@@ -42,6 +42,55 @@ router.post('/', verifyToken, async (req, res) => {
                 error: 'Semua Kolom wajib diisi..'
             })
         }
+
+        // --- FASE 9: ANTI DOUBLE-BOOKING LOGIC ---
+
+        // 1. Cari tahu Hari apa tanggal yang diinputkan (0 = Minggu, 1 = Senin, dst)
+        const hariArray = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+        const dateObj = new Date(tanggal)
+        const namaHari = hariArray[dateObj.getDay()]
+
+        // 2. CEK BENTROK DENGAN JADWAL REGULER (SIAKAD)
+        // Rumus Overlap: (Waktu Mulai Lama < Waktu Selesai Baru) AND (Waktu Selesai Lama > Waktu Mulai Baru)
+        const { data: scheduleConflicts, error: scheduleError } = await supabase
+            .from('schedules')
+            .select('mata_kuliah')
+            .eq('room_id', room_id)
+            .eq('hari', namaHari)
+            .lt('waktu_mulai', waktu_selesai)
+            .gt('waktu_selesai', waktu_mulai)
+
+        if (scheduleError) throw scheduleError
+
+        // Jika ada bentrok dengan jadwal reguler, langsung tolak!
+        if (scheduleConflicts && scheduleConflicts.length > 0) {
+            return res.status(400).json({
+                error: `Gagal: Ruangan sedang digunakan untuk jadwal kuliah reguler (${scheduleConflicts[0].mata_kuliah}).`
+            })
+        }
+
+        // 3. CEK BENTROK DENGAN RESERVASI ORANG LAIN (RACE CONDITION)
+        // Cek apakah ada reservasi yang sudah di-approve di ruangan, tanggal, dan jam yang tumpang tindih
+        const { data: reservationConflicts, error: reservationError } = await supabase
+            .from('reservations')
+            .select('id')
+            .eq('room_id', room_id)
+            .eq('tanggal', tanggal)
+            .eq('status', 'approved')
+            .lt('waktu_mulai', waktu_selesai)
+            .gt('waktu_selesai', waktu_mulai)
+
+        if (reservationError) throw reservationError
+
+        // Jika ada orang yang keduluan meminjam (selisih 1 menit sekalipun), langsung tolak!
+        if (reservationConflicts && reservationConflicts.length > 0) {
+            return res.status(400).json({
+                error: 'Gagal: Ruangan sudah direservasi oleh PJ lain pada jam tersebut.'
+            })
+        }
+
+        // --- AKHIR FASE 9 ---
+
         const { data, error } = await supabase
             .from('reservations')
             .insert({
@@ -108,6 +157,40 @@ router.patch('/:id/reject', verifyToken, adminOnly, async (req, res) => {
         res.json({ message: "Reservasi ditolak.", reservation: data })
     } catch (error) {
         res.status(500).json({ error: 'Gagal menolak reservasi.' })
+    }
+})
+
+// PATCH /api/reservations/:id/check-in - PJ
+router.patch('/:id/checkin', verifyToken, async (req, res) => {
+    try {
+        const { id } = req.params
+
+        const { data: reservation, error: checkError } = await supabase
+            .from('reservations')
+            .select('*')
+            .eq('user_id', req.user.id)
+            .eq('id', id)
+            .eq('status', 'approved')
+            .single()
+
+
+        if (checkError || !reservation) {
+            return res.status(404).json({ error: 'Reservasi tidak ditemukan atau belum disetujui.' });
+        }
+
+        // Update is_cheked-in menjadi true
+        const { data, error } = await supabase
+            .from('reservations')
+            .update({ is_checked_in: true })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.json({ message: 'Berhasil Check-In! Ruangan siap digunakan.', reservation: data })
+    } catch (error) {
+        res.status(500).json({ error: 'Gagal melakukan Check-In.' })
     }
 })
 

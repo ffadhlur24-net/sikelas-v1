@@ -5,6 +5,7 @@
 import express from 'express'
 import cors from 'cors'
 import 'dotenv/config'
+import supabase from './config/supabase.js'
 
 
 // Import routes 
@@ -46,3 +47,35 @@ app.listen(PORT, () => {
     console.log(`\n Server Sikelas berjalan di http://localhost:${PORT}`)
     console.log(`Health check: http://localhost:${PORT}/api/health\n`)
 })
+
+//=======================================
+// BACKGROUND JOB: Sweeper Auto-Cancel Phantom Booking
+//=======================================
+
+setInterval(async () => {
+    try {
+        const now = new Date();
+        const currentTime = now.toTimeString().split(' ')[0]; // format "HH:MM:SS"
+        const currentDate = now.toISOString().split('T')[0]; // format "YYYY-MM-DD"
+
+        // Hitung waktu toleransi: Waktu sekarang dikurangi 15 menit
+        const checkTimeObj = new Date(now.getTime() - 15 * 60000)
+        const checkTime = checkTimeObj.toTimeString().split(' ')[0];
+
+        // Cari dan Tolak
+        const { data, error } = await supabase
+            .from('reservations')
+            .update({ status: 'rejected' })
+            .eq('status', 'approved')
+            .eq('is_checked_in', false)
+            .eq('tanggal', currentDate)
+            .lt('waktu_mulai', checkTime) // waktu mulainya lebih sudah lewat dari waktu toleran
+            .select();
+
+        if (data && data.length > 0) {
+            console.log(`[Sweeper] Membatalkan ${data.length} reservasi karena PJ gaje banget.`)
+        }
+    } catch (error) {
+        console.error('[Sweeper] Error:', error.message)
+    }
+}, 60000) // Berdetak setiap 1 menit
