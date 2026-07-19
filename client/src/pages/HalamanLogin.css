@@ -1,0 +1,183 @@
+/* ============================================
+   Halaman Login & Registrasi PJ - SiKelas
+   ============================================ */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-page);
+  padding: var(--spacing-6);
+}
+
+/* ---- Login Card ---- */
+.login-card {
+  background: var(--bg-primary);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow-xl);
+  padding: var(--spacing-10) var(--spacing-10);
+  width: 100%;
+  max-width: 480px;
+}
+
+/* ---- Branding ---- */
+.login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-1);
+  margin-bottom: var(--spacing-8);
+}
+
+.login-logo {
+  margin-bottom: var(--spacing-2);
+}
+
+.login-title {
+  font-size: var(--font-size-3xl);
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+}
+
+.login-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary-600);
+  font-weight: 500;
+}
+
+/* ---- Tab Toggle ---- */
+.login-tabs {
+  display: flex;
+  background: var(--color-gray-100);
+  border-radius: var(--border-radius-full);
+  padding: 4px;
+  margin-bottom: var(--spacing-8);
+}
+
+.login-tab {
+  flex: 1;
+  padding: var(--spacing-3) var(--spacing-4);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border-radius: var(--border-radius-full);
+  transition: all var(--transition-normal);
+}
+
+.login-tab.active {
+  background: var(--color-primary-500);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-sm);
+}
+
+.login-tab:not(.active):hover {
+  color: var(--text-primary);
+}
+
+/* ---- Form ---- */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.form-label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-4);
+}
+
+.forgot-password {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary-600);
+  text-align: right;
+  font-weight: 500;
+}
+
+.forgot-password:hover {
+  color: var(--color-primary-700);
+  text-decoration: underline;
+}
+
+/* ---- Register Title ---- */
+.register-title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-2);
+}
+
+/* ---- Footer Text ---- */
+.login-footer-text {
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.link-button {
+  background: none;
+  color: var(--color-primary-600);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  padding: 0;
+}
+
+.link-button:hover {
+  color: var(--color-primary-700);
+  text-decoration: underline;
+}
+
+/* ---- Page Footer ---- */
+.login-page-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 960px;
+  margin-top: var(--spacing-12);
+  padding-top: var(--spacing-6);
+  border-top: 1px solid var(--border-color);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.footer-links {
+  display: flex;
+  gap: var(--spacing-6);
+}
+
+.footer-links a {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.footer-links a:hover {
+  color: var(--text-primary);
+}
+
+/* ---- Select Styling ---- */
+.login-form select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: var(--spacing-10);
+  cursor: pointer;
+}
