@@ -47,8 +47,8 @@ function DaftarKelas() {
       <div className="tabs-container">
         <button className={`tab-btn ${activeFilter === 'semua' ? 'active' : ''}`} onClick={() => setActiveFilter('semua')}>Semua</button>
         <button className={`tab-btn ${activeFilter === 'tersedia' ? 'active' : ''}`} onClick={() => setActiveFilter('tersedia')}>Tersedia</button>
+        <button className={`tab-btn ${activeFilter === 'sedang_digunakan' ? 'active' : ''}`} onClick={() => setActiveFilter('sedang_digunakan')}>Sedang Digunakan</button>
         <button className={`tab-btn ${activeFilter === 'terkunci' ? 'active' : ''}`} onClick={() => setActiveFilter('terkunci')}>Terkunci</button>
-        <button className={`tab-btn ${activeFilter === 'perbaikan' ? 'active' : ''}`} onClick={() => setActiveFilter('perbaikan')}>Perbaikan</button>
       </div>
 
       {loading ? (
@@ -69,8 +69,8 @@ function DaftarKelas() {
                   <p className="text-sm text-muted">{room.gedung} - Lantai {room.lantai}</p>
                 </div>
                 {room.status === 'tersedia' && <span className="badge badge-success">Tersedia</span>}
+                {room.status === 'sedang_digunakan' && <span className="badge badge-warning" style={{ background: '#f59e0b', color: 'white' }}>Dipakai</span>}
                 {room.status === 'terkunci' && <span className="badge badge-error">Terkunci</span>}
-                {room.status === 'perbaikan' && <span className="badge badge-warning">Perbaikan</span>}
               </div>
 
               <div style={{ display: 'flex', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-4)' }}>
@@ -80,7 +80,7 @@ function DaftarKelas() {
                 </div>
               </div>
 
-              {room.status === 'tersedia' ? (
+              {room.status === 'tersedia' || room.status === 'sedang_digunakan' ? (
                 <button className="btn btn-primary btn-sm" style={{ width: '100%' }} onClick={() => navigate('/pj/reservasi')}>Reservasi Kelas</button>
               ) : (
                 <button className="btn btn-primary btn-sm" style={{ width: '100%' }} disabled>Tidak Tersedia</button>
