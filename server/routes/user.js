@@ -13,7 +13,7 @@ router.get('/', verifyToken, adminOnly, async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('users')
-            .select('id, nama, nim, email, prodi, no_hp, role, status, created_at')
+            .select('id, username, nim_nip, email, prodi, semester, kelas, mata_kuliah, no_hp, role, status, created_at')
             .neq('id', req.user.id) // Jangan tampilkan admin yang sedang login
             .order('created_at', { ascending: false })
 
@@ -37,8 +37,9 @@ router.patch('/:id/status', verifyToken, adminOnly, async (req, res) => {
             .from('users')
             .update({ status })
             .eq('id', id)
-            .select('id, nama, status')
+            .select('id, username, status')
             .single()
+
         if (error) throw error
 
         res.json({ message: `Status pengguna berhasil diubah menjadi ${status}.`, user: data })

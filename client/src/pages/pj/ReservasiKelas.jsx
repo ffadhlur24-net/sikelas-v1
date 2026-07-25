@@ -10,6 +10,10 @@ function ReservasiKelas() {
   const [roomSchedule, setRoomSchedule] = useState([]) // Menyimpan data jadwal dari backend
   const [loadingSchedule, setLoadingSchedule] = useState(false)
 
+  const [selectedKampus, setSelectedKampus] = useState('')
+  const [selectedGedung, setSelectedGedung] = useState('')
+  const [selectedLantai, setSelectedLantai] = useState('')
+
   const [formData, setFormData] = useState({
     room_id: '',
     mata_kuliah: '',
@@ -24,7 +28,7 @@ function ReservasiKelas() {
       try {
         const response = await api.get('/rooms')
         // Hanya tampilkan ruangan yang bersetatus 'tersedia'
-        const availableRooms = response.data.rooms.filter(r => r.status === 'tersedia')
+        const availableRooms = response.data.rooms.filter(r => r.status !== 'terkunci' && r.status !== 'perbaikan')
         setRooms(availableRooms)
       } catch (error) {
         console.error("Gagal mengambil data ruangan:", error)
@@ -32,6 +36,11 @@ function ReservasiKelas() {
     }
     fetchRooms()
   }, [])
+  // CASCADING DROPDOWNS (FILTER BERTAHAP)
+  const kampusList = [...new Set(rooms.map(r => r.kampus))];
+  const gedungList = [...new Set(rooms.filter(r => r.kampus === selectedKampus).map(r => r.gedung))];
+  const lantaiList = [...new Set(rooms.filter(r => r.kampus === selectedKampus && r.gedung === selectedGedung).map(r => r.lantai))].sort();
+  const finalRooms = rooms.filter(r => r.kampus === selectedKampus && r.gedung === selectedGedung && r.lantai === Number(selectedLantai));
 
   // FECTH TIMELINE JADWAL
   useEffect(() => {
@@ -133,17 +142,50 @@ function ReservasiKelas() {
               <label className="form-label">Mata Kuliah</label>
               <input type="text" className="input-field" name="mata_kuliah" value={formData.mata_kuliah} onChange={handleChange} placeholder="Contoh: Studi MBG" required />
             </div>
-            <div className="form-group">
-              <label className="form-label">Ruangan</label>
-              <select name="room_id" value={formData.room_id} onChange={handleChange} className="input-field" required>
-                <option value="">-- Pilih Ruangan --</option>
-                {rooms.map(room => (
-                  <option value={room.id} key={room.id}>
-                    {room.nama} ({room.gedung}) - {room.kapasitas} Kursi
-                  </option>
-                ))}
-              </select>
+
+            <div className="form-row" style={{ display: 'flex', gap: '20px', marginBottom: '16px' }}>
+              <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                <label className="form-label">Kampus</label>
+                <select className="input-field" value={selectedKampus} onChange={(e) => {
+                  setSelectedKampus(e.target.value); setSelectedGedung(''); setSelectedLantai(''); setFormData({ ...formData, room_id: '' })
+                }} required>
+                  <option value="">-- Pilih Kampus --</option>
+                  {kampusList.map(k => <option key={k} value={k}>{k}</option>)}
+                </select>
+              </div>
+              <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                <label className="form-label">Gedung</label>
+                <select className="input-field" value={selectedGedung} onChange={(e) => {
+                  setSelectedGedung(e.target.value); setSelectedLantai(''); setFormData({ ...formData, room_id: '' })
+                }} disabled={!selectedKampus} required>
+                  <option value="">-- Pilih Gedung --</option>
+                  {gedungList.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
             </div>
+            <div className="form-row" style={{ display: 'flex', gap: '20px' }}>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label className="form-label">Lantai</label>
+                <select className="input-field" value={selectedLantai} onChange={(e) => {
+                  setSelectedLantai(e.target.value); setFormData({ ...formData, room_id: '' })
+                }} disabled={!selectedGedung} required>
+                  <option value="">-- Pilih Lantai --</option>
+                  {lantaiList.map(l => <option key={l} value={l}>Lantai {l}</option>)}
+                </select>
+              </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label className="form-label">Ruangan Akhir</label>
+                <select name="room_id" className="input-field" value={formData.room_id} onChange={handleChange} disabled={!selectedLantai} required>
+                  <option value="">-- Pilih Ruangan --</option>
+                  {finalRooms.map(room => (
+                    <option value={room.id} key={room.id}>
+                      {room.nama} ({room.kapasitas} Kursi) {room.status !== 'tersedia' ? `[⚠️ ${room.status}]` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div className="form-group">
               <label className="form-label">Tanggal</label>
               <input type="date" className="input-field" name='tanggal' value={formData.tanggal} onChange={handleChange} required />

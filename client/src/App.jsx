@@ -3,6 +3,7 @@ import HalamanLogin from './pages/HalamanLogin'
 import DashboardPJ from './pages/DashboardPJ'
 import DashboardAdmin from './pages/DashboardAdmin'
 import ProtectedRoute from './components/ProtectedRoute'
+import Register from './pages/auth/Register'
 import './App.css'
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<HalamanLogin />} />
+        <Route path='/register' element={<Register />} />
 
         {/* PJ Routes */}
         <Route path="/pj/*"

@@ -14,52 +14,64 @@ const router = Router()
 
 router.post('/register', async (req, res) => {
     try {
-        const { nama, nim, email, password, prodi, no_hp } = req.body
+        const { username, nim_nip, email, password, prodi, semester, mata_kuliah, kelas, no_hp } = req.body
 
         // 1. Validasi input
-        if (!nama || !nim || !email || !password) {
+        if (!username || !nim_nip || !email || !password || !prodi || !mata_kuliah || !kelas || !semester || !no_hp) {
             return res.status(400).json({
-                error: 'Nama, NIM, Email, dan Password wajib diisi broo!'
+                error: 'Semua kolom wajib diisi broo!'
             })
         }
 
-        // 2. Cek apakah email atau NIM sudah terdaftar
-        const { data: existing } = await supabase
+        // 2. Cek username Duplikat
+        const { data: existingUser } = await supabase
             .from('users')
             .select('id')
-            .or(`email.eq.${email},nim.eq.${nim}`)
+            .eq('username', username)
             .single()
 
-        if (existing) {
+        if (existingUser) {
             return res.status(409).json({
-                error: "Email atau NIM sudah terdaftar."
+                error: "Username sudah terdaftar, pilih username yang lain aja coy."
             })
         }
 
-        // 3. hash password (enkripsi)
-        const salt = await bcrypt.genSalt(10)
-        const hashedPassword = await bcrypt.hash(password, salt)
+        // 3. Cek double PJ
+        const { data: existingPJ } = await supabase
+            .from('users')
+            .select('id')
+            .eq('role', 'pj')
+            .eq('prodi', prodi)
+            .eq('mata_kuliah', mata_kuliah)
+            .eq('kelas', kelas)
+            .single()
+        if (existingPJ) {
+            return res.status(400).json({
+                error: `Pendaftaran Ditulak: Mata kuliah ${mata_kuliah} (${prodi}) Kelas ${kelas} Sudah memiliki Penganggung Jawab!`
+            })
+        }
 
-        // 4. Input ke database( tabel user)
+        // 4. hash password (enkripsi)
+        const hashedPassword = await bcrypt.hash(password, 10)
+
         const { data: newUser, error } = await supabase
             .from('users')
             .insert({
-                nama,
-                nim,
-                email,
+                username,
                 password: hashedPassword,
-                prodi: prodi || null,
-                no_hp: no_hp || null,
                 role: 'pj',
+                nim_nip,
+                email,
+                prodi,
+                mata_kuliah,
+                semester,
+                kelas,
+                no_hp,
                 status: 'pending' // Menunggu admin acc
             })
             .select()
-            .single()
 
-        if (error) {
-            console.error("Supabase error:", error)
-            return res.status(500).json({ error: 'Gagal mendaftarkan user.' })
-        }
+        if (error) throw error
 
         // 5. Kirim respon sukse
         res.status(201).json({
@@ -79,6 +91,50 @@ router.post('/register', async (req, res) => {
         res.status(500).json({ error: 'Terjadi kesalahan diserver.' })
     }
 })
+// Mengambil seluruh mata kuliah yang belum memiliki pj
+// Mengambil seluruh mata kuliah yang belum memiliki pj
+router.get('/registration-options', async (req, res) => {
+    try {
+        const { data: allSchedules, error: schedError } = await supabase
+            .from('schedules')
+            .select('prodi, semester, kelas, mata_kuliah')
+
+        if (schedError) throw schedError
+
+        const { data: takenUsers, error: userError } = await supabase
+            .from('users')
+            .select('prodi, semester, kelas, mata_kuliah')
+            .eq('role', 'pj')
+
+        if (userError) throw userError
+
+        const takenKeys = new Set((takenUsers || []).map(u =>
+            `${u.prodi}|${u.semester}|${u.kelas}|${u.mata_kuliah}`
+        ))
+
+        // Filter mata kuliah yang BELUM ada PJ-nya
+        const availableSchedules = (allSchedules || []).filter(s => {
+            const key = `${s.prodi}|${s.semester}|${s.kelas}|${s.mata_kuliah}`
+            return !takenKeys.has(key)
+        })
+
+        if (availableSchedules.length === 0) {
+            return res.json({
+                isOpen: false,
+                message: 'Pendaftaran penanggung jawab telah ditutup (Semua Mata Kuliah sudah memiliki PJ).'
+            })
+        }
+
+        res.json({
+            isOpen: true,
+            availableSchedules
+        })
+    } catch (error) {
+        console.error('Registration options error:', error)
+        res.status(500).json({ error: 'Gagal mengambil opsi pendaftaran' })
+    }
+})
+
 //POST/api/auth/login
 // Untuk login PJ dan Admin
 router.post('/login', async (req, res) => {
@@ -156,4 +212,45 @@ router.post('/login', async (req, res) => {
     }
 })
 
+// GET /api/auth/available-courses
+// Mengambil daftar mata kuliah dari SIAKAD yang belum memiliki PJ
+router.get('/available-courses', async (req, res) => {
+    try {
+        const { prodi, kelas } = req.query;
+
+        if (!prodi || !kelas) {
+            return res.status(400).json({ error: 'Prodi dan kelas wajib dipilih' })
+        }
+
+        // 1. Ambil semua mata kuliah dari master data schedule(SIAKAD)
+        const { data: allSchedules, error: schedError } = await supabase
+            .from('schedules')
+            .select('mata_kuliah')
+
+        if (schedError) throw schedError
+
+        // Ekstrak nama mata kuliah (tanpa duplikat)
+        const allCourses = [...new Set((allSchedules || []).map(s => s.mata_kuliah))];
+
+
+        const { data: tokenPjs, error: userError } = await supabase
+            .from('users')
+            .select('mata_kuliah')
+            .eq('role', 'pj')
+            .eq('prodi', prodi)
+            .eq('kelas', kelas)
+
+        if (userError) throw userError;
+
+        const tokenCourses = new Set((tokenPjs || []).map(u => u.mata_kuliah));
+
+        // FILTER: Hanya mengambil mata kuliah yang belum memiliki PJ
+        const availableCourses = allCourses.filter(course => !tokenCourses.has(course))
+
+        res.json({ courses: availableCourses })
+    } catch (error) {
+        console.error('Fetch available course error:', error);
+        res.status(500).json({ error: 'Gagal mengambil daftar mata kuliah.' })
+    }
+});
 export default router

@@ -7,7 +7,10 @@ function DaftarKelas() {
   const [rooms, setRooms] = useState([]) // State untuk menyinpan data ruangan
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [currentTime, setCurrentTime] = useState(new Date())
   const navigate = useNavigate()
+
+
 
   // Fungsi untuk mengambil data ruangan dari back end 
   const fetchRooms = async () => {
@@ -25,9 +28,25 @@ function DaftarKelas() {
     }
   }
 
-  // useEffect untuk mengambil data otomatis saat halaman dibuka
+  // AUTO-REFRESH & JAM DIGITAL
   useEffect(() => {
     fetchRooms()
+
+    // 1. Jam digital
+    const clockTimer = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 1000); // 1 detik
+
+    // 2. Auto-refresh
+    const refreshTimer = setInterval(() => {
+      fetchRooms()
+    }, 60000); // 1 menit
+
+    // Cleanup jika PJ pindah halaman
+    return () => {
+      clearInterval(clockTimer);
+      clearInterval(refreshTimer);
+    }
   }, [])
 
   // Filter ruangan berdasarkan status
@@ -42,12 +61,25 @@ function DaftarKelas() {
           <h1 className="page-title">Daftar Kelas</h1>
           <p className="page-subtitle">Pantau status dan tersediaan ruang kelas hari ini.</p>
         </div>
+
+        {/* JAM DIGITAL */}
+        <div style={{ textAlign: 'right', background: '#f8fafc', padding: '10px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '2px' }}>
+            WAKTU SERVER
+          </div>
+          <div style={{ fontSize: '26px', fontWeight: '800', fontFamily: 'monospace', color: '#0f172a' }}>
+            {currentTime.toLocaleTimeString('id-ID')}
+          </div>
+        </div>
       </div>
+
+
 
       <div className="tabs-container">
         <button className={`tab-btn ${activeFilter === 'semua' ? 'active' : ''}`} onClick={() => setActiveFilter('semua')}>Semua</button>
         <button className={`tab-btn ${activeFilter === 'tersedia' ? 'active' : ''}`} onClick={() => setActiveFilter('tersedia')}>Tersedia</button>
         <button className={`tab-btn ${activeFilter === 'sedang_digunakan' ? 'active' : ''}`} onClick={() => setActiveFilter('sedang_digunakan')}>Sedang Digunakan</button>
+        <button className={`tab-btn ${activeFilter === 'dipesan' ? 'active' : ''}`} onClick={() => setActiveFilter('dipesan')}>Dipesan</button>
         <button className={`tab-btn ${activeFilter === 'terkunci' ? 'active' : ''}`} onClick={() => setActiveFilter('terkunci')}>Terkunci</button>
       </div>
 
@@ -69,7 +101,8 @@ function DaftarKelas() {
                   <p className="text-sm text-muted">{room.gedung} - Lantai {room.lantai}</p>
                 </div>
                 {room.status === 'tersedia' && <span className="badge badge-success">Tersedia</span>}
-                {room.status === 'sedang_digunakan' && <span className="badge badge-warning" style={{ background: '#f59e0b', color: 'white' }}>Dipakai</span>}
+                {room.status === 'sedang_digunakan' && <span className="badge badge-warning" style={{ background: '#f97316', color: 'white' }}>Digunakan</span>}
+                {room.status === 'dipesan' && <span className="badge badge-warning" style={{ background: '#eab308', color: 'white' }}>Dipesan</span>}
                 {room.status === 'terkunci' && <span className="badge badge-error">Terkunci</span>}
               </div>
 
@@ -80,8 +113,8 @@ function DaftarKelas() {
                 </div>
               </div>
 
-              {room.status === 'tersedia' || room.status === 'sedang_digunakan' ? (
-                <button className="btn btn-primary btn-sm" style={{ width: '100%' }} onClick={() => navigate('/pj/reservasi')}>Reservasi Kelas</button>
+              {room.status !== 'terkunci' ? (
+                <button className="btn btn-primary btn-sm" style={{ width: '100%' }} onClick={() => navigate('/pj/reservasi')}>Reservasi Untuk Nanti</button>
               ) : (
                 <button className="btn btn-primary btn-sm" style={{ width: '100%' }} disabled>Tidak Tersedia</button>
               )}

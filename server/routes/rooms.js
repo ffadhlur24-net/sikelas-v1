@@ -9,7 +9,6 @@ import { verifyToken, adminOnly } from '../middleware/auth.js'
 const router = Router()
 
 //GET /api/rooms - Ambil semua ruangan (harus login)
-
 router.get('/', verifyToken, async (req, res) => {
     try {
         // 1. Ambil semua data ruang dari database
@@ -103,7 +102,7 @@ router.get(':id/schedule', verifyToken, async (req, res) => {
         const combined = [
             ...(schedules || []).map(s => ({ ...s, type: 'Reguler' })),
             ...(reservations || []).map(r => ({ ...r, type: 'Dipesan' }))
-        ].sort((a, b) => a.waktu_mulai.localeCompire(b.waktu_mulai))
+        ].sort((a, b) => a.waktu_mulai.localeCompare(b.waktu_mulai))
         //4. kirim hasil ke Front-end
         res.json({ schedule: combined })
     } catch (error) {
