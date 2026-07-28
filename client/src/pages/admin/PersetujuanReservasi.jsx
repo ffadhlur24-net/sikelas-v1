@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect } from 'react'
 import api from '../../api/axios'
 
 function PersetujuanReservasi() {
@@ -25,24 +25,28 @@ function PersetujuanReservasi() {
     fetchReservations()
   }, [])
   // 2. Fungsi untuk mengubah status reservasi
-  const handleAction = async (id, action) => {
-    setActionLoading(true)
-    setMessage('')
+  const handleAction = async (id, status) => {
+    let alasan_penolakan = '';
+
+    if (status === 'rejected') {
+      alasan_penolakan = prompt('Masukan alasan penolakan reservasi ini:');
+      if (alasan_penolakan === null) return;
+      if (!alasan_penolakan.trim()) {
+        alert('Alasan penolakan wajib diisi!');
+        return
+      }
+    }
 
     try {
-      // aksi bernilai 'approve' atau 'reject'
-      await api.patch(`/reservations/${id}/${action}`)
-
-      setMessage(`Reservasi berhasil di-${action === 'approve' ? 'setujui' : 'tolak'}!`)
-
-      // Ambil ulang data terbaru setelah diubah statusnya
-      fetchReservations()
+      setActionLoading(true)
+      await api.patch(`/reservations/${id}/status`, { status, alasan_penolakan });
+      fetchReservations();
     } catch (error) {
-      console.error('Gagal mengambil reservasi:', error)
+      console.error(error);
+      alert('Gagal mengubah status reservasi.');
     } finally {
-      setActionLoading(false)
-      // Hilangkan pesan setelah 3 detik
-      setTimeout(() => setMessage(''), 3000)
+      setActionLoading(false);
+      setTimeout(() => setMessage('', 3000))
     }
   }
   // 3. Filter untuk melihat reservasi yang masih pending
@@ -52,22 +56,20 @@ function PersetujuanReservasi() {
     <div className="animate-fade-in">
       <div className="page-header">
         <h1 className="page-title">Persetujuan Reservasi</h1>
-        <p className="subtitle">Daftar pengajuan peminjaman kelas yang menunggu Persetujuan Anda.</p>
+        <p className="subtitle">Daftar pengajuan peminjaman kelas yang menunggu persetujuan Anda.</p>
       </div>
-
       {message && (
         <div style={{ background: 'var(--color-success-bg)', color: 'var(--color-success)', padding: '12px', borderRadius: '8px', marginBottom: '20px', fontWeight: '500' }}>
           {message}
         </div>
       )}
-
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Memuat data...</div>
       ) : (
         <div className="card-flat" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
-              <tr>
+              <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
                 <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: '500' }}>Mata Kuliah</th>
                 <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: '500' }}>Ruangan</th>
                 <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: '500' }}>Pemohon (PJ)</th>
@@ -75,36 +77,39 @@ function PersetujuanReservasi() {
                 <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: '500', textAlign: 'right' }}>Aksi</th>
               </tr>
             </thead>
-
             <tbody>
               {pendingReservations.length > 0 ? pendingReservations.map((res) => (
                 <tr key={res.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
 
-                  {/* res.room.nama berisi nama dari tabel relasi rooms */}
-                  <td style={{ padding: '16px' }}>{res.rooms?.nama || 'Ruang Dihapus'}</td>
-
+                  {/* Mata Kuliah */}
+                  <td style={{ padding: '16px', fontWeight: '600' }}>{res.mata_kuliah}</td>
+                  {/* Ruangan */}
                   <td style={{ padding: '16px' }}>
-                    <div>{res.users?.nama}</div>
-                    <div className="text-sm text-muted">{res.users?.nim}</div>
+                    <div>{res.rooms?.nama || 'Ruang Dihapus'}</div>
+                    <div className="text-sm text-muted">{res.rooms?.gedung}</div>
                   </td>
-
+                  {/* Pemohon (PJ) */}
+                  <td style={{ padding: '16px' }}>
+                    <div>{res.users?.username || 'PJ Tidak Ditemukan'}</div>
+                    <div className="text-sm text-muted">NIM: {res.users?.nim_nip || '-'}</div>
+                  </td>
+                  {/* Waktu */}
                   <td style={{ padding: '16px' }}>
                     <div>{res.tanggal}</div>
-                    <div className="text-sm text-muted">{res.waktu_mulai} - {res.waktu_selesai}</div>
+                    <div className="text-sm text-muted">{res.waktu_mulai.substring(0, 5)} - {res.waktu_selesai.substring(0, 5)}</div>
                   </td>
-
+                  {/* Aksi */}
                   <td style={{ padding: '16px', textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                       <button className="btn btn-primary btn-sm"
                         disabled={actionLoading}
-                        onClick={() => handleAction(res.id, 'approve')}>
+                        onClick={() => handleAction(res.id, 'approved')}>
                         Setuju
                       </button>
-
                       <button className="btn btn-secondary btn-sm"
                         style={{ color: 'var(--color-error)' }}
                         disabled={actionLoading}
-                        onClick={() => handleAction(res.id, 'reject')}>
+                        onClick={() => handleAction(res.id, 'rejected')}>
                         Tolak
                       </button>
                     </div>

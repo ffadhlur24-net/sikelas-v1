@@ -48,5 +48,40 @@ router.patch('/:id/status', verifyToken, adminOnly, async (req, res) => {
         res.status(500).json({ error: 'Gagal mengubah status pengguna.' })
     }
 })
+// Hapus Akun PJ
+router.delete('/:id', verifyToken, adminOnly, async (req, res) => {
+    try {
+        const { id } = req.params
+        const { error } = await supabase
+            .from('users')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error
+        res.json({ message: 'Akun PJ berhasil dihapus secara permanent' })
+    } catch (error) {
+        console.error('Delete user error:', error)
+        res.status(500).json({ error: 'Gagal menghapus akun PJ.' })
+    }
+})
+// Edit data PJ
+router.put('/:id', verifyToken, adminOnly, async (req, res) => {
+    try {
+        const { id } = req.params
+        const { username, nim_nip, prodi, semester, kelas, mata_kuliah, no_hp, status } = req.body
+        const { data, error } = await supabase
+            .from('users')
+            .update({ username, nim_nip, prodi, semester, kelas, mata_kuliah, no_hp, status })
+            .eq('id', id)
+            .select('*')
+            .single()
+
+        if (error) throw error
+        res.json({ message: 'Data Pj berhasil diperbarui.', user: data })
+    } catch (error) {
+        console.error('Update user error:', error);
+        res.status(500).json({ error: 'Gagal memperbarui data PJ.' })
+    }
+})
 
 export default router

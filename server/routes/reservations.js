@@ -13,7 +13,7 @@ router.get('/', verifyToken, async (req, res) => {
     try {
         let query = supabase
             .from('reservations')
-            .select('*, rooms(nama, gedung), users(nama, nim)')
+            .select('*, rooms(nama, gedung), users(username, nim_nip, prodi, kelas)')
             .order('created_at', { ascending: false })
 
 
@@ -42,8 +42,6 @@ router.post('/', verifyToken, async (req, res) => {
                 error: 'Semua Kolom wajib diisi..'
             })
         }
-
-        // --- FASE 9: ANTI DOUBLE-BOOKING LOGIC ---
 
         // 1. Cari tahu Hari apa tanggal yang diinputkan (0 = Minggu, 1 = Senin, dst)
         const hariArray = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
@@ -191,6 +189,33 @@ router.patch('/:id/checkin', verifyToken, async (req, res) => {
         res.json({ message: 'Berhasil Check-In! Ruangan siap digunakan.', reservation: data })
     } catch (error) {
         res.status(500).json({ error: 'Gagal melakukan Check-In.' })
+    }
+})
+
+router.patch('/:id/status', verifyToken, adminOnly, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, alasan_penolakan } = req.body;
+
+        const updateData = { status };
+        // Jika ditolak, simpan alasan penolakan dari admin
+        if (status === 'rejected' && alasan_penolakan) {
+            updateData.alasan_penolakan = alasan_penolakan;
+        }
+
+        const { data, error } = await supabase
+            .from('reservations')
+            .update(updateData)
+            .eq('id', id)
+            .select('*')
+            .single()
+
+        if (error) throw error
+
+        res.json({ message: `Status reservasi berhasil diubah menjadi ${status}.`, reservation: data })
+    } catch (error) {
+        console.error('Update reservasi error:', error)
+        res.status(500).json({ error: 'gagal mengubah status reservasi.' })
     }
 })
 

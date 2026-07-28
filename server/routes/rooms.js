@@ -110,20 +110,48 @@ router.get(':id/schedule', verifyToken, async (req, res) => {
         res.status(500).json({ error: 'Gagal mengambil jadwal ruangan.' })
     }
 })
-//POST /api/rooms - Tambah ruangan baru (admin only)
+//POST /api/rooms - Tambah ruangan baru + Jadwal ruangan (admin only)
 router.post('/', verifyToken, adminOnly, async (req, res) => {
     try {
-        const { nama, kampus, gedung, lantai, kapasitas } = req.body
+        const { nama, kampus, gedung, lantai, kapasitas, initial_schedule } = req.body
 
-        const { data, error } = await supabase
+        if (!nama || !kampus || !gedung || !lantai || !kapasitas) {
+            return res.status(400).json({ error: 'Nama, kampus, gedung, lantai, dan kapasitas wajib diisi.' })
+        }
+
+        const { data: roomData, error: roomError } = await supabase
             .from('rooms')
             .insert({ nama, kampus, gedung, lantai, kapasitas, status: 'tersedia' })
             .select()
             .single()
 
-        if (error) throw error
+        if (roomError) throw roomError
 
-        res.status(201).json({ message: 'Ruangan berhasil ditambahkan.', room: data })
+        if (initial_schedule &&
+            initial_schedule.prodi &&
+            initial_schedule.semester &&
+            initial_schedule.kelas &&
+            initial_schedule.mata_kuliah &&
+            initial_schedule.dosen &&
+            initial_schedule.hari &&
+            initial_schedule.waktu_mulai &&
+            initial_schedule.waktu_selesai
+        ) {
+            const { prodi, semester, kelas, mata_kuliah, dosen, hari, waktu_mulai, waktu_selesai } = initial_schedule
+            await supabase.from('schedules').insert([{
+                room_id: roomData.id,
+                prodi,
+                semester,
+                kelas,
+                mata_kuliah,
+                dosen,
+                hari,
+                waktu_mulai,
+                waktu_selesai,
+            }])
+        }
+
+        res.status(201).json({ message: 'Ruangan berhasil ditambahkan.', room: roomData })
     } catch (error) {
         console.error('Create room error:', error)
         res.status(500).json({ error: 'Gagal menambahkan ruangan.' })

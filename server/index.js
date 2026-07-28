@@ -14,6 +14,7 @@ import roomRoutes from './routes/rooms.js'
 import reservationRoutes from './routes/reservations.js'
 import reportRoutes from './routes/reports.js'
 import userRoutes from './routes/user.js'
+import scheduleRoutes from './routes/schedules.js'
 
 // Inisialisasi Express app
 const app = express()
@@ -33,6 +34,7 @@ app.use('/api/rooms', roomRoutes)
 app.use('/api/reservations', reservationRoutes)
 app.use('/api/reports', reportRoutes)
 app.use('/api/users', userRoutes)
+app.use('/api/schedules', scheduleRoutes)
 
 // Routes test sederhana
 app.get('/api/health', (req, res) => {

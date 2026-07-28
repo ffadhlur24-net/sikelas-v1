@@ -198,11 +198,15 @@ router.post('/login', async (req, res) => {
             token,
             user: {
                 id: user.id,
-                nama: user.nama,
-                nim: user.nim,
+                username: user.username,
+                nim_nip: user.nim_nip,
                 email: user.email,
                 role: user.role,
-                prodi: user.prodi
+                prodi: user.prodi,
+                semester: user.semester,
+                kelas: user.kelas,
+                mata_kuliah: user.mata_kuliah,
+                no_hp: user.no_hp
             }
         })
 

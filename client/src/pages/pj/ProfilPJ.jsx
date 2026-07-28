@@ -56,10 +56,10 @@ function ProfilPJ() {
         <div className='profile-card card-flat' style={{ height: 'fit-content' }}>
           <div className="profile-header">
             <div className="profile-avatar">
-              {getInitials(user?.nama)}
+              {getInitials(user?.username)}
             </div>
             <div className="profile-info">
-              <h2>{user?.nama || 'Nama PJ'}</h2>
+              <h2>{user?.username || 'Nama PJ'}</h2>
               <p>{user?.email || 'email@student.walisongo.ac.id'}</p>
               <span className='badge badge-success'>PJ Aktif</span>
             </div>
@@ -68,12 +68,32 @@ function ProfilPJ() {
           <div className="profile-details">
             <div className="detail-item">
               <span className="datail-label">NIM</span>
-              <span className="detail-value">{user?.nim || '-'}</span>
+              <span className="detail-value">{user?.nim_nip || '-'}</span>
+            </div>
+
+            <div className="detail-item">
+              <span className="datail-label">Semester</span>
+              <span className="detail-value">{user?.semester || '-'}</span>
+            </div>
+
+            <div className="detail-item">
+              <span className="datail-label">Kelas</span>
+              <span className="detail-value">{user?.kelas || '-'}</span>
             </div>
 
             <div className="detail-item">
               <span className="datail-label">Program Studi</span>
               <span className="detail-value">{user?.prodi || '-'}</span>
+            </div>
+
+            <div className="detail-item">
+              <span className="datail-label">Mata Kuliah</span>
+              <span className="detail-value">{user?.mata_kuliah || '-'}</span>
+            </div>
+
+            <div className="detail-item">
+              <span className="datail-label">No. HP</span>
+              <span className="detail-value">{user?.no_hp || '-'}</span>
             </div>
 
             <div className="detail-item">
@@ -105,7 +125,11 @@ function ProfilPJ() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <h3 style={{ fontSize: '16px', fontWeight: 'bold' }}>{res.mata_kuliah}</h3>
                     {res.status === 'pending' && <span className="badge badge-warning">Menunggu</span>}
-                    {res.status === 'rejected' && <span className="badge badge-error">Ditolak</span>}
+                    {res.status === 'rejected' && (
+                      <div style={{ background: '#fee2e2', color: '#dc2626', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', marginTop: '8px' }}>
+                        ❌ <b>Ditolak Admin:</b> {res.alasan_penolakan || 'Tidak ada alasan yang dicantumkan.'}
+                      </div>
+                    )}
                     {res.status === 'expired' && <span className="badge badge-error">Hangus (Ghosting)</span>}
                     {res.status === 'approved' && !res.is_checked_in && <span className="badge badge-success">Disetujui (Belum Check-In)</span>}
                     {res.status === 'approved' && res.is_checked_in && <span className="badge badge-success" style={{ background: '#10b981', color: 'white' }}>Sudah Check-In</span>}
