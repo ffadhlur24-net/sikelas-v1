@@ -55,9 +55,11 @@ function Register() {
 
     // 100% MURNI CASCADING DARI DATABASE SUPABASE (Schedules Table)
     const dbProdisFromSchedules = [...new Set(availableSchedules.map(s => s.prodi))].filter(Boolean).sort()
-    const dbProdisFromDepartemen = departments.map(d => d.nama_prodi).filter(Boolean)
-    const prodiOptions = dbProdisFromDepartemen.length > 0 
-        ? dbProdisFromDepartemen 
+    const dbProdisFromDepartemen = departments
+        .filter(d => d.nama_prodi && !d.nama_prodi.includes('(Umum)') && d.kode_prodi !== 'UMUM')
+        .map(d => d.nama_prodi)
+    const prodiOptions = dbProdisFromDepartemen.length > 0
+        ? dbProdisFromDepartemen
         : dbProdisFromSchedules
 
     const filteredByProdi = availableSchedules.filter(s => s.prodi === formData.prodi)
@@ -208,7 +210,7 @@ function Register() {
                             <div className="form-group" style={{ marginBottom: '14px' }}>
                                 <label className="form-label">1. Program Studi (Prodi)</label>
                                 <select name="prodi" value={formData.prodi} onChange={handleChange} className="input-field" required>
-                                    <option value="">-- Pilih Program Studi dari Database --</option>
+                                    <option value="">-- Pilih Program Studi --</option>
                                     {prodiOptions.map(p => (
                                         <option key={p} value={p}>{p}</option>
                                     ))}
