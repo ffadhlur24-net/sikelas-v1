@@ -15,6 +15,7 @@ import reservationRoutes from './routes/reservations.js'
 import reportRoutes from './routes/reports.js'
 import userRoutes from './routes/user.js'
 import scheduleRoutes from './routes/schedules.js'
+import departemenRoutes from './routes/departemen.js'
 
 // Inisialisasi Express app
 const app = express()
@@ -35,6 +36,7 @@ app.use('/api/reservations', reservationRoutes)
 app.use('/api/reports', reportRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/schedules', scheduleRoutes)
+app.use('/api/departemen', departemenRoutes)
 
 // Routes test sederhana
 app.get('/api/health', (req, res) => {
@@ -50,9 +52,9 @@ app.listen(PORT, () => {
     console.log(`Health check: http://localhost:${PORT}/api/health\n`)
 })
 
-//=======================================
-// BACKGROUND JOB: Sweeper Auto-Cancel Phantom Booking
-//=======================================
+//========================================================
+// BACKGROUND JOB: Sweeper Auto-Cancel & Auto-Expire
+//========================================================
 
 setInterval(async () => {
     try {
@@ -76,6 +78,17 @@ setInterval(async () => {
 
         if (data && data.length > 0) {
             console.log(`[Sweeper] Membatalkan ${data.length} reservasi karena PJ gaje banget.`)
+        }
+
+        const { data: repData } = await supabase
+            .from('reports')
+            .update({ status: 'expired' })
+            .eq('status', 'pending')
+            .lt('tanggal', currentDate)
+            .select('*')
+
+        if (repData && repData.length > 0) {
+            console.log(`[Sweeper] mengubah ${repData.length} laporan menjadi expired karena sudah kadaluarsa`)
         }
     } catch (error) {
         console.error('[Sweeper] Error:', error.message)

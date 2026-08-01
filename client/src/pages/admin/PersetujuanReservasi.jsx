@@ -8,6 +8,22 @@ function PersetujuanReservasi() {
   const [message, setMessage] = useState('')
 
 
+  const formatTanggalIndonesia = (dateString) => {
+    if (!dateString) return '-'
+    const cleanDate = dateString.split('T')[0]
+    const parts = cleanDate.split('-')
+    if (parts.length === 3) {
+      const year = parts[0]
+      const monthIdx = parseInt(parts[1], 10) - 1
+      const day = parseInt(parts[2], 10)
+      const namaBulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+      const namaHari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+      const dateObj = new Date(year, monthIdx, day)
+      return `${namaHari[dateObj.getDay()]}, ${day} ${namaBulan[monthIdx]} ${year}`
+    }
+    return dateString
+  }
+
   // 1. Fungsi mengmabil data reservasi dari backend
   const fetchReservations = async () => {
     try {
@@ -49,7 +65,22 @@ function PersetujuanReservasi() {
       setTimeout(() => setMessage('', 3000))
     }
   }
-  // 3. Filter untuk melihat reservasi yang masih pending
+
+  const handleDeleteReservation = async (id) => {
+    if (!window.confirm('Hapus pengajuan reservasi basi ini dari tabel?')) return
+    setActionLoading(true)
+    try {
+      await api.delete(`/reservations/${id}`)
+      setMessage('Reservasi berhasil dihapus dari tabel.')
+      fetchReservations()
+    } catch (error) {
+      console.error('Gagal menghapus reservasi: ', error)
+      alert('Gagal menghapus reservasi.')
+    } finally {
+      setActionLoading(false)
+      setTimeout(() => setMessage(''), 2000)
+    }
+  }
   const pendingReservations = reservations.filter(r => r.status === 'pending')
 
   return (
@@ -78,47 +109,75 @@ function PersetujuanReservasi() {
               </tr>
             </thead>
             <tbody>
-              {pendingReservations.length > 0 ? pendingReservations.map((res) => (
-                <tr key={res.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+              {pendingReservations.length > 0 ? pendingReservations.map((res) => {
+                const now = new Date()
+                const yyyy = now.getFullYear()
+                const mm = String(now.getMonth() + 1).padStart(2, '0')
+                const dd = String(now.getDate()).padStart(2, '0')
+                const todayStr = `${yyyy}-${mm}-${dd}`
+                const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
 
-                  {/* Mata Kuliah */}
-                  <td style={{ padding: '16px', fontWeight: '600' }}>{res.mata_kuliah}</td>
-                  {/* Ruangan */}
-                  <td style={{ padding: '16px' }}>
-                    <div>{res.rooms?.nama || 'Ruang Dihapus'}</div>
-                    <div className="text-sm text-muted">{res.rooms?.gedung}</div>
-                  </td>
-                  {/* Pemohon (PJ) */}
-                  <td style={{ padding: '16px' }}>
-                    <div>{res.users?.username || 'PJ Tidak Ditemukan'}</div>
-                    <div className="text-sm text-muted">NIM: {res.users?.nim_nip || '-'}</div>
-                  </td>
-                  {/* Waktu */}
-                  <td style={{ padding: '16px' }}>
-                    <div>{res.tanggal}</div>
-                    <div className="text-sm text-muted">{res.waktu_mulai.substring(0, 5)} - {res.waktu_selesai.substring(0, 5)}</div>
-                  </td>
-                  {/* Aksi */}
-                  <td style={{ padding: '16px', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                      <button className="btn btn-primary btn-sm"
-                        disabled={actionLoading}
-                        onClick={() => handleAction(res.id, 'approved')}>
-                        Setuju
-                      </button>
-                      <button className="btn btn-secondary btn-sm"
-                        style={{ color: 'var(--color-error)' }}
-                        disabled={actionLoading}
-                        onClick={() => handleAction(res.id, 'rejected')}>
-                        Tolak
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )) : (
+                // Cek apakah reservasi sudah basi/kadaluarsa
+                const isExpired = res.tanggal < todayStr || (res.tanggal === todayStr && res.waktu_mulai <= currentTimeStr)
+                return (
+                  <tr key={res.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <td style={{ padding: '16px', fontWeight: '600' }}>
+                      {res.mata_kuliah}
+                      {isExpired && (
+                        <span style={{ display: 'block', color: '#dc2626', fontSize: '11px', marginTop: '2px', fontWeight: 'bold' }}>
+                          🚨 Kadaluarsa / Lewat Jam
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: '16px' }}>
+                      <div>{res.rooms?.nama || 'Ruang Dihapus'}</div>
+                      <div className="text-sm text-muted">{res.rooms?.gedung}</div>
+                    </td>
+                    <td style={{ padding: '16px' }}>
+                      <div>{res.users?.username || 'PJ Tidak Ditemukan'}</div>
+                      <div className="text-sm text-muted">NIM: {res.users?.nim_nip || '-'}</div>
+                    </td>
+                    <td style={{ padding: '16px' }}>
+                      <div style={{ fontWeight: 'bold', color: '#0f172a' }}>{formatTanggalIndonesia(res.tanggal)}</div>
+                      <div className="text-sm text-muted">{res.waktu_mulai.substring(0, 5)} - {res.waktu_selesai.substring(0, 5)} WIB</div>
+                    </td>
+                    <td style={{ padding: '16px', textAlign: 'right' }}>
+                      {!isExpired ? (
+                        <>
+                          <button
+                            className="btn btn-sm btn-success"
+                            style={{ marginRight: '8px' }}
+                            onClick={() => handleAction(res.id, 'approved')}
+                            disabled={actionLoading}
+                          >
+                            Setujui
+                          </button>
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() => handleAction(res.id, 'rejected')}
+                            disabled={actionLoading}
+                          >
+                            Tolak
+                          </button>
+                        </>
+                      ) : (
+                        /* TOMBOL HAPUS ROW EXPIRED 🗑️ */
+                        <button
+                          className="btn btn-sm btn-danger"
+                          disabled={actionLoading}
+                          onClick={() => handleDeleteReservation(res.id)}
+                          title="Hapus reservasi kadaluarsa dari tabel"
+                        >
+                          🗑️ Hapus Expired
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              }) : (
                 <tr>
                   <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    Hore! Tidak ada pengajuan reservasi yang menunggu.
+                    Nyantai dulu boss, tidak ada pengajuan reservasi yang menunggu.
                   </td>
                 </tr>
               )}

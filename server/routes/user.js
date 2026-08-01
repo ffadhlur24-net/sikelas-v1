@@ -14,7 +14,7 @@ router.get('/', verifyToken, adminOnly, async (req, res) => {
         const { data, error } = await supabase
             .from('users')
             .select('id, username, nim_nip, email, prodi, semester, kelas, mata_kuliah, no_hp, role, status, created_at')
-            .neq('id', req.user.id) // Jangan tampilkan admin yang sedang login
+            .eq('role', 'pj') // 👈 Hanya ambil akun bertipe PJ (Keluarkan seluruh Akun Admin)
             .order('created_at', { ascending: false })
 
         if (error) throw error
@@ -83,5 +83,45 @@ router.put('/:id', verifyToken, adminOnly, async (req, res) => {
         res.status(500).json({ error: 'Gagal memperbarui data PJ.' })
     }
 })
+// POST /api/users/reset-semester 
+router.post('/reset-semester', verifyToken, adminOnly, async (req, res) => {
+    try {
+        const { confirmation } = req.body
 
+        if (confirmation !== 'RESET-SEMESTER') {
+            return res.status(400).json({ error: 'Kode konfirmasi tidak valid.' })
+        }
+        // 1. Reset PJ
+        const { error: userErr } = await supabase
+            .from('users')
+            .delete()
+            .eq('role', 'pj');
+
+        if (userErr) throw userErr
+        // 2. Reset Reservations
+        const { error: resErr } = await supabase
+            .from('reservations')
+            .delete()
+            .neq('id', 0)
+
+        if (resErr) throw resErr
+        // 3. Reset Laporan
+        const { error: repErr } = await supabase
+            .from('reports')
+            .delete()
+            .neq('id', 0)
+        if (repErr) throw repErr
+
+        // 4. Reset Jadwal SIAKAD
+        const { error: schedErr } = await supabase
+            .from('schedules')
+            .delete()
+            .neq('id', 0);
+        if (schedErr) throw schedErr
+        res.json({ message: 'Reset Akhir Semester Berhasil! Akun PJ, Reservasi, Laporan, dan Jadwal SIAKAD Berhasil Dihapus.' })
+    } catch (error) {
+        console.error('ResetSemester Error:', error)
+        res.status(500).json({ error: 'Gagal melakukan reset semester.' })
+    }
+});
 export default router

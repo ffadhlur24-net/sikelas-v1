@@ -21,17 +21,15 @@ router.get('/', verifyToken, async (req, res) => {
 
         // 2. TENTUKAN WAKTU KESARANG
         const now = new Date();
-        // format waktu HH:MM:SS
-        const currentTime = now.toTimeString().split(' ')[0];
-        // format tanggal YYYY-MM-DD
-        const currentDate = now.toISOString().split('T')[0];
-
-        // Terjemahkan hari kedalam bahasa indonesia
-        const hariArray = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+        const currentTime = now.toTimeString().split(' ')[0];         // format waktu HH:MM:SS
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const currentDate = `${yyyy}-${mm}-${dd}`;
+        const hariArray = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']        // Terjemahkan hari kedalam bahasa indonesia
         const currentHari = hariArray[now.getDay()]
 
         // 3. CARI JADWAL SIAKAD YANG SEDANG BERJALAN
-        // Syarat: Hari sama, waktu mulai sudah terlewat, dan waktu selesai belum habis
         const { data: activeSchedules } = await supabase
             .from('schedules')
             .select('room_id')
@@ -39,8 +37,16 @@ router.get('/', verifyToken, async (req, res) => {
             .lte('waktu_mulai', currentTime)
             .gte('waktu_selesai', currentTime)
 
+        const { data: approvedReports } = await supabase
+            .from('reports')
+            .select('room_id', 'mata_kuliah')
+            .eq('tanggal', currentDate)
+            .in('status', ['approved', 'verified'])
+
+        const cancelledroomIds = new Set((approvedReports || []).map(rep => rep.room_id))
+        const validScheduledRoomIds = new Set((activeSchedules || []).filter(sched => !cancelledroomIds.has(sched.room_id)).map(sched => sched.room_id))
+
         // 4. CARI RESERVASI INSIDENTAL YANG SEDANG BERJALAN SAAT INI
-        // syarat: Tanggal sama, status approved, waktu_mulai sudah terlewat, waktu selesai belum habis
         const { data: activeReservations } = await supabase
             .from('reservations')
             .select('room_id')
@@ -49,18 +55,15 @@ router.get('/', verifyToken, async (req, res) => {
             .lte('waktu_mulai', currentTime)
             .gte('waktu_selesai', currentTime)
 
-        // 5. PISAHKAN ID RUANGAN BERDASARKAN PENYEBAB KESIBUKAN
-        const scheduledRoomIds = new Set((activeSchedules || []).map(s => s.room_id));
         const reservationRoomIds = new Set((activeReservations || []).map(r => r.room_id));
-
-        // 6. SUNTIKAN STATUS KEDALAM DATA RUANGAN SECARA SPESIFIK
+        // 5. SUNTIKAN STATUS KEDALAM DATA RUANGAN SECARA SPESIFIK
         const virtualRooms = rooms.map(room => {
             if (room.status !== "tersedia") {
                 return room;
             }
 
             // Cek Prioritas 1: Apakah sedang dipakai kuliah reguler?
-            if (scheduledRoomIds.has(room.id)) {
+            if (validScheduledRoomIds.has(room.id)) {
                 return { ...room, status: 'sedang_digunakan' }
             }
 
@@ -79,31 +82,40 @@ router.get('/', verifyToken, async (req, res) => {
         res.status(500).json({ error: 'Gagal mengambil data ruangan.' })
     }
 })
-// GET /api/rooms:id/schedule -mengambil jadwal harian (Timeline) ruangan tertentu
-router.get(':id/schedule', verifyToken, async (req, res) => {
+// GET /api/rooms/:id/schedule - Mengambil jadwal harian (Timeline) ruangan tertentu
+router.get('/:id/schedule', verifyToken, async (req, res) => {
     try {
         const { id } = req.params
         const { date } = req.query;
 
-        if (!date) return res.status(400).json({ error: 'Tanggal diperlukan,' });
+        if (!date) return res.status(400).json({ error: 'Tanggal diperlukan.' });
 
         const dateObj = new Date(date);
         const hariArray = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
         const namaHari = hariArray[dateObj.getDay()];
 
-        // Ambil jadwal SIAKAD
+        // 1. Ambil jadwal SIAKAD reguler untuk hari tersebut
         const { data: schedules } = await supabase
             .from('schedules')
             .select('mata_kuliah, waktu_mulai, waktu_selesai')
             .eq('room_id', id)
+            .eq('hari', namaHari);
+
+        // 2. Ambil peminjaman insidental yang di-ACC untuk tanggal tersebut
+        const { data: reservations } = await supabase
+            .from('reservations')
+            .select('mata_kuliah, waktu_mulai, waktu_selesai')
+            .eq('room_id', id)
+            .eq('tanggal', date)
             .eq('status', 'approved');
 
-        // 3. gabungkan dan urutkan dari jam paling pagi
+        // 3. Gabungkan dan urutkan dari jam paling pagi
         const combined = [
             ...(schedules || []).map(s => ({ ...s, type: 'Reguler' })),
             ...(reservations || []).map(r => ({ ...r, type: 'Dipesan' }))
         ].sort((a, b) => a.waktu_mulai.localeCompare(b.waktu_mulai))
-        //4. kirim hasil ke Front-end
+
+        // 4. Kirim hasil ke Front-end
         res.json({ schedule: combined })
     } catch (error) {
         console.error('Get room schedule error:', error)

@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
 import api from '../../api/axios'
 
 function ReservasiKelas() {
+  const { user } = useContext(AuthContext)
   const [rooms, setRooms] = useState([])
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ text: '', type: '' })
@@ -16,11 +18,17 @@ function ReservasiKelas() {
 
   const [formData, setFormData] = useState({
     room_id: '',
-    mata_kuliah: '',
+    mata_kuliah: user?.mata_kuliah || '',
     tanggal: '',
     waktu_mulai: '',
     waktu_selesai: ''
   })
+
+  useEffect(() => {
+    if (user?.mata_kuliah && !formData.mata_kuliah) {
+      setFormData(prev => ({ ...prev, mata_kuliah: user.mata_kuliah }))
+    }
+  }, [user])
 
   // 1. Ambil daftar ruangan untuk opsi di dropdown
   useEffect(() => {
@@ -198,6 +206,8 @@ function ReservasiKelas() {
                   <option value="2">2 SKS (100 Menit)</option>
                   <option value="3">3 SKS (150 Menit)</option>
                   <option value="4">4 SKS (200 Menit)</option>
+                  <option value="5">5 SKS (250 Menit)</option>
+                  <option value="6">6 SKS (300 Menit)</option>
                 </select>
               </div>
               <div className="form-group" style={{ flex: 1 }}>

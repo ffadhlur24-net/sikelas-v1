@@ -6,6 +6,7 @@ import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import supabase from '../config/supabase.js'
+import { loginLimiter } from '../middleware/rateLimiter.js'
 
 const router = Router()
 
@@ -137,7 +138,7 @@ router.get('/registration-options', async (req, res) => {
 
 //POST/api/auth/login
 // Untuk login PJ dan Admin
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
     try {
         const { email, password } = req.body
 
@@ -177,10 +178,13 @@ router.post('/login', async (req, res) => {
         // 4. Verifikasi password
         const isMatch = await bcrypt.compare(password, user.password)
         if (!isMatch) {
+            if (req.rateLimiter) req.rateLimiter.recordFailedAttempt()
             return res.status(401).json({
                 error: 'Email atau password salah.'
             })
         }
+
+        if (req.rateLimiter) req.rateLimiter.resetAttempts()
         // 5. Buat JWT token
         const token = jwt.sign({
             id: user.id,

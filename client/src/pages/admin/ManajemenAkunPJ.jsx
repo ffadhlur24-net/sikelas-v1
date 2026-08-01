@@ -28,7 +28,8 @@ function ManajemenAkunPJ() {
         api.get('/users'),
         api.get('/auth/registration-options')
       ])
-      setUsers(userRes.data.users || [])
+      const allUsers = userRes.data.users || []
+      setUsers(allUsers.filter(u => u.role === 'pj' || u.role !== 'admin'))
       setAvailableSchedules(optionRes.data.availableSchedules || [])
     } catch (error) {
       console.error('Gagal mengambil data user:', error)

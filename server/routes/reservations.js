@@ -28,7 +28,7 @@ router.get('/', verifyToken, async (req, res) => {
         res.json({ reservations: data })
     } catch (error) {
         console.error('Get reservations error:', error)
-        res.status(500).json({ error: 'Gagal mengambil data reservasi.' })
+        res.status(500).json({ error: error.message || 'Gagal mengambil data reservasi.' })
     }
 })
 
@@ -42,6 +42,17 @@ router.post('/', verifyToken, async (req, res) => {
                 error: 'Semua Kolom wajib diisi..'
             })
         }
+        const now = new Date()
+        const yyyy = now.getFullYear()
+        const mm = String(now.getMonth() + 1).padStart(2, '0')
+        const dd = String(now.getDate()).padStart(2, '0')
+        const todayStr = `${yyyy}-${mm}-${dd}`
+        const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+
+        if (tanggal < todayStr || (tanggal === todayStr && waktu_mulai <= currentTimeStr)) {
+            return res.status(400).json({ error: 'Gagal: Waktu pemakaian yang Anda pilih sudah berlalu!' })
+        }
+
 
         // 1. Cari tahu Hari apa tanggal yang diinputkan (0 = Minggu, 1 = Senin, dst)
         const hariArray = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
@@ -112,13 +123,28 @@ router.post('/', verifyToken, async (req, res) => {
 
     } catch (error) {
         console.error(' Create reservation error:', error)
-        res.status(500).json({ error: 'gagal membuat reservasi.' })
+        res.status(500).json({ error: error.message || 'gagal membuat reservasi.' })
     }
 })
 
 // PATCH /api/reservations/:id/approve - Setuju reservasi (Admin Only)
 
 router.patch('/:id/approve', verifyToken, adminOnly, async (req, res) => {
+    if (status === 'approved') {
+        const { data: targetRes } = await supabase
+            .from('reservations')
+            .select('*')
+            .eq('id', id)
+            .single()
+
+        if (targetRes) {
+            if (targetRes.tanggal < todayStr || (tanggal === todayStr && targetRes.waktu_mulai <= currentTimeStr)) {
+                return res.status(400).json({
+                    error: 'Gagal: Reservasi ini sudah lewat waktu. Tidak dapat disetujui.'
+                })
+            }
+        }
+    }
     try {
         const { id } = req.params
 
@@ -162,7 +188,6 @@ router.patch('/:id/reject', verifyToken, adminOnly, async (req, res) => {
 router.patch('/:id/checkin', verifyToken, async (req, res) => {
     try {
         const { id } = req.params
-
         const { data: reservation, error: checkError } = await supabase
             .from('reservations')
             .select('*')
@@ -219,4 +244,18 @@ router.patch('/:id/status', verifyToken, adminOnly, async (req, res) => {
     }
 })
 
+// DELETE /api/reservations/:id - Hapus reservasi basi
+router.delete('/:id', verifyToken, adminOnly, async (req, res) => {
+    try {
+        const { id } = req.params
+        const { error } = await supabase
+            .from('reservations')
+            .delete()
+            .eq('id', id)
+        res.json({ message: 'Reservasi berhasil dihapus dari tabel.' })
+    } catch (error) {
+        console.error('Delete reservation error:', error)
+        res.status(500).json({ error: error.message || 'Gagal menghapus reservasi.' })
+    }
+})
 export default router
