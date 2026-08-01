@@ -24,17 +24,29 @@ function ManajemenRuangan() {
     kapasitas: 40
   })
 
-  // Tambah Jadwal Pertama Sekaligus (Opsional)
+  // Kalkulator SKS Otomatis (50 Menit per 1 SKS)
+  const calculateEndTime = (startTime, sksValue) => {
+    if (!startTime || !sksValue) return ''
+    const [hours, minutes] = startTime.split(':').map(Number)
+    const totalMinutes = hours * 60 + minutes + Number(sksValue) * 50
+    const endHours = Math.floor(totalMinutes / 60) % 24
+    const endMinutes = totalMinutes % 60
+    return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`
+  }
+
+  // Tambah Jadwal Pertama Sekaligus (Cascading Fakultas ➔ Prodi + SKS System)
   const [addWithSchedule, setAddWithSchedule] = useState(false)
   const [initialSched, setInitialSched] = useState({
+    fakultas: '',
     prodi: '',
     semester: '1',
     kelas: 'A',
     mata_kuliah: '',
     dosen: '',
     hari: 'Senin',
-    waktu_mulai: '08:00',
-    waktu_selesai: '10:30'
+    sks: '3',
+    waktu_mulai: '07:30',
+    waktu_selesai: '10:00'
   })
 
   // State Modal Kelola Jadwal Ruangan
@@ -45,14 +57,16 @@ function ManajemenRuangan() {
   const [editingSchedId, setEditingSchedId] = useState(null)
 
   const [schedForm, setSchedForm] = useState({
+    fakultas: '',
     prodi: '',
     semester: '1',
     kelas: 'A',
     mata_kuliah: '',
     dosen: '',
     hari: 'Senin',
-    waktu_mulai: '08:00',
-    waktu_selesai: '10:30'
+    sks: '3',
+    waktu_mulai: '07:30',
+    waktu_selesai: '10:00'
   })
 
   const fetchRooms = async () => {
@@ -72,10 +86,6 @@ function ManajemenRuangan() {
       const res = await api.get('/departemen')
       const deps = res.data.departemen || []
       setDepartments(deps)
-      if (deps.length > 0) {
-        setInitialSched(prev => ({ ...prev, prodi: prev.prodi || deps[0].nama_prodi }))
-        setSchedForm(prev => ({ ...prev, prodi: prev.prodi || deps[0].nama_prodi }))
-      }
     } catch (error) {
       console.error('Gagal mengambil data prodi:', error)
     }
@@ -85,6 +95,31 @@ function ManajemenRuangan() {
     fetchRooms()
     fetchDepartments()
   }, [])
+
+  // Update Waktu Selesai Otomatis pada Initial Sched
+  const handleInitialSchedTimeChange = (startTime, sksVal) => {
+    const calculatedEnd = calculateEndTime(startTime, sksVal)
+    setInitialSched(prev => ({
+      ...prev,
+      waktu_mulai: startTime,
+      sks: sksVal,
+      waktu_selesai: calculatedEnd
+    }))
+  }
+
+  // Update Waktu Selesai Otomatis pada Modal Sched Form
+  const handleSchedFormTimeChange = (startTime, sksVal) => {
+    const calculatedEnd = calculateEndTime(startTime, sksVal)
+    setSchedForm(prev => ({
+      ...prev,
+      waktu_mulai: startTime,
+      sks: sksVal,
+      waktu_selesai: calculatedEnd
+    }))
+  }
+
+  // Ekstrak Daftar Fakultas Unik dari Database
+  const listFakultas = Array.from(new Set(departments.map(d => d.fakultas).filter(Boolean)))
 
   // Ekstrak Daftar Kampus Unik & Daftar Gedung Unik
   const kampusList = Array.from(new Set(rooms.map(r => r.kampus).filter(Boolean)))
@@ -226,16 +261,31 @@ function ManajemenRuangan() {
   }
 
   const handleEditScheduleClick = (sched) => {
+    const matchedDep = departments.find(d => d.nama_prodi === sched.prodi)
+    
+    // Hitung SKS dari selisih waktu_mulai dan waktu_selesai
+    let derivedSks = '3'
+    if (sched.waktu_mulai && sched.waktu_selesai) {
+      const [startH, startM] = sched.waktu_mulai.split(':').map(Number)
+      const [endH, endM] = sched.waktu_selesai.split(':').map(Number)
+      const durationMin = (endH * 60 + endM) - (startH * 60 + startM)
+      if (durationMin > 0) {
+        derivedSks = String(Math.max(1, Math.round(durationMin / 50)))
+      }
+    }
+
     setEditingSchedId(sched.id)
     setSchedForm({
-      prodi: sched.prodi || (departments.length > 0 ? departments[0].nama_prodi : ''),
+      fakultas: matchedDep ? matchedDep.fakultas : '',
+      prodi: sched.prodi || '',
       semester: sched.semester || '1',
       kelas: sched.kelas || 'A',
       mata_kuliah: sched.mata_kuliah || '',
       dosen: sched.dosen || '',
       hari: sched.hari || 'Senin',
-      waktu_mulai: sched.waktu_mulai || '08:00',
-      waktu_selesai: sched.waktu_selesai || '10:30'
+      sks: derivedSks,
+      waktu_mulai: sched.waktu_mulai ? sched.waktu_mulai.substring(0, 5) : '07:30',
+      waktu_selesai: sched.waktu_selesai ? sched.waktu_selesai.substring(0, 5) : '10:00'
     })
     setShowFormSched(true)
   }
@@ -410,7 +460,7 @@ function ManajemenRuangan() {
                 </div>
               </div>
 
-              {/* Tambah Jadwal Pertama Sekaligus (Prodi Dinamis) */}
+              {/* Tambah Jadwal Pertama Sekaligus (Cascading Fakultas ➔ Prodi + SKS System) */}
               <div style={{ marginBottom: '16px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: '500', fontSize: '14px' }}>
                   <input
@@ -423,25 +473,49 @@ function ManajemenRuangan() {
 
                 {addWithSchedule && (
                   <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #cbd5e1' }}>
-                    <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-                      <div className="form-group" style={{ flex: 1 }}>
-                        <label className="form-label">Program Studi</label>
-                        <select className="input-field" value={initialSched.prodi} onChange={(e) => setInitialSched({ ...initialSched, prodi: e.target.value })} required={addWithSchedule}>
-                          <option value="">-- Pilih Prodi --</option>
-                          {departments.map(dep => (
-                            <option key={dep.id} value={dep.nama_prodi}>
-                              {dep.nama_prodi} ({dep.fakultas || 'Fakultas'})
-                            </option>
+                    <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                      {/* DROPDOWN FAKULTAS (CASCADING 1) */}
+                      <div className="form-group" style={{ flex: 1, minWidth: '160px' }}>
+                        <label className="form-label">1. Pilih Fakultas</label>
+                        <select
+                          className="input-field"
+                          value={initialSched.fakultas}
+                          onChange={(e) => setInitialSched({ ...initialSched, fakultas: e.target.value, prodi: '' })}
+                          required={addWithSchedule}
+                        >
+                          <option value="">-- Pilih Fakultas --</option>
+                          {listFakultas.map((fak, i) => (
+                            <option key={i} value={fak}>{fak}</option>
                           ))}
                         </select>
                       </div>
-                      <div className="form-group" style={{ flex: 1 }}>
+
+                      {/* DROPDOWN PRODI (CASCADING 2 - HANYA PRODI FAKULTAS TERPILIH) */}
+                      <div className="form-group" style={{ flex: 1, minWidth: '160px' }}>
+                        <label className="form-label">2. Pilih Program Studi</label>
+                        <select
+                          className="input-field"
+                          value={initialSched.prodi}
+                          onChange={(e) => setInitialSched({ ...initialSched, prodi: e.target.value })}
+                          required={addWithSchedule}
+                          disabled={!initialSched.fakultas}
+                        >
+                          <option value="">{initialSched.fakultas ? '-- Pilih Prodi --' : '-- Pilih Fakultas Dulu --'}</option>
+                          {departments
+                            .filter(d => d.fakultas === initialSched.fakultas && !d.nama_prodi.includes('(Umum)'))
+                            .map(dep => (
+                              <option key={dep.id} value={dep.nama_prodi}>{dep.nama_prodi}</option>
+                            ))}
+                        </select>
+                      </div>
+
+                      <div className="form-group" style={{ flex: 1, minWidth: '100px' }}>
                         <label className="form-label">Semester</label>
                         <select className="input-field" value={initialSched.semester} onChange={(e) => setInitialSched({ ...initialSched, semester: e.target.value })} required={addWithSchedule}>
                           {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <option key={s} value={String(s)}>Semester {s}</option>)}
                         </select>
                       </div>
-                      <div className="form-group" style={{ flex: 1 }}>
+                      <div className="form-group" style={{ flex: 1, minWidth: '80px' }}>
                         <label className="form-label">Kelas</label>
                         <select className="input-field" value={initialSched.kelas} onChange={(e) => setInitialSched({ ...initialSched, kelas: e.target.value })} required={addWithSchedule}>
                           {['A', 'B', 'C', 'D', 'E', 'F', 'G'].map(k => <option key={k} value={k}>Kelas {k}</option>)}
@@ -460,20 +534,50 @@ function ManajemenRuangan() {
                       </div>
                     </div>
 
-                    <div className="form-row" style={{ display: 'flex', gap: '12px' }}>
-                      <div className="form-group" style={{ flex: 1 }}>
+                    {/* SKS SYSTEM & KALKULATOR JAM SELESAI OTOMATIS */}
+                    <div className="form-row" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                      <div className="form-group" style={{ flex: 1, minWidth: '110px' }}>
                         <label className="form-label">Hari</label>
                         <select className="input-field" value={initialSched.hari} onChange={(e) => setInitialSched({ ...initialSched, hari: e.target.value })} required={addWithSchedule}>
                           {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'].map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
                       </div>
-                      <div className="form-group" style={{ flex: 1 }}>
-                        <label className="form-label">Jam Mulai</label>
-                        <input type="time" className="input-field" value={initialSched.waktu_mulai} onChange={(e) => setInitialSched({ ...initialSched, waktu_mulai: e.target.value })} required={addWithSchedule} />
+
+                      <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
+                        <label className="form-label">Bobot SKS</label>
+                        <select
+                          className="input-field"
+                          value={initialSched.sks}
+                          onChange={(e) => handleInitialSchedTimeChange(initialSched.waktu_mulai, e.target.value)}
+                          required={addWithSchedule}
+                        >
+                          <option value="1">1 SKS (50 Menit)</option>
+                          <option value="2">2 SKS (100 Menit)</option>
+                          <option value="3">3 SKS (150 Menit)</option>
+                          <option value="4">4 SKS (200 Menit)</option>
+                        </select>
                       </div>
-                      <div className="form-group" style={{ flex: 1 }}>
-                        <label className="form-label">Jam Selesai</label>
-                        <input type="time" className="input-field" value={initialSched.waktu_selesai} onChange={(e) => setInitialSched({ ...initialSched, waktu_selesai: e.target.value })} required={addWithSchedule} />
+
+                      <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
+                        <label className="form-label">Jam Mulai</label>
+                        <input
+                          type="time"
+                          className="input-field"
+                          value={initialSched.waktu_mulai}
+                          onChange={(e) => handleInitialSchedTimeChange(e.target.value, initialSched.sks)}
+                          required={addWithSchedule}
+                        />
+                      </div>
+
+                      <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
+                        <label className="form-label">Jam Selesai (Otomatis)</label>
+                        <input
+                          type="time"
+                          className="input-field"
+                          style={{ background: '#f1f5f9', cursor: 'not-allowed', fontWeight: 'bold' }}
+                          value={initialSched.waktu_selesai}
+                          readOnly
+                        />
                       </div>
                     </div>
                   </div>
@@ -544,50 +648,96 @@ function ManajemenRuangan() {
       )}
 
       {/* ========================================================= */}
-      {/* MODAL KELOLA JADWAL SIAKAD (PRODI DINAMIS) */}
+      {/* MODAL KELOLA JADWAL SIAKAD (CASCADING FAKULTAS ➔ PRODI + SKS SYSTEM) */}
       {/* ========================================================= */}
       {selectedRoomModal && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
-          <div className="card-flat" style={{ width: '100%', maxWidth: '680px', background: '#fff', padding: '24px', borderRadius: '12px', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className="card-flat" style={{ width: '100%', maxWidth: '720px', background: '#fff', padding: '24px', borderRadius: '12px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 'bold' }}>📅 Jadwal SIAKAD Ruang {selectedRoomModal.nama}</h2>
               <button className="btn btn-secondary btn-sm" onClick={() => setSelectedRoomModal(null)}>Tutup</button>
             </div>
 
             {!showFormSched && (
-              <button className="btn btn-primary btn-sm" style={{ marginBottom: '16px' }} onClick={() => { setEditingSchedId(null); setShowFormSched(true); }}>
+              <button
+                className="btn btn-primary btn-sm"
+                style={{ marginBottom: '16px' }}
+                onClick={() => {
+                  setEditingSchedId(null)
+                  const defaultStart = '07:30'
+                  const defaultSks = '3'
+                  setSchedForm({
+                    fakultas: '',
+                    prodi: '',
+                    semester: '1',
+                    kelas: 'A',
+                    mata_kuliah: '',
+                    dosen: '',
+                    hari: 'Senin',
+                    sks: defaultSks,
+                    waktu_mulai: defaultStart,
+                    waktu_selesai: calculateEndTime(defaultStart, defaultSks)
+                  })
+                  setShowFormSched(true)
+                }}
+              >
                 ➕ Tambah Jadwal Perkuliahan
               </button>
             )}
 
-            {/* FORM TAMBAH / EDIT JADWAL RUANGAN */}
+            {/* FORM TAMBAH / EDIT JADWAL RUANGAN (CASCADING FAKULTAS ➔ PRODI + SKS SYSTEM) */}
             {showFormSched && (
               <form onSubmit={handleSaveSchedule} style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
                 <h3 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px' }}>
                   {editingSchedId ? '✏️ Edit Jadwal' : '➕ Tambah Jadwal Baru'}
                 </h3>
-                <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label">Program Studi</label>
-                    <select className="input-field" value={schedForm.prodi} onChange={(e) => setSchedForm({ ...schedForm, prodi: e.target.value })} required>
-                      <option value="">-- Pilih Prodi --</option>
-                      {departments.map(dep => (
-                        <option key={dep.id} value={dep.nama_prodi}>
-                          {dep.nama_prodi} ({dep.fakultas || 'Fakultas'})
-                        </option>
+                
+                <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                  {/* DROPDOWN FAKULTAS (CASCADING 1) */}
+                  <div className="form-group" style={{ flex: 1, minWidth: '160px' }}>
+                    <label className="form-label">1. Pilih Fakultas</label>
+                    <select
+                      className="input-field"
+                      value={schedForm.fakultas}
+                      onChange={(e) => setSchedForm({ ...schedForm, fakultas: e.target.value, prodi: '' })}
+                      required
+                    >
+                      <option value="">-- Pilih Fakultas --</option>
+                      {listFakultas.map((fak, i) => (
+                        <option key={i} value={fak}>{fak}</option>
                       ))}
                     </select>
                   </div>
-                  <div className="form-group" style={{ flex: 1 }}>
+
+                  {/* DROPDOWN PRODI (CASCADING 2 - HANYA PRODI FAKULTAS TERPILIH) */}
+                  <div className="form-group" style={{ flex: 1, minWidth: '160px' }}>
+                    <label className="form-label">2. Pilih Program Studi</label>
+                    <select
+                      className="input-field"
+                      value={schedForm.prodi}
+                      onChange={(e) => setSchedForm({ ...schedForm, prodi: e.target.value })}
+                      required
+                      disabled={!schedForm.fakultas}
+                    >
+                      <option value="">{schedForm.fakultas ? '-- Pilih Prodi --' : '-- Pilih Fakultas Dulu --'}</option>
+                      {departments
+                        .filter(d => d.fakultas === schedForm.fakultas && !d.nama_prodi.includes('(Umum)'))
+                        .map(dep => (
+                          <option key={dep.id} value={dep.nama_prodi}>{dep.nama_prodi}</option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group" style={{ flex: 1, minWidth: '100px' }}>
                     <label className="form-label">Semester</label>
                     <select className="input-field" value={schedForm.semester} onChange={(e) => setSchedForm({ ...schedForm, semester: e.target.value })} required>
                       {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <option key={s} value={String(s)}>Semester {s}</option>)}
                     </select>
                   </div>
-                  <div className="form-group" style={{ flex: 1 }}>
+                  <div className="form-group" style={{ flex: 1, minWidth: '80px' }}>
                     <label className="form-label">Kelas</label>
                     <select className="input-field" value={schedForm.kelas} onChange={(e) => setSchedForm({ ...schedForm, kelas: e.target.value })} required>
                       {['A', 'B', 'C', 'D', 'E', 'F', 'G'].map(k => <option key={k} value={k}>Kelas {k}</option>)}
@@ -606,20 +756,50 @@ function ManajemenRuangan() {
                   </div>
                 </div>
 
-                <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-                  <div className="form-group" style={{ flex: 1 }}>
+                {/* SKS SYSTEM & KALKULATOR JAM SELESAI OTOMATIS */}
+                <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                  <div className="form-group" style={{ flex: 1, minWidth: '110px' }}>
                     <label className="form-label">Hari</label>
                     <select className="input-field" value={schedForm.hari} onChange={(e) => setSchedForm({ ...schedForm, hari: e.target.value })} required>
                       {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'].map(h => <option key={h} value={h}>{h}</option>)}
                     </select>
                   </div>
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label">Jam Mulai</label>
-                    <input type="time" className="input-field" value={schedForm.waktu_mulai} onChange={(e) => setSchedForm({ ...schedForm, waktu_mulai: e.target.value })} required />
+
+                  <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
+                    <label className="form-label">Bobot SKS</label>
+                    <select
+                      className="input-field"
+                      value={schedForm.sks}
+                      onChange={(e) => handleSchedFormTimeChange(schedForm.waktu_mulai, e.target.value)}
+                      required
+                    >
+                      <option value="1">1 SKS (50 Menit)</option>
+                      <option value="2">2 SKS (100 Menit)</option>
+                      <option value="3">3 SKS (150 Menit)</option>
+                      <option value="4">4 SKS (200 Menit)</option>
+                    </select>
                   </div>
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label">Jam Selesai</label>
-                    <input type="time" className="input-field" value={schedForm.waktu_selesai} onChange={(e) => setSchedForm({ ...schedForm, waktu_selesai: e.target.value })} required />
+
+                  <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
+                    <label className="form-label">Jam Mulai</label>
+                    <input
+                      type="time"
+                      className="input-field"
+                      value={schedForm.waktu_mulai}
+                      onChange={(e) => handleSchedFormTimeChange(e.target.value, schedForm.sks)}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
+                    <label className="form-label">Jam Selesai (Otomatis)</label>
+                    <input
+                      type="time"
+                      className="input-field"
+                      style={{ background: '#f1f5f9', cursor: 'not-allowed', fontWeight: 'bold' }}
+                      value={schedForm.waktu_selesai}
+                      readOnly
+                    />
                   </div>
                 </div>
 
@@ -659,9 +839,9 @@ function ManajemenRuangan() {
                       <td style={{ padding: '10px 12px' }}>
                         {s.prodi} (Smstr {s.semester} - {s.kelas})
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right' }}>
-                        <button className="btn btn-secondary btn-sm" style={{ marginRight: '4px' }} onClick={() => handleEditScheduleClick(s)}>✏️</button>
-                        <button className="btn btn-secondary btn-sm" style={{ color: 'red' }} onClick={() => handleDeleteSchedule(s.id)}>🗑️</button>
+                      <td style={{ padding: '10px 10px', textAlign: 'right' }}>
+                        <button className="btn btn-secondary btn-sm" style={{ marginRight: '4px' }} onClick={() => handleEditScheduleClick(s)}>✏️ Edit</button>
+                        <button className="btn btn-secondary btn-sm" style={{ color: 'red' }} onClick={() => handleDeleteSchedule(s.id)}>🗑️ Hapus</button>
                       </td>
                     </tr>
                   ))}

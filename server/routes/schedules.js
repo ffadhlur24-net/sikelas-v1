@@ -37,14 +37,14 @@ router.post('/', verifyToken, adminOnly, async (req, res) => {
         if (!room_id || !prodi || !semester || !kelas || !mata_kuliah || !hari || !waktu_mulai || !waktu_selesai || !dosen) {
             return res.status(400).json({ error: 'Semua kolom jadwal wajib diisi!' })
         }
-        // Cekbentrok
+        // Cek bentrok jadwal reguler SIAKAD
         const { data: conflicts, error: checkErr } = await supabase
             .from('schedules')
             .select('mata_kuliah')
             .eq('room_id', room_id)
             .eq('hari', hari)
-            .lt('waktu_mulai', waktu_mulai)
-            .gt('waktu_selesai', waktu_selesai)
+            .lt('waktu_mulai', waktu_selesai)
+            .gt('waktu_selesai', waktu_mulai)
 
         if (checkErr) throw checkErr
 
@@ -66,6 +66,31 @@ router.post('/', verifyToken, adminOnly, async (req, res) => {
     }
 })
 
+// 3. PUT /api/schedules/:id - Edit Jadwal SIAKAD
+router.put('/:id', verifyToken, adminOnly, async (req, res) => {
+    try {
+        const { id } = req.params
+        const { room_id, prodi, semester, dosen, kelas, mata_kuliah, hari, waktu_mulai, waktu_selesai } = req.body
+
+        if (!room_id || !prodi || !semester || !kelas || !mata_kuliah || !hari || !waktu_mulai || !waktu_selesai || !dosen) {
+            return res.status(400).json({ error: 'Semua kolom jadwal wajib diisi!' })
+        }
+
+        const { data, error } = await supabase
+            .from('schedules')
+            .update({ room_id, prodi, semester, kelas, mata_kuliah, hari, waktu_mulai, waktu_selesai, dosen })
+            .eq('id', id)
+            .select()
+
+        if (error) throw error
+
+        res.json({ message: 'Jadwal SIAKAD berhasil diperbarui!', schedule: data && data.length > 0 ? data[0] : null })
+    } catch (error) {
+        console.error('Update schedule error:', error)
+        res.status(500).json({ error: error.message || 'Gagal memperbarui jadwal.' })
+    }
+})
+
 router.delete('/:id', verifyToken, adminOnly, async (req, res) => {
     try {
         const { id } = req.params
@@ -76,7 +101,7 @@ router.delete('/:id', verifyToken, adminOnly, async (req, res) => {
 
         if (error) throw error
 
-        res.json({ message: 'Jadwal SIAKAD berhasi dihapus' })
+        res.json({ message: 'Jadwal SIAKAD berhasil dihapus' })
     } catch (error) {
         console.error('Delete schedule error:', error)
         res.status(500).json({ error: 'Gagal menghapus jadwal' })
