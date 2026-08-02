@@ -268,6 +268,11 @@ function Register() {
                         Sudah punya akun? <Link to="/login" style={{ color: 'var(--color-primary)', fontWeight: '600' }}>Login di sini</Link>
                     </div>
                 )}
+                <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '14px' }}>
+                    <Link to="/" style={{ color: '#64748b', textDecoration: 'none', fontWeight: '500' }}>
+                        ⬅️ Kembali ke Beranda
+                    </Link>
+                </div>
             </div>
         </div>
     )

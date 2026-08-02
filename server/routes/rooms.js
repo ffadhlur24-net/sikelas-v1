@@ -9,7 +9,7 @@ import { verifyToken, adminOnly } from '../middleware/auth.js'
 const router = Router()
 
 //GET /api/rooms - Ambil semua ruangan (harus login)
-router.get('/', verifyToken, async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         // 1. Ambil semua data ruang dari database
         const { data: rooms, error: roomsError } = await supabase

@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import LandingPage from './pages/LandingPage'
 import HalamanLogin from './pages/HalamanLogin'
 import DashboardPJ from './pages/DashboardPJ'
 import DashboardAdmin from './pages/DashboardAdmin'
@@ -11,7 +12,7 @@ function App() {
     <Router>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<HalamanLogin />} />
         <Route path='/register' element={<Register />} />
 
