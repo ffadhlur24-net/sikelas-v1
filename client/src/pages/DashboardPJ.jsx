@@ -2,6 +2,7 @@ import { Routes, Route, NavLink, useNavigate } from 'react-router-dom'
 import ProfilPJ from './pj/ProfilPJ'
 import DaftarKelas from './pj/DaftarKelas'
 import PelaporanKelas from './pj/PelaporanKelas'
+import Pelaporankerusakan from './pj/Pelaporankerusakan'
 import './DashboardPJ.css'
 import { useContext } from 'react'
 import { AuthContext } from '../context/AuthContext'
@@ -54,7 +55,15 @@ function DashboardPJ() {
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
-              Pelaporan
+              Pelaporan Kelas kosong
+            </NavLink>
+            <NavLink to="/pj/pelaporan-kerusakan" className="sidebar-link" id="nav-pelaporan">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              Pelaporan Kerusakan
             </NavLink>
           </nav>
         </div>
@@ -83,6 +92,7 @@ function DashboardPJ() {
             <Route path="profil" element={<ProfilPJ />} />
             <Route path="daftar-kelas" element={<DaftarKelas />} />
             <Route path="pelaporan" element={<PelaporanKelas />} />
+            <Route path="pelaporan-kerusakan" element={<Pelaporankerusakan />} />
           </Routes>
         </div>
       </main>

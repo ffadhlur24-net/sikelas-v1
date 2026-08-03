@@ -16,6 +16,7 @@ import reportRoutes from './routes/reports.js'
 import userRoutes from './routes/user.js'
 import scheduleRoutes from './routes/schedules.js'
 import departemenRoutes from './routes/departemen.js'
+import facilityRoutes from './routes/facilityReports.js'
 
 // Inisialisasi Express app
 const app = express()
@@ -37,6 +38,7 @@ app.use('/api/reports', reportRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/schedules', scheduleRoutes)
 app.use('/api/departemen', departemenRoutes)
+app.use('/api/facility-reports', facilityRoutes)
 
 // Routes test sederhana
 app.get('/api/health', (req, res) => {
