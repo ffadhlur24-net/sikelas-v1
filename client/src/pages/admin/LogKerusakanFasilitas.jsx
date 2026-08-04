@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { exportToCSV } from '../../untils/exportExcel'
 import api from '../../api/axios'
 function LogKerusakanFasilitas() {
     const [reports, setReports] = useState([])
@@ -26,7 +27,6 @@ function LogKerusakanFasilitas() {
             alert('Gagal memperbarui status tiket.')
         }
     }
-    // 💡 MANFAATKAN FITUR KUNCI RUANGAN YANG SUDAH ADA!
     const handleLockRoom = async (roomId, roomName) => {
         if (!window.confirm(`Kerusakan Parah! Apakah Anda yakin ingin MENGUNCI Ruang ${roomName}? Ruangan tidak akan bisa dipinjam oleh PJ lain.`)) {
             return
@@ -42,16 +42,36 @@ function LogKerusakanFasilitas() {
     const filteredReports = filterStatus === 'Semua'
         ? reports
         : reports.filter(r => r.status === filterStatus)
+
+    const handleExportExcel = () => {
+        const headers = ['ID Tiket', 'Kampus', 'Gedung', 'Ruangan', 'Kategori', 'Rincian Kerusakan', 'Pelapor (PJ)', 'Prodi', 'Status Penanganan', 'Tanggal Lapor']
+        const rows = filteredReports.map(r => [
+            r.id,
+            r.rooms?.kampus || 'Kampus 3',
+            r.rooms?.gedung || '-',
+            r.rooms?.nama || '-',
+            r.kategori,
+            r.rincian,
+            r.users?.username || '-',
+            r.users?.prodi || '-',
+            r.status === 'pending' ? 'Menunggu' : r.status === 'in_progress' ? 'Sedang Dikerjakan' : 'Selesai',
+            new Date(r.created_at).toLocaleDateString('id-ID')
+        ])
+        exportToCSV('Laporan_Kerusakan_Fasilitas', headers, rows)
+    }
+    const handlePrintPDF = () => {
+        window.print()
+    }
     return (
         <div className="animate-fade-in">
             <div className="page-header">
                 <h1 className="page-title">🛠️ Log Kerusakan Fasilitas Kampus</h1>
-                <p className="page-subtitle">Kelola tiket perbaikan sarana kelas dan kunci ruangan jika terjadi kerusakan parah.</p>
+                <p className="page-subtitle">Kelola perbaikan sarana kelas dan kunci ruangan jika terjadi kerusakan parah.</p>
             </div>
             {/* Filter Status Penanganan (Terarah & Profesional) */}
-            <div className="card-flat" style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: 'bold', fontSize: '14px', color: '#334155' }}>📌 Status Penanganan:</span>
-                
+            <div className="card-flat no-print" style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 'bold', fontSize: '14px', color: '#334155' }}>📌 Status:</span>
+
                 {/* 1. Menunggu Perbaikan (Default Active) */}
                 <button
                     className="btn btn-secondary btn-sm"
@@ -106,6 +126,18 @@ function LogKerusakanFasilitas() {
             </div>
             {/* Tabel Log Tiket */}
             <div className="card-flat" style={{ background: '#fff', padding: '20px', borderRadius: '12px' }}>
+                <div className="no-print" style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+                    <button className="btn btn-secondary btn-sm" onClick={handlePrintPDF}>🖨️ Cetak PDF Resmi</button>
+                    <button className="btn btn-secondary btn-sm" onClick={handleExportExcel}>📊 Ekspor Excel (.CSV)</button>
+                </div>
+                {/* ELEMEN KOP SURAT KHUSUS CETAK */}
+                <div className="print-only">
+                    <div className="kop-surat">
+                        <h2>PLATFORM KAMPUS SMART CLASSROOM</h2>
+                        <h3>LAPORAN REKAPITULASI KERUSAKAN FASILITAS & SARPRAS</h3>
+                        <p>Dokumen Resmi Hasil Ekspor Log Sistem Manajemen Ruangan Kelas</p>
+                    </div>
+                </div>
                 {loading ? (
                     <p>Memuat tiket kerusakan...</p>
                 ) : filteredReports.length === 0 ? (
@@ -117,7 +149,7 @@ function LogKerusakanFasilitas() {
                                 <th style={{ padding: '10px 12px' }}>Lokasi Ruangan</th>
                                 <th style={{ padding: '10px 12px' }}>Kategori & Rincian</th>
                                 <th style={{ padding: '10px 12px' }}>Pelapor (PJ)</th>
-                                <th style={{ padding: '10px 12px' }}>Status Tiket</th>
+                                <th style={{ padding: '10px 12px' }}>Status Penangan</th>
                                 <th style={{ padding: '10px 12px', textAlign: 'right' }}>Aksi Staf</th>
                             </tr>
                         </thead>
