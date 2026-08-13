@@ -5,6 +5,7 @@ import DashboardPJ from './pages/DashboardPJ'
 import DashboardAdmin from './pages/DashboardAdmin'
 import ProtectedRoute from './components/ProtectedRoute'
 import Register from './pages/auth/Register'
+import VerifyEmail from './pages/VerifyEmail'
 import './App.css'
 
 function App() {
@@ -15,6 +16,8 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<HalamanLogin />} />
         <Route path='/register' element={<Register />} />
+        <Route path='/verify-email' element={<VerifyEmail />} />
+
 
         {/* PJ Routes */}
         <Route path="/pj/*"

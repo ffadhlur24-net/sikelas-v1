@@ -61,6 +61,26 @@ router.post('/', verifyToken, async (req, res) => {
 
         if (error) throw error
 
+        // ⚡ BUAT NOTIFIKASI IN-APP OTOMATIS KE SELURUH ADMIN
+        try {
+            const { data: adminUsers } = await supabase
+                .from('users')
+                .select('id')
+                .eq('role', 'admin')
+
+            if (adminUsers && adminUsers.length > 0) {
+                const notifPayloads = adminUsers.map(adm => ({
+                    user_id: adm.id,
+                    title: '🛠️ Laporan Kerusakan Fasilitas',
+                    message: `PJ ${req.user.username || 'Mahasiswa'} melaporkan kerusakan ${kategori} pada ruangan.`,
+                    type: 'warning'
+                }))
+                await supabase.from('notifications').insert(notifPayloads)
+            }
+        } catch (notifErr) {
+            console.error('Gagal mengirim notifikasi in-app ke admin:', notifErr)
+        }
+
         res.status(201).json({
             message: 'Laporan berhasil terkirim',
             report: data[0]

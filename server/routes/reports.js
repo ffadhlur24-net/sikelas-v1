@@ -94,6 +94,27 @@ router.post('/', verifyToken, async (req, res) => {
             console.error('Supabase Insert Report Error:', error)
             throw error
         }
+
+        // ⚡ BUAT NOTIFIKASI IN-APP OTOMATIS KE SELURUH ADMIN
+        try {
+            const { data: adminUsers } = await supabase
+                .from('users')
+                .select('id')
+                .eq('role', 'admin')
+
+            if (adminUsers && adminUsers.length > 0) {
+                const notifPayloads = adminUsers.map(adm => ({
+                    user_id: adm.id,
+                    title: '📋 Laporan Kelas Kosong Baru',
+                    message: `PJ ${req.user.username || 'Mahasiswa'} melaporkan pengosongan kelas ${mata_kuliah || ''}.`,
+                    type: 'info'
+                }))
+                await supabase.from('notifications').insert(notifPayloads)
+            }
+        } catch (notifErr) {
+            console.error('Gagal mengirim notifikasi in-app ke admin:', notifErr)
+        }
+
         res.status(201).json({
             message: 'Laporan kelas kosong berhasil dikirim!',
             report: data && data.length > 0 ? data[0] : null

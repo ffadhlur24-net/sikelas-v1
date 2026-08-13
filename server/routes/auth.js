@@ -7,6 +7,7 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import supabase from '../config/supabase.js'
 import { loginLimiter } from '../middleware/rateLimiter.js'
+import { sendOtpEmail } from '../untils/sendEmail.js'
 
 const router = Router()
 
@@ -15,12 +16,37 @@ const router = Router()
 
 router.post('/register', async (req, res) => {
     try {
+        console.log('📩 [REGISTER REQUEST BODY]:', req.body)
         const { username, nim_nip, email, password, prodi, semester, mata_kuliah, kelas, no_hp } = req.body
 
-        // 1. Validasi input
+        // 1. Validasi input kelengkapan
         if (!username || !nim_nip || !email || !password || !prodi || !mata_kuliah || !kelas || !semester || !no_hp) {
+            console.log('❌ [REGISTER FAILED]: Ada kolom yang kosong!')
             return res.status(400).json({
-                error: 'Semua kolom wajib diisi broo!'
+                error: 'Semua kolom wajib diisi!'
+            })
+        }
+
+        // 1b. Validasi Format Nama Lengkap / Username (Hanya huruf dan spasi, tanpa angka & karakter khusus)
+        const nameRegex = /^[a-zA-Z\s]+$/
+        if (!nameRegex.test(username.trim())) {
+            return res.status(400).json({
+                error: 'Nama Lengkap / Username hanya boleh berisi huruf dan spasi (tanpa angka atau karakter khusus).'
+            })
+        }
+
+        // 1c. Validasi Format No. HP (Harus diawali 08, 10-15 digit angka)
+        const phoneRegex = /^08[0-9]{8,13}$/
+        if (!phoneRegex.test(no_hp.trim())) {
+            return res.status(400).json({
+                error: 'Nomor HP harus berawalan 08 dan terdiri dari 10 hingga 15 digit angka.'
+            })
+        }
+
+        // 1d. Validasi Panjang Password (Minimal 8 karakter)
+        if (password.length < 8) {
+            return res.status(400).json({
+                error: 'Password minimal harus 8 karakter.'
             })
         }
 
@@ -29,11 +55,24 @@ router.post('/register', async (req, res) => {
             .from('users')
             .select('id')
             .eq('username', username)
-            .single()
+            .maybeSingle()
 
         if (existingUser) {
             return res.status(409).json({
-                error: "Username sudah terdaftar, pilih username yang lain aja coy."
+                error: "Username sudah terdaftar, pilih username yang lain."
+            })
+        }
+
+        // 2b. Cek Email Duplikat
+        const { data: existingEmail } = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', email.trim().toLowerCase())
+            .maybeSingle()
+
+        if (existingEmail) {
+            return res.status(409).json({
+                error: "Email ini telah memiliki akun."
             })
         }
 
@@ -45,54 +84,182 @@ router.post('/register', async (req, res) => {
             .eq('prodi', prodi)
             .eq('mata_kuliah', mata_kuliah)
             .eq('kelas', kelas)
-            .single()
+            .maybeSingle()
+
         if (existingPJ) {
+            console.log(`❌ [REGISTER FAILED]: Double PJ untuk ${mata_kuliah} (${prodi}) Kelas ${kelas}`)
             return res.status(400).json({
-                error: `Pendaftaran Ditulak: Mata kuliah ${mata_kuliah} (${prodi}) Kelas ${kelas} Sudah memiliki Penganggung Jawab!`
+                error: `Pendaftaran Ditolak: Mata kuliah ${mata_kuliah} (${prodi}) Kelas ${kelas} sudah memiliki Penanggung Jawab!`
             })
         }
 
-        // 4. hash password (enkripsi)
+        // 4. Hash password (enkripsi)
         const hashedPassword = await bcrypt.hash(password, 10)
 
-        const { data: newUser, error } = await supabase
+        // 5. Generate Kode OTP 6-Digit & Expire Time (15 menit)
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString()
+        const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000)
+
+        const parsedSemester = parseInt(String(semester).replace(/\D/g, ''), 10) || 1
+
+        const insertPayload = {
+            username,
+            nim_nip,
+            email,
+            password: hashedPassword,
+            prodi,
+            semester: parsedSemester,
+            mata_kuliah,
+            kelas,
+            no_hp,
+            role: 'pj',
+            status: 'pending_email_verification',
+            otp_code: otpCode,
+            otp_expires_at: otpExpiresAt.toISOString()
+        }
+
+        let { data: newUser, error } = await supabase
             .from('users')
-            .insert({
-                username,
-                password: hashedPassword,
-                role: 'pj',
-                nim_nip,
-                email,
-                prodi,
-                mata_kuliah,
-                semester,
-                kelas,
-                no_hp,
-                status: 'pending' // Menunggu admin acc
-            })
+            .insert(insertPayload)
             .select()
+            .single()
 
-        if (error) throw error
+        if (error && error.message && (error.message.includes('otp_code') || error.message.includes('otp_expires_at') || error.message.includes('column'))) {
+            delete insertPayload.otp_code
+            delete insertPayload.otp_expires_at
+            insertPayload.status = 'pending'
+            const retry = await supabase
+                .from('users')
+                .insert(insertPayload)
+                .select()
+                .single()
 
-        // 5. Kirim respon sukse
-        res.status(201).json({
-            message: 'Registrasi berhasil! Menunggu verifikasi admin.',
-            user: {
-                id: newUser.id,
-                nama: newUser.nama,
-                nim: newUser.nim,
-                email: newUser.email,
-                role: newUser.role,
-                status: newUser.status
+            newUser = retry.data
+            error = retry.error
+        }
+
+        if (error) {
+            console.error('Supabase Insert User Error:', error)
+            if (error.code === '23505' || (error.message && (error.message.includes('unique') || error.message.includes('already exists') || error.message.includes('duplicate')))) {
+                return res.status(409).json({
+                    error: 'Pendaftaran Gagal: Email, NIM/NIP, atau Username ini sudah terdaftar di sistem. Silakan gunakan akun/email lain.'
+                })
             }
-        })
+            return res.status(400).json({ error: error.message || 'Gagal melakukan pendaftaran akun.' })
+        }
 
+        const emailSent = await sendOtpEmail(email, otpCode, username)
+
+        res.status(201).json({
+            message: emailSent ?
+                'Registrasi berhasil! Kode keramat telah dikirim ke email Anda.'
+                : 'Registrasi berhasil, Gagal mengirim email OTP, silahkan click "kirim ulang',
+            email: newUser?.email || email,
+        })
     } catch (error) {
         console.error('Registrasi error:', error)
-        res.status(500).json({ error: 'Terjadi kesalahan diserver.' })
+        res.status(400).json({ error: error.message || 'Terjadi kesalahan saat memproses registrasi.' })
     }
 })
-// Mengambil seluruh mata kuliah yang belum memiliki pj
+
+router.post('/verify-otp', async (req, res) => {
+    try {
+        const { email, otp_code } = req.body
+
+        if (!email || !otp_code) {
+            return res.status(400).json({ error: 'Email dan Kode OTP wajib diisi!' })
+        }
+
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', email)
+            .maybeSingle()
+
+        if (error || !user) {
+            return res.status(404).json({ error: 'Akun dengan email tersebut tidak ditemukan' })
+        }
+
+        if (user.status !== 'pending_email_verification') {
+            return res.status(400).json({ error: 'Email akun ini sudah terverifikasi sebelumnya.' })
+        }
+
+        if (user.otp_code !== otp_code.trim()) {
+            return res.status(400).json({ error: 'Kode OTP yang Anda masukkan salah!' })
+        }
+
+        if (user.otp_expires_at && new Date() > new Date(user.otp_expires_at)) {
+            return res.status(400).json({ error: 'Kode OTP telah kadaluarsa! Silakan minta kode baru.' })
+        }
+
+        const { error: updateErr } = await supabase
+            .from('users')
+            .update({
+                status: 'pending',
+                otp_code: null,
+                otp_expires_at: null
+            })
+            .eq('id', user.id)
+
+        if (updateErr) throw updateErr
+        res.json({ message: 'Email berhasil terverifikasi! Menunggu persetujuan Admin' })
+    } catch (error) {
+        console.error('Varify OTP error:', error)
+        res.status(500).json({ error: 'Gagal memverifikasi OTP' })
+    }
+})
+
+// POST /api/auth/resend-otp - Kirim Ulang Kode OTP Baru
+router.post('/resend-otp', async (req, res) => {
+    try {
+        const { email } = req.body
+        if (!email) {
+            return res.status(400).json({ error: 'Email wajib diisi!' })
+        }
+        // 1. Cari user dengan status pending_email_verification
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('id, username, otp_expires_at')
+            .eq('email', email)
+            .eq('status', 'pending_email_verification')
+            .maybeSingle()
+        if (error || !user) {
+            return res.status(404).json({ error: 'Akun tidak ditemukan atau sudah terverifikasi.' })
+        }
+        // 2. Cooldown 60 detik — cegah spam kirim ulang
+        if (user.otp_expires_at) {
+            const lastSent = new Date(user.otp_expires_at).getTime() - (15 * 60 * 1000) // Waktu kirim = expire - 15 menit
+            const now = Date.now()
+            const diffSeconds = Math.floor((now - lastSent) / 1000)
+            if (diffSeconds < 60) {
+                return res.status(429).json({
+                    error: `Tunggu ${60 - diffSeconds} detik lagi sebelum mengirim ulang.`
+                })
+            }
+        }
+        // 3. Generate OTP baru & update di database
+        const newOtp = Math.floor(100000 + Math.random() * 900000).toString()
+        const newExpiry = new Date(Date.now() + 15 * 60 * 1000)
+        const { error: updateErr } = await supabase
+            .from('users')
+            .update({
+                otp_code: newOtp,
+                otp_expires_at: newExpiry.toISOString()
+            })
+            .eq('id', user.id)
+        if (updateErr) throw updateErr
+        // 4. Kirim email OTP baru
+        const emailSent = await sendOtpEmail(email, newOtp, user.username)
+        res.json({
+            message: emailSent
+                ? 'Kode OTP baru telah dikirim ke email Anda!'
+                : 'Gagal mengirim email. Silakan coba lagi nanti.'
+        })
+    } catch (error) {
+        console.error('Resend OTP error:', error)
+        res.status(500).json({ error: 'Gagal mengirim ulang OTP.' })
+    }
+})
 // Mengambil seluruh mata kuliah yang belum memiliki pj
 router.get('/registration-options', async (req, res) => {
     try {
@@ -154,7 +321,7 @@ router.post('/login', loginLimiter, async (req, res) => {
             .from('users')
             .select('*')
             .eq('email', email)
-            .single()
+            .maybeSingle()
 
         if (error || !user) {
             return res.status(401).json({
@@ -162,16 +329,22 @@ router.post('/login', loginLimiter, async (req, res) => {
             })
         }
 
-        // 3. cek apakah akun sudah diverifikasi
+        // 3. Cek apakah akun sudah diverifikasi
+        if (user.status === 'pending_email_verification') {
+            return res.status(403).json({
+                error: 'Email Anda belum diverifikasi! Silakan verifikasi email menggunakan kode OTP 6-digit terlebih dahulu.'
+            })
+        }
+
         if (user.status === 'pending') {
             return res.status(403).json({
-                error: 'Akun belum diverifikasi oleh admin'
+                error: 'Akun Anda sudah terverifikasi email, namun masih menunggu persetujuan (ACC) dari Admin.'
             })
         }
 
         if (user.status === 'nonaktif') {
             return res.status(403).json({
-                error: 'Akun Anda telah dinontaktifkan'
+                error: 'Akun Anda telah dinonaktifkan oleh Admin.'
             })
         }
 
@@ -261,4 +434,31 @@ router.get('/available-courses', async (req, res) => {
         res.status(500).json({ error: 'Gagal mengambil daftar mata kuliah.' })
     }
 });
+
+// GET /api/auth/check-email?email=...
+// Pengecekan real-time apakah email sudah terdaftar
+router.get('/check-email', async (req, res) => {
+    try {
+        const { email } = req.query
+        if (!email) {
+            return res.status(400).json({ error: 'Email wajib diisi' })
+        }
+
+        const { data: existingEmail } = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', email.trim().toLowerCase())
+            .maybeSingle()
+
+        if (existingEmail) {
+            return res.json({ exists: true, message: 'Email ini telah memiliki akun.' })
+        }
+
+        return res.json({ exists: false, message: 'Email tersedia.' })
+    } catch (error) {
+        console.error('Check email error:', error)
+        res.status(500).json({ error: 'Gagal memeriksa email.' })
+    }
+})
+
 export default router

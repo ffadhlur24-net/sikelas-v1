@@ -56,7 +56,7 @@ router.post('/', verifyToken, async (req, res) => {
 
         // 1. Cari tahu Hari apa tanggal yang diinputkan (0 = Minggu, 1 = Senin, dst)
         const hariArray = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
-        const dateObj = new Date(tanggal)
+        const dateObj = new Date(tanggal + 'T00:00:00')
         const namaHari = hariArray[dateObj.getDay()]
 
         // 2. CEK BENTROK DENGAN JADWAL REGULER (SIAKAD)
@@ -115,6 +115,26 @@ router.post('/', verifyToken, async (req, res) => {
             .single()
 
         if (error) throw error
+
+        // ⚡ BUAT NOTIFIKASI IN-APP OTOMATIS KE SELURUH ADMIN
+        try {
+            const { data: adminUsers } = await supabase
+                .from('users')
+                .select('id')
+                .eq('role', 'admin')
+
+            if (adminUsers && adminUsers.length > 0) {
+                const notifPayloads = adminUsers.map(adm => ({
+                    user_id: adm.id,
+                    title: '📥 Pengajuan Reservasi Baru',
+                    message: `PJ ${req.user.username || 'Mahasiswa'} mengajukan reservasi kelas untuk ${mata_kuliah} pada ${tanggal}.`,
+                    type: 'info'
+                }))
+                await supabase.from('notifications').insert(notifPayloads)
+            }
+        } catch (notifErr) {
+            console.error('Gagal mengirim notifikasi in-app ke admin:', notifErr)
+        }
 
         res.status(201).json({
             message: ' Reserbasi berhasil diajukan!\n Menunggu persetjuan admin.',

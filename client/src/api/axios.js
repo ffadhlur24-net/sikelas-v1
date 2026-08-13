@@ -1,28 +1,39 @@
 import axios from 'axios'
 
-
-// insatance axios khusus dengan URL backend
+// Instance axios khusus dengan URL backend
 const api = axios.create({
-    baseURL: 'http://localhost:5000/api', // URL Node.js Backend
+    baseURL: 'http://127.0.0.1:5000/api', // URL Node.js Backend IPv4 Presisi
     headers: {
         'Content-Type': 'application/json'
     }
 })
 
-// Interceptor: Menjalankan kode ini sebelum request dikirim keserver
-
+// Interceptor Request: Menambahkan Header Authorization (Bearer Token)
 api.interceptors.request.use((config) => {
-    // Cek apakah ada token di LocalStorage (disimpan saat user login)
-    const token = localStorage.getItem('sikelas_token');
-
+    const token = localStorage.getItem('sikelas_token')
     if (token) {
-        // Jika ada, tampilkan pada Header Authorization
         config.headers.Authorization = `Bearer ${token}`
     }
-
     return config
 }, (error) => {
     return Promise.reject(error)
 })
+
+// Interceptor Response: Mencegat status 401 Unauthorized (Token Sesi Expired)
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            console.warn('⚠️ Sesi login telah berakhir. Menghapus token & redirect ke login...')
+            localStorage.removeItem('sikelas_token')
+            localStorage.removeItem('sikelas_user')
+            
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login?expired=true'
+            }
+        }
+        return Promise.reject(error)
+    }
+)
 
 export default api

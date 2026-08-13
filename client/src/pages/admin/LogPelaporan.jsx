@@ -47,28 +47,47 @@ function LogPelaporan() {
         return
       }
     }
-    // 🛑 1. PEMBATAS: PROSES NOTIFIKASI WA DAHULU SEBELUM UBAH STATUS
+
     const targetReport = reports.find(r => r.id === id)
+    let isWASent = false
+
+    // 1. Cobakan Kirim Notifikasi WhatsApp Direct Link
     if (targetReport) {
       const pjPhone = targetReport.users?.no_hp || targetReport.users?.phone || ''
       const pjName = targetReport.users?.username || 'PJ Kelas'
       const matkul = targetReport.mata_kuliah || 'Mata Kuliah'
       const ruang = targetReport.rooms?.nama || targetReport.room_id || '-'
+
       const msg = status === 'verified'
         ? `🟢 *[SiKelas - Konfirmasi Pelaporan Kelas Kosong]*\n\nHalo *${pjName}*,\nLaporan pengosongan sesi perkuliahan untuk *${matkul}* di Ruang *${ruang}* telah *DISETUJUI & DIVERIFIKASI* oleh Admin.\n\nSlot ruangan telah dibebaskan untuk peminjaman insidental. Terima kasih!`
         : `🔴 *[SiKelas - Penolakan Laporan Kelas Kosong]*\n\nHalo *${pjName}*,\nLaporan pengosongan kelas untuk *${matkul}* *DITOLAK* oleh Admin.\n\n📌 *Alasan Penolakan:*\n"${alasan_penolakan}"\n\nTerima kasih!`
-      // Cek Saklar Pembatas WA:
-      const isSent = sendWANotifications({ phone: pjPhone, message: msg })
-      // 🛑 JIKA NOMOR SALAH ATAU DIBATALKAN, HENTIKAN PROSES! STATUS TIDAK BERUBAH.
-      if (!isSent) {
-        return
-      }
+
+      isWASent = sendWANotifications({ phone: pjPhone, message: msg })
     }
-    // 🛑 2. HANYA JIKA NOTIFIKASI BERHASIL, UBAH STATUS DI DATABASE:
+
+    // 2. STATUS TETAP BERUBAH DI DATABASE (TIDAK DIBATALKAN)
     setActionLoading(true)
     setMessage('')
     try {
       const res = await api.patch(`reports/${id}/resolve`, { status, alasan_penolakan })
+      
+      // ⚡ 3. BUAT NOTIFIKASI IN-APP KE KOTAK MASUK PJ (DENGAN WA FALLBACK WARNING JIKA WA GAGAL)
+      if (targetReport?.user_id) {
+        try {
+          const waNote = !isWASent ? ' (⚠️ WhatsApp gagal terkirim karena nomor HP tidak valid/terdaftar. Silakan perbarui nomor di Profil)' : ''
+          await api.post('/notifications', {
+            user_id: targetReport.user_id,
+            title: status === 'verified' ? '🟢 Laporan Kelas Kosong Disetujui' : '🔴 Laporan Kelas Kosong Ditolak',
+            message: (status === 'verified'
+              ? `Laporan pengosongan sesi perkuliahan untuk ${targetReport.mata_kuliah} di Ruang ${targetReport.rooms?.nama || targetReport.room_id} telah disetujui Admin.`
+              : `Laporan pengosongan sesi kelas untuk ${targetReport.mata_kuliah} ditolak dengan alasan: "${alasan_penolakan}"`) + waNote,
+            type: status === 'verified' ? 'success' : 'danger'
+          })
+        } catch (notifErr) {
+          console.error('Gagal membuat notifikasi in-app:', notifErr)
+        }
+      }
+
       setMessage(res.data.message || 'Status laporan berhasil diperbarui!')
       fetchReports()
     } catch (error) {

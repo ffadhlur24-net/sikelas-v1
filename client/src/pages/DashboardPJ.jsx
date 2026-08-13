@@ -3,6 +3,7 @@ import ProfilPJ from './pj/ProfilPJ'
 import DaftarKelas from './pj/DaftarKelas'
 import PelaporanKelas from './pj/PelaporanKelas'
 import Pelaporankerusakan from './pj/Pelaporankerusakan'
+import Notification from '../components/Notification'
 import './DashboardPJ.css'
 import { useContext } from 'react'
 import { AuthContext } from '../context/AuthContext'
@@ -33,7 +34,7 @@ function DashboardPJ() {
           <nav className="sidebar-nav">
             <NavLink to="/pj/profil" className="sidebar-link" id="nav-profil">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 4 4v2" />
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
               Profil Saya
@@ -73,14 +74,14 @@ function DashboardPJ() {
         {/* Top Header Bar */}
         <header className="dashboard-header">
           <div className="header-left">
-            {/* Page title will be set by child pages */}
           </div>
           <div className="header-right">
+            <Notification />
+            <div className="header-avatar">{user?.username.charAt(0).toUpperCase()}</div>
             <div className="header-user-info">
               <span className="header-user-name">{user?.username}</span>
               <span className="header-user-detail">{user?.nim_nip} • {user?.prodi} {user?.semester}{user?.kelas}</span>
             </div>
-            <div className="header-avatar">{user?.username.charAt(0).toUpperCase()}</div>
           </div>
         </header>
 

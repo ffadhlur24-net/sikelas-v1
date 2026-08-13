@@ -6,6 +6,7 @@ import ManajemenAkunPJ from './admin/ManajemenAkunPJ'
 import LogPelaporan from './admin/LogPelaporan'
 import ManajemenProdi from './admin/ManajemenProdi'
 import LogKerusakanFasilitas from './admin/LogKerusakanFasilitas'
+import Notification from '../components/Notification'
 import { useContext } from 'react'
 import { AuthContext } from '../context/AuthContext'
 import './DashboardPJ.css' // Reuse the shared dashboard layout styles
@@ -108,14 +109,14 @@ function DashboardAdmin() {
         {/* Top Header Bar */}
         <header className="dashboard-header">
           <div className="header-left">
-            {/* Page title will be set by child pages via standard layout context or just empty */}
           </div>
           <div className="header-right">
+            <Notification />
+            <div className="header-avatar" style={{ background: 'var(--color-primary-500)', color: 'white' }}>{user?.username.charAt(0).toUpperCase()}</div>
             <div className="header-user-info" style={{ borderLeft: '1px solid var(--border-color)', paddingLeft: 'var(--spacing-4)', marginLeft: 'var(--spacing-2)' }}>
               <span className="header-user-name">{user?.username}</span>
               <span className="header-user-detail" style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>{user?.role}</span>
             </div>
-            <div className="header-avatar" style={{ background: 'var(--color-primary-500)', color: 'white' }}>{user?.username.charAt(0).toUpperCase()}</div>
           </div>
         </header>
 

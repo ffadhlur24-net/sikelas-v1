@@ -7,6 +7,7 @@ import './HalamanLogin.css'
 function HalamanLogin() {
   const [activeTab, setActiveTab] = useState('login') // 'login' or 'register'
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
 
@@ -99,7 +100,30 @@ function HalamanLogin() {
           </div>
           <div className="form-group">
             <label className="form-label">Password</label>
-            <input type="password" className="input-field" name="password" value={formData.password} onChange={handleChange} required />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                className="input-field"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Masukkan password Anda"
+                required
+                style={{ paddingRight: '44px' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', color: '#64748b',
+                  padding: '4px'
+                }}
+                title={showPassword ? "Sembunyikan Password" : "Tampilkan Password"}
+              >
+                {showPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
           </div>
           <button type="submit" className="btn btn-primary btn-lg btn-full" disabled={loading}>
             {loading ? 'Memproses...' : 'Masuk'}

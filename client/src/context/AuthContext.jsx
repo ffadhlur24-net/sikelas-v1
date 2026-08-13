@@ -34,11 +34,19 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('sikelas_token');
     }
 
+    // Fungsi Update User (digunakan saat edit profil)
+    const updateUser = (updatedUserData) => {
+        const newUserData = { ...user, ...updatedUserData }
+        setUser(newUserData);
+        localStorage.setItem('sikelas_user', JSON.stringify(newUserData))
+    }
+
     // Data yang akan dibagikan ke seluruh komponen
     const contextValue = {
         user,
         login,
         logout,
+        updateUser,
         loading
     }
     return (

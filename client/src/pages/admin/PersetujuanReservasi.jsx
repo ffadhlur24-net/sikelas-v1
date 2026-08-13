@@ -57,8 +57,11 @@ function PersetujuanReservasi() {
         return;
       }
     }
-    // 🛑 1. PEMBATAS: PROSES NOTIFIKASI WA DAHULU SEBELUM UBAH STATUS
+
     const targetRes = reservations.find(r => r.id === id)
+    let isWASent = false
+
+    // 1. Cobakan Kirim Notifikasi WhatsApp Direct Link
     if (targetRes) {
       const pjPhone = targetRes.users?.no_hp || targetRes.users?.phone || ''
       const pjName = targetRes.users?.username || 'PJ Kelas'
@@ -68,17 +71,32 @@ function PersetujuanReservasi() {
       const msg = status === 'approved'
         ? `🎓 *[SiKelas - Konfirmasi Reservasi Ruangan]*\n\nHalo *${pjName}*,\nPengajuan peminjaman ruangan kelas Anda telah *DISETUJUI* oleh Admin.\n\n📖 *Detail Peminjaman:*\n• Mata Kuliah: *${matkul}*\n• Lokasi: Ruang *${ruang}* (${gedung})\n• Waktu: ${targetRes.tanggal}, ${targetRes.waktu_mulai.substring(0, 5)} - ${targetRes.waktu_selesai.substring(0, 5)} WIB\n\nSilakan gunakan ruangan dengan tertib dan jaga kebersihan fasilitas. Terima kasih!`
         : `🚨 *[SiKelas - Pemberitahuan Reservasi Ruangan]*\n\nHalo *${pjName}*,\nMohon maaf, pengajuan reservasi kelas untuk mata kuliah *${matkul}* pada ${targetRes.tanggal} *DITOLAK* oleh Admin.\n\n📌 *Alasan Penolakan:*\n"${alasan_penolakan}"\n\nSilakan mengajukan ulang pada slot waktu atau ruangan lain. Terima kasih!`
-      // Cek Saklar Pembatas WA:
-      const isSent = sendWANotifications({ phone: pjPhone, message: msg })
-      // 🛑 JIKA NOMOR SALAH ATAU DIBATALKAN, HENTIKAN PROSES! STATUS TIDAK BERUBAH.
-      if (!isSent) {
-        return
-      }
+
+      isWASent = sendWANotifications({ phone: pjPhone, message: msg })
     }
-    // 🛑 2. HANYA JIKA NOTIFIKASI BERHASIL, UBAH STATUS DI DATABASE:
+
+    // 2. STATUS TETAP BERUBAH DI DATABASE (TIDAK DIBATALKAN)
     try {
       setActionLoading(true)
       await api.patch(`/reservations/${id}/status`, { status, alasan_penolakan });
+      
+      // ⚡ 3. BUAT NOTIFIKASI IN-APP KE KOTAK MASUK PJ (DENGAN WA FALLBACK WARNING JIKA WA GAGAL)
+      if (targetRes?.user_id) {
+        try {
+          const waNote = !isWASent ? ' (⚠️ WhatsApp gagal terkirim karena nomor HP tidak valid/terdaftar. Silakan perbarui nomor di Profil)' : ''
+          await api.post('/notifications', {
+            user_id: targetRes.user_id,
+            title: status === 'approved' ? '🎓 Reservasi Disetujui!' : '🚨 Reservasi Ditolak',
+            message: (status === 'approved'
+              ? `Pengajuan reservasi Anda untuk ${targetRes.mata_kuliah} di Ruang ${targetRes.rooms?.nama || ''} (${targetRes.rooms?.gedung || ''}) telah disetujui Admin.`
+              : `Pengajuan reservasi Anda untuk ${targetRes.mata_kuliah} ditolak dengan alasan: "${alasan_penolakan}"`) + waNote,
+            type: status === 'approved' ? 'success' : 'danger'
+          })
+        } catch (notifErr) {
+          console.error('Gagal membuat notifikasi in-app:', notifErr)
+        }
+      }
+
       fetchReservations();
     } catch (error) {
       console.error(error);

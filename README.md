@@ -13,6 +13,7 @@
   <img src="https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express" />
   <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Resend-000000?style=for-the-badge&logo=resend&logoColor=white" alt="Resend" />
   <img src="https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white" alt="JWT" />
   <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript" />
   <img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white" alt="CSS3" />
@@ -26,59 +27,138 @@
 ### 🎨 Tampilan Depan (Frontend Web):
 - **React.js (Vite):** Pustaka (*library*) JavaScript modern untuk membangun antarmuka web yang interaktif, cepat, dan tanpa perlu melakukan reload halaman (*Single Page Application*).
 - **React Router DOM:** Berfungsi mengatur navigasi halaman (seperti berpindah dari Halaman Login ke Dashboard Admin) tanpa membuat browser me-load ulang seluruh halaman.
-- **Axios:** "Kurir pengantar pesan" berbasis HTTP yang bertugas mengirim dan mengambil data dari server backend ke layar web Anda.
+- **Axios:** "Kurir pengantar pesan" berbasis HTTP yang bertugas mengirim dan mengambil data dari server backend ke layar web Anda (dilengkapi *Response Interceptor 401* untuk auto-logout saat sesi expired).
 - **Vanilla CSS (Variables System):** Bahasa desain tampilan berbasis variabel terpusat (`--color-primary-500`, `--color-success`) untuk menciptakan gaya visual modern, bersih, dan konsisten di semua halaman.
 
 ### ⚙️ Mesin Server (Backend API):
 - **Node.js:** Lingkungan (*runtime*) yang memungkinkan kode JavaScript dapat dijalankan di komputer server (di luar browser).
 - **Express.js:** Kerangka kerja (*framework*) berbasis Node.js untuk membuat rute API (jalur komunikasi antara web frontend dan database).
+- **Resend (Email API Service):** Layanan pengiriman email transaksi terandal untuk mengirimkan kode OTP 6-Digit saat verifikasi pendaftaran akun baru, lupa password, dan konfirmasi penggantian password profil secara instan.
+- **Automation Cron Jobs Sweeper:** Pembersih otomatis latar belakang yang berjalan berkala untuk membatalkan reservasi hangus (*Phantom Booking Cleaner*) dan laporan kadaluwarsa secara mandiri.
 - **JWT (JSON Web Tokens):** "Tiket masuk digital" yang mengamankan sesi login pengguna. Tiket ini menyimpan ID dan hak akses (*role*) pengguna yang terenkripsi.
 - **Bcrypt.js:** Pengaman kata sandi yang bertugas mengacak (*hash*) password sebelum disimpan ke database agar tidak bisa dibaca oleh siapapun.
 
 ### 💾 Penyimpanan Data (Database):
-- **Supabase (PostgreSQL Cloud):** Layanan basis data awan (*cloud database*) canggih berbasis PostgreSQL untuk menyimpan seluruh data master (Ruangan, Jadwal, Pengguna, Pelaporan, dan Pemesanan).
+- **Supabase (PostgreSQL Cloud):** Layanan basis data awan (*cloud database*) canggih berbasis PostgreSQL untuk menyimpan seluruh data master (Ruangan, Jadwal, Pengguna, Pelaporan, Notifikasi, dan Pemesanan).
 
 ---
 
-## 🌟 FITUR UTAMA & FITUR KEAMANAN CANGGIH
+## 🌟 FITUR UTAMA & FITUR TAMBAHAN APLIKASI
 
-1. **Anti Double-Booking System (Pencegah Konflik Jadwal):**
+### 📌 1. FITUR UTAMA (CORE FEATURES):
+
+1. **Dashboard Interaktif Admin & PJ Kelas:**
+   - Visualisasi ringkasan statistik harian (Jumlah Ruangan Tersedia/Terkunci, Total Reservasi Hari Ini, Status Laporan, dan Akun Pending).
+2. **Peminjaman & Reservasi Ruangan Kelas (PJ Kelas):**
+   - Formulir reservasi interaktif yang memilih tanggal, jam, prodi, dan mata kuliah.
+3. **Anti Double-Booking System (Pencegah Konflik Jadwal):**
    - Menggunakan rumus aljabar interval waktu (`Waktu Mulai Lama < Waktu Selesai Baru` AND `Waktu Selesai Lama > Waktu Mulai Baru`) untuk memastikan peminjaman kelas tidak akan pernah bentrok dengan jadwal reguler SIAKAD maupun peminjaman pengguna lain.
-2. **Kalkulator SKS & Jam Selesai Otomatis:**
-   - Pengisian waktu perkuliahan menggunakan standar akademik SKS (1 SKS = 50 Menit), di mana jam selesai dihitung dan dikunci secara otomatis.
-3. **Navigasi Berjenjang Bebas Typo (*Typo-Proof Hierarchy*):**
-   - **Manajemen Ruangan 3 Level:** Kampus ➔ Gedung ➔ Ruangan per Lantai.
-   - **Manajemen Prodi 2 Level:** Fakultas ➔ Sub-Prodi Terikat.
-4. **Proteksi Keamanan Rate Limiting Login:**
-   - Sistem otomatis mengunci komputer/IP peretas jika terjadi kesalahan memasukkan password sebanyak **5 kali berturut-turut selama 15 menit**, sementara pemilik akun asli tetap aman bisa login dari perangkatnya sendiri.
-5. **Kalkulasi Zona Waktu Presisi (WIB / UTC+7):**
-   - Backend memproses waktu lokal WIB secara akurat sehingga mencegah bug pergeseran tanggal mundur 1 hari yang sering terjadi pada server berzona waktu UTC.
+4. **Pelaporan Kelas Kosong / Kendala Perkuliahan:**
+   - Fitur pelaporan oleh PJ saat dosen berhalangan hadir, kelas pindah online, atau ruangan terkunci.
+5. **Pelaporan Kerusakan Fasilitas Kelas:**
+   - Log pelaporan kerusakan fasilitas (AC rusak, proyektor mati, spidol habis) yang terintegrasi langsung ke panel pantau Admin.
+6. **Sistem Verifikasi & Manajemen Akun PJ:**
+   - Pendaftaran akun baru PJ yang membutuhkan persetujuan (*Approval/Rejection*) dari Admin sebelum bisa login.
+7. **Pusat Penampung Notifikasi In-App (Web Inbox Center):**
+   - Fitur lonceng 🔔 header dasbor dengan badge merah indikator real-time, status pesan dibaca, serta tombol *bulk delete* (hapus massal).
+8. **Ekspor Laporan Data (PDF & Excel):**
+   - Kemampuan mengunduh rekapitulasi data log pelaporan dan kerusakan ke format dokumen PDF dan file Excel/CSV.
+9. **Manajemen Hierarki Ruangan 3-Level:**
+   - Penataan hierarki lokasi terstruktur: Kampus ➔ Gedung ➔ Ruangan per Lantai.
+10. **Manajemen Prodi Dinamis 2-Level:**
+    - Penataan hierarki akademik: Fakultas ➔ Program Studi Terikat.
+11. **Pemeliharaan & Reset Akhir Semester ("Tombol Nuklir"):**
+    - Fitur pembersihan total akhir semester untuk mengosongkan data PJ, reservasi, laporan, dan jadwal SIAKAD lama saat semester resmi berakhir.
 
 ---
 
-## 📁 STRUKTUR FOLDER PROYEK
+### 🚀 2. FITUR TAMBAHAN & KEAMANAN SISTEM (ADDITIONAL & ADVANCED SECURITY FEATURES):
 
-Proyek ini dibagi secara rapi menjadi 2 folder utama:
+1. **Verifikasi OTP Email Ganda (Double OTP Verification via Resend API):**
+   - Kode OTP 6-digit dikirim langsung ke email pengguna untuk memverifikasi akun pendaftaran baru, reset lupa password, serta perlindungan ganda saat mengubah password di halaman Profil.
+2. **Automated Phantom Booking Sweeper:**
+   - Robot latar belakang otomatis membatalkan reservasi berstatus `approved` jika PJ tidak melakukan *check-in* setelah lewat 15 menit dari jam mulai, sehingga ruangan tidak terkunci secara gantung.
+3. **Toggle Lihat/Sembunyi Password (👁️ / 🙈):**
+   - Tombol interaktif untuk menampilkan atau menyembunyikan karakter password pada form login, register, dan modal profil.
+4. **Validasi Kemanan Password Frontend:**
+   - Pengecekan otomatis minimal 8 karakter dan konfirmasi kecocokan password sebelum form dikirim ke server.
+5. **Proteksi Keamanan Rate Limiting Login (IP Limiter):**
+   - Sistem otomatis mengunci komputer/IP peretas jika terjadi kesalahan memasukkan password sebanyak **5 kali berturut-turut selama 15 menit**, sementara pemilik akun asli tetap aman bisa login dari perangkatnya sendiri.
+
+---
+
+## 📁 STRUKTUR FOLDER PROYEK LENGKAP
+
+Proyek **SiKelas** disusun secara terstruktur dengan pemisahan penuh antara Frontend (React) dan Backend (Express API):
 
 ```text
 project_website/
-├── client/                     # 🎨 FRONTEND WEB (React.js)
+├── client/                             # 🎨 FRONTEND WEB (React.js + Vite)
 │   ├── src/
-│   │   ├── api/axios.js        # Konfigurasi komunikasi API
-│   │   ├── context/            # Pengelola State Login Global (AuthContext)
-│   │   ├── pages/              # Halaman Web (Admin, PJ, Login, Register)
-│   │   │   ├── admin/          # Halaman Fitur Manajemen Admin
-│   │   │   └── pj/             # Halaman Fitur Mahasiswa PJ
-│   │   ├── App.jsx             # Pengatur Rute Utama Aplikasi
-│   │   └── main.jsx            # Berkas Entri Utama React
-│   └── package.json            # Daftar Pustaka Frontend
+│   │   ├── api/
+│   │   │   └── axios.js                # Client API & Response 401 Interceptor
+│   │   ├── components/                 # Komponen Reusable
+│   │   │   ├── Header.jsx              # Topbar Header Dashboard
+│   │   │   ├── NotificationBell.jsx    # Pop-up Lonceng Inbox Notifikasi
+│   │   │   ├── ProtectedRoute.jsx      # Pengaman Akses Berdasarkan Role
+│   │   │   └── Sidebar.jsx             # Menu Navigasi Samping
+│   │   ├── context/
+│   │   │   └── AuthContext.jsx         # Provider State Pengguna Global
+│   │   ├── pages/                      # Halaman Utama Aplikasi
+│   │   │   ├── admin/                  # Halaman Fitur Manajemen Admin
+│   │   │   │   ├── LogKerusakanFasilitas.jsx
+│   │   │   │   ├── LogPelaporan.jsx
+│   │   │   │   ├── ManajemenAkunPJ.jsx
+│   │   │   │   ├── ManajemenProdi.jsx
+│   │   │   │   ├── ManajemenRuangan.jsx
+│   │   │   │   ├── PersetujuanReservasi.jsx
+│   │   │   │   ├── ProfilAdmin.css
+│   │   │   │   └── ProfilAdmin.jsx     # Edit Profil Admin + Toggle & OTP
+│   │   │   ├── auth/                   # Autentikasi Pengguna
+│   │   │   │   └── Register.jsx        # Pendaftaran Akun PJ & Form OTP
+│   │   │   ├── pj/                     # Halaman Fitur Mahasiswa PJ
+│   │   │   │   ├── DaftarKelas.jsx
+│   │   │   │   ├── PelaporanKelas.jsx
+│   │   │   │   ├── Pelaporankerusakan.jsx
+│   │   │   │   ├── ProfilPJ.css
+│   │   │   │   └── ProfilPJ.jsx        # Edit Profil PJ + Toggle & OTP
+│   │   │   ├── DashboardAdmin.jsx      # Layout Shell Admin
+│   │   │   ├── DashboardPJ.jsx         # Layout Shell PJ
+│   │   │   ├── HalamanLogin.jsx        # Form Login & Rate Limiter Alert
+│   │   │   ├── LandingPage.jsx         # Halaman Depan Publik
+│   │   │   └── VerifyEmail.jsx         # Verifikasi Email OTP
+│   │   ├── App.css
+│   │   ├── App.jsx                     # Konfigurasi Rute Aplikasi
+│   │   ├── index.css                   # System Design Tokens & Variabel CSS
+│   │   └── main.jsx                    # Berkas Utama React Entry Point
+│   ├── index.html
+│   └── package.json                    # Pustaka & Dependensi Frontend
 │
-└── server/                     # ⚙️ BACKEND API (Express.js)
-    ├── config/                 # Konfigurasi Supabase Database
-    ├── middleware/             # Pengaman Rute & Keamanan Rate Limiter
-    ├── routes/                 # Endpoint API (Auth, Rooms, Schedules, Reports)
-    ├── index.js                # Berkas Utama Menjalankan Server
-    └── package.json            # Daftar Pustaka Backend
+└── server/                             # ⚙️ BACKEND API (Express.js)
+    ├── config/
+    │   └── supabase.js                 # Inisialisasi Koneksi DB Supabase
+    ├── middleware/
+    │   ├── auth.js                     # Middleware Verifikasi JWT Token
+    │   └── rateLimiter.js              # Middleware IP Limiter Perangkat
+    ├── routes/                         # Endpoint Controller RESTful API
+    │   ├── auth.js                     # Register, Login, Verify OTP, Reset Password
+    │   ├── departemen.js               # Manajemen Prodi Dinamis
+    │   ├── facilityReports.js          # Laporan Kerusakan Fasilitas
+    │   ├── notification.js             # API Notifikasi Inbox 2-Arah
+    │   ├── reports.js                  # API Laporan Kelas Kosong
+    │   ├── reservations.js             # API Booking & Check-In Kelas
+    │   ├── rooms.js                    # API Master Ruangan & Status Lock
+    │   ├── schedules.js                # API Kalender Perkuliahan
+    │   └── user.js                     # API Profil, User List, & Request OTP
+    ├── tasks/
+    │   └── cronJobs.js                 # Automation Phantom Booking & Midnight Sweeper
+    ├── untils/
+    │   └── sendEmail.js                # Helper Pengiriman Email OTP via Resend API
+    ├── .env                            # Kunci Rahasia Environment Variables
+    ├── index.js                        # Berkas Utama Server & Init Cron Jobs
+    ├── seed_add.js                     # Skrip Inisialisasi Data Awal (Seeder)
+    ├── seed_clear.js                   # Skrip Reset Data Seeder
+    └── package.json                    # Pustaka & Dependensi Backend
 ```
 
 ---
@@ -87,7 +167,7 @@ project_website/
 
 > 💡 **Penjelasan Singkat untuk Pemula:**  
 > Aplikasi website ini terdiri dari 2 bagian utama:
-> 1. **Server (Backend/Express):** Bertindak sebagai "mesin" yang mengolah data dan mengubungkan ke database.
+> 1. **Server (Backend/Express):** Bertindak sebagai "mesin" yang mengolah data, mengirim email OTP via Resend, dan menghubungkan ke database.
 > 2. **Client (Frontend/React):** Bertindak sebagai "layar tampilan" yang dilihat oleh pengguna di browser.
 > 
 > **Keduanya harus dijalankan secara bersamaan agar website dapat berfungsi sempurna!**
@@ -125,7 +205,7 @@ Sebelum mulai, pastikan komputer Anda sudah terpasang:
    npm run dev
    ```
 5. Jika berhasil, Anda akan melihat tulisan di terminal:  
-   `🚀 Server SiKelas berjalan di port 5000` atau `connected to Supabase`.  
+   `🚀 Server SiKelas berjalan di port 5000` dan `🤖 [CronJobs] Mengaktifkan Sweeper Latar Belakang...`.  
    *(Biarkan terminal ini tetap terbuka dan berjalan!)*
 
 ---

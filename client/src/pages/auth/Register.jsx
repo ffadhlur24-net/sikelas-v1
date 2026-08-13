@@ -21,35 +21,42 @@ function Register() {
     const [closedMessage, setClosedMessage] = useState('')
     const [loadingOptions, setLoadingOptions] = useState(true)
     const [loading, setLoading] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
+    const [emailError, setEmailError] = useState('')
+    const [emailChecking, setEmailChecking] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
     const navigate = useNavigate()
 
+    const [fetchError, setFetchError] = useState(false)
+
     // 1. Fetch Data Master & Jadwal Bebas PJ Murni dari Database Supabase
-    useEffect(() => {
-        const fetchInitialData = async () => {
-            try {
-                setLoadingOptions(true)
-                // Fetch Master Prodi dari Database
-                const depRes = await api.get('/departemen')
-                setDepartments(depRes.data.departemen || [])
+    const fetchInitialData = async () => {
+        try {
+            setLoadingOptions(true)
+            setFetchError(false)
+            // Fetch Master Prodi dari Database
+            const depRes = await api.get('/departemen')
+            setDepartments(depRes.data.departemen || [])
 
-                // Fetch Schedules Bebas PJ dari Database
-                const optRes = await api.get('/auth/registration-options')
-                if (optRes.data.isOpen === false || (optRes.data.availableSchedules && optRes.data.availableSchedules.length === 0)) {
-                    setIsRegistrationClosed(true)
-                    setClosedMessage(optRes.data.message || 'Pendaftaran penanggung jawab telah ditutup (Semua Mata Kuliah sudah memiliki PJ).')
-                } else {
-                    setAvailableSchedules(optRes.data.availableSchedules || [])
-                    setIsRegistrationClosed(false)
-                }
-            } catch (err) {
-                console.error("Gagal mengambil opsi pendaftaran dari database:", err)
-            } finally {
-                setLoadingOptions(false)
+            // Fetch Schedules Bebas PJ dari Database
+            const optRes = await api.get('/auth/registration-options')
+            if (optRes.data.isOpen === false || (optRes.data.availableSchedules && optRes.data.availableSchedules.length === 0)) {
+                setIsRegistrationClosed(true)
+                setClosedMessage(optRes.data.message || 'Pendaftaran penanggung jawab telah ditutup (Semua Mata Kuliah sudah memiliki PJ).')
+            } else {
+                setAvailableSchedules(optRes.data.availableSchedules || [])
+                setIsRegistrationClosed(false)
             }
+        } catch (err) {
+            console.error("Gagal mengambil opsi pendaftaran dari database:", err)
+            setFetchError(true)
+        } finally {
+            setLoadingOptions(false)
         }
+    }
 
+    useEffect(() => {
         fetchInitialData()
     }, [])
 
@@ -71,9 +78,30 @@ function Register() {
     const filteredByKelas = filteredBySemester.filter(s => s.kelas === formData.kelas)
     const uniqueCourseOptions = [...new Set(filteredByKelas.map(s => s.mata_kuliah))].filter(Boolean).sort()
 
-    // Form Change Handlers dengan Auto-Reset Bertingkat
+    // Form Change Handlers dengan Auto-Reset Bertingkat & Input Sanitization
     const handleChange = (e) => {
         const { name, value } = e.target
+
+        // 1. Sanitasi Nama Lengkap / Username: Hanya huruf dan spasi (tanpa angka / karakter khusus)
+        if (name === 'username') {
+            const filteredName = value.replace(/[^a-zA-Z\s]/g, '')
+            setFormData(prev => ({ ...prev, username: filteredName }))
+            return
+        }
+
+        // 2. Sanitasi No. HP: Hanya angka & maksimal 15 digit
+        if (name === 'no_hp') {
+            const filteredPhone = value.replace(/\D/g, '').slice(0, 15)
+            setFormData(prev => ({ ...prev, no_hp: filteredPhone }))
+            return
+        }
+
+        if (name === 'email') {
+            setEmailError('')
+            setError('')
+            setFormData(prev => ({ ...prev, email: value }))
+            return
+        }
 
         if (name === 'prodi') {
             setFormData(prev => ({
@@ -101,23 +129,71 @@ function Register() {
         }
     }
 
+    // Pengecekan Email Duplikat saat User selesai mengetik (onBlur)
+    const handleEmailBlur = async () => {
+        if (!formData.email || !formData.email.includes('@')) return
+        try {
+            setEmailChecking(true)
+            const res = await api.get(`/auth/check-email?email=${encodeURIComponent(formData.email.trim())}`)
+            if (res.data.exists) {
+                setEmailError('Email ini telah memiliki akun.')
+            } else {
+                setEmailError('')
+            }
+        } catch (err) {
+            console.error('Pengecekan email gagal:', err)
+        } finally {
+            setEmailChecking(false)
+        }
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         if (isRegistrationClosed) return
 
-        setLoading(true)
         setError('')
         setSuccess('')
+
+        // Validasi Frontend 1: Nama Lengkap / Username
+        const nameRegex = /^[a-zA-Z\s]+$/
+        if (!nameRegex.test(formData.username.trim())) {
+            setError('Nama Lengkap / Username hanya boleh berisi huruf dan spasi (tanpa angka atau karakter khusus).')
+            return
+        }
+
+        // Validasi Frontend 2: Check Email Duplikat dari State Blur
+        if (emailError) {
+            setError('Email ini telah memiliki akun.')
+            return
+        }
+
+        // Validasi Frontend 3: Password Minimal 8 Karakter
+        if (formData.password.length < 8) {
+            setError('Password minimal harus 8 karakter.')
+            return
+        }
+
+        // Validasi Frontend 4: No. HP (Harus 08... dan 10-15 digit)
+        const phoneRegex = /^08[0-9]{8,13}$/
+        if (!phoneRegex.test(formData.no_hp.trim())) {
+            setError('Nomor HP harus berawalan 08 dan terdiri dari 10 hingga 15 digit angka.')
+            return
+        }
+
+        setLoading(true)
 
         try {
             const response = await api.post('/auth/register', formData)
             setSuccess(response.data.message)
             setTimeout(() => {
-                navigate('/login')
-            }, 2000)
+                navigate('/verify-email', { state: { email: formData.email } })
+            }, 1500)
         } catch (err) {
             if (err.response && err.response.data.error) {
                 setError(err.response.data.error)
+                if (err.response.data.error.includes('Email ini telah memiliki akun')) {
+                    setEmailError('Email ini telah memiliki akun.')
+                }
             } else {
                 setError('Terjadi kesalahan jaringan/server.')
             }
@@ -143,6 +219,19 @@ function Register() {
                     <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
                         Memeriksa ketersediaan kuota pendaftaran...
                     </div>
+                ) : fetchError ? (
+                    <div style={{ textAlign: 'center', padding: '24px 16px' }}>
+                        <div style={{ fontSize: '36px', marginBottom: '12px' }}>⚠️</div>
+                        <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#0f172a', marginBottom: '8px' }}>
+                            Gagal Memuat Data Pendaftaran
+                        </h3>
+                        <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px' }}>
+                            Server backend baru saja di-restart atau sedang menyiapkan koneksi. Silakan muat ulang.
+                        </p>
+                        <button onClick={fetchInitialData} className="btn btn-primary" style={{ padding: '10px 20px' }}>
+                            🔄 Muat Ulang Opsi Pendaftaran
+                        </button>
+                    </div>
                 ) : isRegistrationClosed ? (
                     /* TAMPILAN KHUSUS: PENDAFTARAN DITUTUP (100% PULIH) */
                     <div style={{ textAlign: 'center', padding: '20px 10px' }}>
@@ -167,25 +256,95 @@ function Register() {
                 ) : (
                     /* FORM REGISTRASI DENGAN FULL SMART CASCADING FILTER */
                     <form onSubmit={handleSubmit}>
-                        {error && <div style={{ background: '#fee2e2', color: '#dc2626', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px' }}>{error}</div>}
+                        {error && (
+                            <div style={{
+                                background: '#fee2e2', color: '#dc2626', padding: '14px', borderRadius: '10px',
+                                marginBottom: '16px', fontSize: '14px', border: '1px solid #fca5a5',
+                                display: 'flex', flexDirection: 'column', gap: '8px'
+                            }}>
+                                <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    ⚠️ {error}
+                                </div>
+                                {error.includes('Email ini telah memiliki akun') && (
+                                    <div style={{ marginTop: '4px' }}>
+                                        <Link to="/login" className="btn btn-secondary" style={{
+                                            display: 'inline-block', padding: '6px 14px', fontSize: '13px',
+                                            textDecoration: 'none', background: '#dc2626', color: '#ffffff',
+                                            borderRadius: '6px', fontWeight: '600'
+                                        }}>
+                                            👉 Klik di sini untuk Login ke Akun Anda
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         {success && <div style={{ background: '#dcfce7', color: '#15803d', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px' }}>{success}</div>}
 
                         {/* Username */}
                         <div className="form-group" style={{ marginBottom: '16px' }}>
                             <label className="form-label">Username / Nama Lengkap</label>
-                            <input type="text" name="username" value={formData.username} onChange={handleChange} className="input-field" placeholder="Masukkan nama lengkap" required />
+                            <input type="text" name="username" value={formData.username} onChange={handleChange} className="input-field" placeholder="Masukkan nama lengkap (hanya huruf)" required />
+                            <small style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                                ℹ️ Hanya boleh huruf dan spasi (tanpa angka / karakter khusus).
+                            </small>
                         </div>
 
-                        {/* Email */}
+                        {/* Email dengan Real-Time Check */}
                         <div className="form-group" style={{ marginBottom: '16px' }}>
                             <label className="form-label">Email</label>
-                            <input type="email" name="email" value={formData.email} onChange={handleChange} className="input-field" placeholder="Masukkan email aktif" required />
+                            <input
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                onBlur={handleEmailBlur}
+                                className="input-field"
+                                placeholder="nama@student.walisongo.ac.id"
+                                style={{ borderColor: emailError ? '#dc2626' : undefined }}
+                                required
+                            />
+                            {emailChecking && (
+                                <small style={{ fontSize: '11px', color: '#3b82f6', marginTop: '4px', display: 'block' }}>
+                                    🔍 Memeriksa ketersediaan email...
+                                </small>
+                            )}
+                            {emailError && (
+                                <small style={{ fontSize: '12px', color: '#dc2626', marginTop: '4px', fontWeight: 'bold', display: 'block' }}>
+                                    ⚠️ {emailError} <Link to="/login" style={{ color: '#0284c7', textDecoration: 'underline' }}>Login di sini</Link>
+                                </small>
+                            )}
                         </div>
 
-                        {/* Password */}
+                        {/* Password dengan Toggle Mata */}
                         <div className="form-group" style={{ marginBottom: '16px' }}>
                             <label className="form-label">Password</label>
-                            <input type="password" name="password" value={formData.password} onChange={handleChange} className="input-field" placeholder="******" required />
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    className="input-field"
+                                    placeholder="Minimal 8 karakter"
+                                    required
+                                    style={{ paddingRight: '44px' }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    style={{
+                                        position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+                                        background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', color: '#64748b',
+                                        padding: '4px'
+                                    }}
+                                    title={showPassword ? "Sembunyikan Password" : "Tampilkan Password"}
+                                >
+                                    {showPassword ? '🙈' : '👁️'}
+                                </button>
+                            </div>
+                            <small style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                                ℹ️ Password minimal 8 karakter.
+                            </small>
                         </div>
 
                         {/* NIM & No. HP */}
@@ -196,7 +355,19 @@ function Register() {
                             </div>
                             <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
                                 <label className="form-label">No. HP (WhatsApp)</label>
-                                <input type="text" name="no_hp" value={formData.no_hp} onChange={handleChange} className="input-field" placeholder="08123456789" required />
+                                <input
+                                    type="text"
+                                    name="no_hp"
+                                    value={formData.no_hp}
+                                    onChange={handleChange}
+                                    className="input-field"
+                                    placeholder="08123456789"
+                                    maxLength={15}
+                                    required
+                                />
+                                <small style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                                    ℹ️ Harus berawalan 08 (10-15 digit angka).
+                                </small>
                             </div>
                         </div>
 
