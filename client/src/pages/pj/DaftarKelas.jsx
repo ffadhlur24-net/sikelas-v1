@@ -1,6 +1,8 @@
 import { useState, useEffect, useContext } from 'react'
 import { AuthContext } from '../../context/AuthContext'
 import api from '../../api/axios'
+import { supabaseClient } from '../../config/supabase'
+
 function DaftarKelas() {
   const { user } = useContext(AuthContext)
   const [activeFilter, setActiveFilter] = useState('semua')
@@ -23,38 +25,96 @@ function DaftarKelas() {
   const [conflictError, setConflictError] = useState('')
   const [daySchedulesForBooking, setDaySchedulesForBooking] = useState([])
   const [loadingDaySchedules, setLoadingDaySchedules] = useState(false)
+  const todayDefaultStr = new Date().toISOString().split('T')[0]
+  const [filterTanggal, setFilterTanggal] = useState(todayDefaultStr)
+  const [filterWaktuMulai, setFilterWaktuMulai] = useState('08:00')
+  const [filterSks, setFilterSks] = useState('2')
+
+  // STATE CASCADING LOCATION FILTER (Database Driven)
+  const [filterKampus, setFilterKampus] = useState('')
+  const [filterGedung, setFilterGedung] = useState('')
+  const [filterLantai, setFilterLantai] = useState('')
+  const [searchKeyword, setSearchKeyword] = useState('')
+
+  // 1. Opsi Kampus Dinamis dari Database
+  const kampusOptions = [...new Set((rooms || []).map(r => r.kampus).filter(Boolean))].sort()
+
+  // 2. Opsi Gedung Cascading berdasar Kampus terpilih
+  const availableGedungRooms = filterKampus ? rooms.filter(r => r.kampus === filterKampus) : rooms
+  const gedungOptions = [...new Set(availableGedungRooms.map(r => r.gedung).filter(Boolean))].sort()
+
+  // 3. Opsi Lantai Cascading berdasar Kampus & Gedung terpilih
+  const availableLantaiRooms = availableGedungRooms.filter(r => !filterGedung || r.gedung === filterGedung)
+  const lantaiOptions = [...new Set(availableLantaiRooms.map(r => r.lantai).filter(l => l !== null && l !== undefined))].sort((a, b) => a - b)
+
+  const handleKampusChange = (e) => {
+    setFilterKampus(e.target.value)
+    setFilterGedung('')
+    setFilterLantai('')
+  }
+
+  const handleGedungChange = (e) => {
+    setFilterGedung(e.target.value)
+    setFilterLantai('')
+  }
+
+  const resetLocationFilter = () => {
+    setFilterKampus('')
+    setFilterGedung('')
+    setFilterLantai('')
+    setSearchKeyword('')
+  }
+
   const [bookingForm, setBookingForm] = useState({
     mata_kuliah: '',
-    tanggal: new Date().toISOString().split('T')[0],
+    tanggal: todayDefaultStr,
     waktu_mulai: '08:00',
     waktu_selesai: '09:40'
   })
-  // Fungsi mengambil data ruangan dari backend
-  const fetchRooms = async () => {
+  // Fungsi mengambil data ruangan dari backend berdasarkan slot waktu target
+  const fetchRooms = async (tgl = filterTanggal, wkt = filterWaktuMulai, sksVal = filterSks, showSpinner = true) => {
     try {
-      setLoading(true)
-      const res = await api.get('/rooms')
+      if (showSpinner) setLoading(true)
+      const res = await api.get('/rooms', {
+        params: {
+          tanggal: tgl,
+          waktu_mulai: wkt,
+          sks: sksVal
+        }
+      })
       setRooms(res.data.rooms || [])
     } catch (err) {
       console.error('Gagal memuat ruangan:', err)
     } finally {
-      setLoading(false)
+      if (showSpinner) setLoading(false)
     }
   }
-  // AUTO-REFRESH & JAM DIGITAL
+
+  // JAM DIGITAL & SUPABASE REALTIME WEBSOCKET LISTENER (Pendekatan 1)
   useEffect(() => {
-    fetchRooms()
+    fetchRooms(filterTanggal, filterWaktuMulai, filterSks, true)
     const clockTimer = setInterval(() => {
       setCurrentTime(new Date())
     }, 1000)
-    const refreshTimer = setInterval(() => {
-      fetchRooms()
-    }, 60000)
+
+    // ⚡ Menghubungkan WebSocket Listener Supabase Realtime
+    const channel = supabaseClient
+      .channel('realtime-sikelas-rooms')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, () => {
+        console.log('⚡ [Realtime] Terdeteksi perubahan reservasi di Supabase. Memperbarui status ruangan...')
+        fetchRooms(filterTanggal, filterWaktuMulai, filterSks, false)
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, () => {
+        console.log('⚡ [Realtime] Terdeteksi perubahan laporan di Supabase. Memperbarui status ruangan...')
+        fetchRooms(filterTanggal, filterWaktuMulai, filterSks, false)
+      })
+      .subscribe()
+
     return () => {
       clearInterval(clockTimer)
-      clearInterval(refreshTimer)
+      supabaseClient.removeChannel(channel)
     }
-  }, [])
+  }, [filterTanggal, filterWaktuMulai, filterSks])
   // Buka Modal Timeline berdasarkan Hari
   const handleOpenTimeline = async (room, hari = selectedHari) => {
     setSelectedRoom(room)
@@ -140,20 +200,17 @@ function DaftarKelas() {
     setBookingRoom(room)
     setBookingMessage({ text: '', type: '' })
     setConflictError('')
-    const initialStart = '07:00'
-    const now = new Date()
-    const yyyy = now.getFullYear()
-    const mm = String(now.getMonth() + 1).padStart(2, '0')
-    const dd = String(now.getDate()).padStart(2, '0')
-    const todayStr = `${yyyy}-${mm}-${dd}`
-    const calculatedEnd = calculateEndTime(initialStart, sks)
+    setSks(filterSks)
+    const initialStart = filterWaktuMulai
+    const targetDate = filterTanggal
+    const calculatedEnd = calculateEndTime(initialStart, filterSks)
     setBookingForm({
       mata_kuliah: user?.mata_kuliah || '',
-      tanggal: todayStr,
+      tanggal: targetDate,
       waktu_mulai: initialStart,
       waktu_selesai: calculatedEnd
     })
-    fetchSchedulesForDate(room.id, todayStr, initialStart, calculatedEnd)
+    fetchSchedulesForDate(room.id, targetDate, initialStart, calculatedEnd)
   }
   const fetchSchedulesForDate = async (roomId, dateStr, startVal, endVal) => {
     try {
@@ -218,15 +275,34 @@ function DaftarKelas() {
       setActionLoading(false)
     }
   }
-  const filteredRooms = activeFilter === 'semua' ? rooms
-    : rooms.filter(r => r.status === activeFilter)
+  const filteredRooms = (rooms || []).filter(room => {
+    // 1. Filter Status Tab (Semua / Tersedia / Terpakai)
+    if (activeFilter === 'tersedia' && !room.slot_available) return false
+    if (activeFilter === 'terpakai' && room.slot_available) return false
+
+    // 2. Filter Lokasi Berjenjang (Kampus -> Gedung -> Lantai)
+    if (filterKampus && room.kampus !== filterKampus) return false
+    if (filterGedung && room.gedung !== filterGedung) return false
+    if (filterLantai && String(room.lantai) !== String(filterLantai)) return false
+
+    // 3. Search Keyword (Nama Ruangan / Gedung)
+    if (searchKeyword.trim() !== '') {
+      const kw = searchKeyword.trim().toLowerCase()
+      const namaMatch = (room.nama || '').toLowerCase().includes(kw)
+      const gedungMatch = (room.gedung || '').toLowerCase().includes(kw)
+      if (!namaMatch && !gedungMatch) return false
+    }
+
+    return true
+  })
+
   return (
     <div className="animate-fade-in">
       {/* HEADER + JAM DIGITAL */}
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 className="page-title">Daftar Kelas & Ketersediaan Ruangan</h1>
-          <p className="page-subtitle">Pantau status ruangan fisik secara real-time dan lihat jadwal pemakaian harian.</p>
+          <p className="page-subtitle">Cari slot waktu peminjaman spesifik dan pantau ketersediaan ruangan secara real-time.</p>
         </div>
         <div style={{ textAlign: 'right', background: '#f8fafc', padding: '10px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
           <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '2px' }}>
@@ -237,52 +313,178 @@ function DaftarKelas() {
           </div>
         </div>
       </div>
-      {/* FILTER TABS STATUS RUANG */}
-      <div className="tabs-container" style={{ marginBottom: '20px' }}>
-        <button className={`tab-btn ${activeFilter === 'semua' ? 'active' : ''}`} onClick={() => setActiveFilter('semua')}>Semua ({rooms.length})</button>
-        <button className={`tab-btn ${activeFilter === 'tersedia' ? 'active' : ''}`} onClick={() => setActiveFilter('tersedia')}>Tersedia ({rooms.filter(r => r.status === 'tersedia').length})</button>
-        <button className={`tab-btn ${activeFilter === 'sedang_digunakan' ? 'active' : ''}`} onClick={() => setActiveFilter('sedang_digunakan')}>Sedang Kuliah ({rooms.filter(r => r.status === 'sedang_digunakan').length})</button>
-        <button className={`tab-btn ${activeFilter === 'dipesan' ? 'active' : ''}`} onClick={() => setActiveFilter('dipesan')}>Dipesan ({rooms.filter(r => r.status === 'dipesan').length})</button>
-        <button className={`tab-btn ${activeFilter === 'terkunci' ? 'active' : ''}`} onClick={() => setActiveFilter('terkunci')}>Terkunci ({rooms.filter(r => r.status === 'terkunci').length})</button>
+
+      {/* PANEL FILTER LOKASI BERJENJANG (CASCADING DYNAMIC LOCATION FILTER) */}
+      <div className="card-flat" style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '16px 20px', borderRadius: '12px', marginBottom: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            🏢 Filter Lokasi Ruangan (Kampus ➔ Gedung ➔ Lantai)
+          </h3>
+          {(filterKampus || filterGedung || filterLantai || searchKeyword) && (
+            <button
+              type="button"
+              onClick={resetLocationFilter}
+              style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', fontSize: '12px', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}
+            >
+              🔄 Reset Filter Lokasi
+            </button>
+          )}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px' }}>
+          {/* Dropdown 1: Kampus */}
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>1. Kampus</label>
+            <select className="input-field" value={filterKampus} onChange={handleKampusChange} style={{ background: '#f8fafc' }}>
+              <option value="">-- Semua Kampus ({kampusOptions.length}) --</option>
+              {kampusOptions.map(k => (
+                <option key={k} value={k}>{k}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Dropdown 2: Gedung (Cascading) */}
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>2. Gedung</label>
+            <select className="input-field" value={filterGedung} onChange={handleGedungChange} style={{ background: '#f8fafc' }}>
+              <option value="">-- Semua Gedung ({gedungOptions.length}) --</option>
+              {gedungOptions.map(g => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Dropdown 3: Lantai (Cascading) */}
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>3. Lantai</label>
+            <select className="input-field" value={filterLantai} onChange={(e) => setFilterLantai(e.target.value)} style={{ background: '#f8fafc' }}>
+              <option value="">-- Semua Lantai ({lantaiOptions.length}) --</option>
+              {lantaiOptions.map(l => (
+                <option key={l} value={l}>Lantai {l}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Input 4: Live Search Nama Ruangan */}
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>🔍 Cari Nama Ruangan</label>
+            <input
+              type="text"
+              className="input-field"
+              placeholder="Ketik nama (mis: 201 / FST)..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              style={{ background: '#f8fafc' }}
+            />
+          </div>
+        </div>
       </div>
+
+      {/* PANEL FILTER SLOT WAKTU (TIME-SLOT DRIVEN AVAILABILITY) */}
+      <div className="card-flat" style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '16px 20px', borderRadius: '12px', marginBottom: '24px' }}>
+        <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: '0 0 12px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          ⏰ Slot Waktu Peminjaman Target
+        </h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', alignItems: 'end' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>📅 Tanggal Peminjaman</label>
+            <input
+              type="date"
+              className="input-field"
+              value={filterTanggal}
+              onChange={(e) => setFilterTanggal(e.target.value)}
+              style={{ background: '#fff' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>⏰ Jam Mulai Peminjaman</label>
+            <input
+              type="time"
+              className="input-field"
+              value={filterWaktuMulai}
+              onChange={(e) => setFilterWaktuMulai(e.target.value)}
+              style={{ background: '#fff' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>⏱️ Jumlah SKS (1 SKS = 50 Mnt)</label>
+            <select
+              className="input-field"
+              value={filterSks}
+              onChange={(e) => setFilterSks(e.target.value)}
+              style={{ background: '#fff' }}
+            >
+              <option value="1">1 SKS (50 Menit)</option>
+              <option value="2">2 SKS (100 Menit / 1 Jam 40 Mnt)</option>
+              <option value="3">3 SKS (150 Menit / 2 Jam 30 Mnt)</option>
+              <option value="4">4 SKS (200 Menit / 3 Jam 20 Mnt)</option>
+            </select>
+          </div>
+          <button
+            className="btn btn-primary"
+            onClick={() => fetchRooms(filterTanggal, filterWaktuMulai, filterSks)}
+            style={{ height: '42px', width: '100%', background: '#2563eb' }}
+          >
+            🔎 Cari Slot Ketersediaan
+          </button>
+        </div>
+      </div>
+
+      {/* FILTER TABS STATUS RUANG & STATISTIK FINISHED */}
+      <div className="tabs-container" style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className={`tab-btn ${activeFilter === 'semua' ? 'active' : ''}`} onClick={() => setActiveFilter('semua')}>Semua ({filteredRooms.length})</button>
+          <button className={`tab-btn ${activeFilter === 'tersedia' ? 'active' : ''}`} onClick={() => setActiveFilter('tersedia')}>Tersedia Slot Ini ({filteredRooms.filter(r => r.slot_available).length})</button>
+          <button className={`tab-btn ${activeFilter === 'terpakai' ? 'active' : ''}`} onClick={() => setActiveFilter('terpakai')}>Terpakai/Terkunci ({filteredRooms.filter(r => !r.slot_available).length})</button>
+        </div>
+        <div style={{ fontSize: '13px', color: '#64748b', fontWeight: '500' }}>
+          Menampilkan <b>{filteredRooms.length}</b> dari <b>{rooms.length}</b> total ruangan
+        </div>
+      </div>
+
       {/* DAFTAR KARTU RUANGAN */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Memuat ketersediaan ruangan...</div>
       ) : filteredRooms.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-          Tidak ada ruangan dengan status "{activeFilter}".
+          Tidak ada ruangan untuk kriteria filter ini.
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
           {filteredRooms.map(room => (
-            <div key={room.id} className="card-flat" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div key={room.id} className="card-flat" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: room.slot_available ? '1px solid #86efac' : '1px solid #fca5a5' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                   <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Ruang {room.nama}</h3>
-                  {room.status === 'tersedia' && <span className="badge badge-success">Tersedia (Kosong)</span>}
-                  {room.status === 'sedang_digunakan' && <span className="badge badge-error">Sedang Kuliah</span>}
-                  {room.status === 'dipesan' && <span className="badge badge-warning">Dipesan Insidental</span>}
-                  {room.status === 'terkunci' && <span className="badge badge-error">Terkunci Admin</span>}
-                  {room.status === 'perbaikan' && <span className="badge badge-warning">Perbaikan</span>}
+                  {room.slot_available ? (
+                    <span className="badge badge-success" style={{ background: '#059669', color: 'white' }}>🟢 Tersedia Slot Ini</span>
+                  ) : (
+                    <span className="badge badge-error" style={{ background: '#dc2626', color: 'white' }}>🔴 Terpakai / Bentrok</span>
+                  )}
                 </div>
-                <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '8px' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '4px' }}>
                   📍 {room.kampus} - {room.gedung} (Lantai {room.lantai})
                 </p>
-                <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '12px' }}>
                   🪑 Kapasitas: <b>{room.kapasitas} Kursi</b>
                 </p>
+
+                {room.conflict_reason && (
+                  <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '8px 10px', borderRadius: '6px', fontSize: '12px', marginBottom: '12px', lineHeight: '1.4' }}>
+                    ⚠️ {room.conflict_reason}
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => handleOpenTimeline(room)}>
                   📅 Lihat Jadwal
                 </button>
-                {room.status === 'tersedia' ? (
-                  <button className="btn btn-primary btn-sm" style={{ flex: 1 }} onClick={() => handleOpenBookingModal(room)}>
+                {room.slot_available ? (
+                  <button className="btn btn-primary btn-sm" style={{ flex: 1, background: '#2563eb' }} onClick={() => handleOpenBookingModal(room)}>
                     📌 Pesan Ruang
                   </button>
                 ) : (
-                  <button className="btn btn-primary btn-sm" style={{ flex: 1 }} disabled>
-                    Tidak Tersedia
+                  <button className="btn btn-secondary btn-sm" style={{ flex: 1, cursor: 'not-allowed', opacity: 0.6 }} disabled title={room.conflict_reason}>
+                    Terpakai di Slot Ini
                   </button>
                 )}
               </div>

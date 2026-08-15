@@ -13,7 +13,7 @@ router.get('/', verifyToken, async (req, res) => {
     try {
         let query = supabase
             .from('reservations')
-            .select('*, rooms(nama, gedung), users(username, nim_nip, prodi, kelas)')
+            .select('*, rooms(nama, gedung), users(username, nim_nip, prodi, kelas, no_hp)')
             .order('created_at', { ascending: false })
 
 
@@ -60,10 +60,19 @@ router.post('/', verifyToken, async (req, res) => {
         const namaHari = hariArray[dateObj.getDay()]
 
         // 2. CEK BENTROK DENGAN JADWAL REGULER (SIAKAD)
-        // Rumus Overlap: (Waktu Mulai Lama < Waktu Selesai Baru) AND (Waktu Selesai Lama > Waktu Mulai Baru)
+        // Ambil laporan kelas kosong yang sudah disetujui pada tanggal peminjaman ini
+        const { data: approvedReports } = await supabase
+            .from('reports')
+            .select('mata_kuliah')
+            .eq('room_id', room_id)
+            .eq('tanggal', tanggal)
+            .in('status', ['approved', 'verified'])
+
+        const cancelledSubjects = new Set((approvedReports || []).map(r => r.mata_kuliah))
+
         const { data: scheduleConflicts, error: scheduleError } = await supabase
             .from('schedules')
-            .select('mata_kuliah')
+            .select('mata_kuliah, waktu_mulai, waktu_selesai')
             .eq('room_id', room_id)
             .eq('hari', namaHari)
             .lt('waktu_mulai', waktu_selesai)
@@ -71,10 +80,14 @@ router.post('/', verifyToken, async (req, res) => {
 
         if (scheduleError) throw scheduleError
 
-        // Jika ada bentrok dengan jadwal reguler, langsung tolak!
-        if (scheduleConflicts && scheduleConflicts.length > 0) {
+        // Filter bentrok yang BELUM dilaporkan kosong pada tanggal tersebut
+        const validConflicts = (scheduleConflicts || []).filter(sched => !cancelledSubjects.has(sched.mata_kuliah))
+
+        // Jika ada bentrok dengan jadwal reguler yang masih aktif, langsung tolak!
+        if (validConflicts.length > 0) {
+            const conflict = validConflicts[0]
             return res.status(400).json({
-                error: `Gagal: Ruangan sedang digunakan untuk jadwal kuliah reguler (${scheduleConflicts[0].mata_kuliah}).`
+                error: `❌ Peminjaman Ditolak! Durasi peminjaman Anda (selesai jam ${waktu_selesai}) menabrak Jadwal SIAKAD di ruangan ini: "${conflict.mata_kuliah}" (Jam ${conflict.waktu_mulai.substring(0, 5)} - ${conflict.waktu_selesai.substring(0, 5)} WIB). Silakan kurangi SKS atau pilih ruangan lain.`
             })
         }
 
@@ -82,7 +95,7 @@ router.post('/', verifyToken, async (req, res) => {
         // Cek apakah ada reservasi yang sudah di-approve di ruangan, tanggal, dan jam yang tumpang tindih
         const { data: reservationConflicts, error: reservationError } = await supabase
             .from('reservations')
-            .select('id')
+            .select('id, waktu_mulai')
             .eq('room_id', room_id)
             .eq('tanggal', tanggal)
             .eq('status', 'approved')
@@ -91,8 +104,22 @@ router.post('/', verifyToken, async (req, res) => {
 
         if (reservationError) throw reservationError
 
-        // Jika ada orang yang keduluan meminjam (selisih 1 menit sekalipun), langsung tolak!
-        if (reservationConflicts && reservationConflicts.length > 0) {
+        const currentMins = now.getHours() * 60 + now.getMinutes()
+
+        // Filter reservasi yang MASIH VALID (abaikan yang >15 menit belum check-in hari ini)
+        const activeResConflicts = (reservationConflicts || []).filter(res => {
+            if (tanggal === todayStr) {
+                const [sH, sM] = res.waktu_mulai.split(':').map(Number)
+                const startMins = sH * 60 + sM
+                if (currentMins > startMins + 15) {
+                    return false // Hangus/expired, abaikan dari bentrok!
+                }
+            }
+            return true
+        })
+
+        // Jika ada orang yang keduluan meminjam (dan belum kadaluwarsa), langsung tolak!
+        if (activeResConflicts.length > 0) {
             return res.status(400).json({
                 error: 'Gagal: Ruangan sudah direservasi oleh PJ lain pada jam tersebut.'
             })
@@ -221,7 +248,33 @@ router.patch('/:id/checkin', verifyToken, async (req, res) => {
             return res.status(404).json({ error: 'Reservasi tidak ditemukan atau belum disetujui.' });
         }
 
-        // Update is_cheked-in menjadi true
+        // ⏱️ PROTEKSI REAL-TIME: CEK TOLERANSI WAKTU CHECK-IN (MAKSIMAL 15 MENIT DARI WAKTU MULAI)
+        const now = new Date()
+        const todayStr = now.toISOString().split('T')[0]
+        const currentHour = String(now.getHours()).padStart(2, '0')
+        const currentMinute = String(now.getMinutes()).padStart(2, '0')
+        const currentTimeStr = `${currentHour}:${currentMinute}`
+
+        const [startH, startM] = reservation.waktu_mulai.split(':').map(Number)
+        const expiryDateObj = new Date(2000, 0, 1, startH, startM + 15)
+        const expiryTimeStr = expiryDateObj.toTimeString().substring(0, 5)
+
+        const isDateExpired = reservation.tanggal < todayStr
+        const isTimeExpired = (reservation.tanggal === todayStr && currentTimeStr > expiryTimeStr)
+
+        if (isDateExpired || isTimeExpired) {
+            // Otomatis ubah status reservasi gantung menjadi 'expired'
+            await supabase
+                .from('reservations')
+                .update({ status: 'expired' })
+                .eq('id', id)
+
+            return res.status(400).json({
+                error: `❌ Check-In Gagal! Batas waktu check-in telah kadaluwarsa (>15 menit dari jam mulai ${reservation.waktu_mulai.substring(0, 5)} WIB). Reservasi otomatis dibatalkan.`
+            })
+        }
+
+        // Update is_checked_in menjadi true
         const { data, error } = await supabase
             .from('reservations')
             .update({ is_checked_in: true })

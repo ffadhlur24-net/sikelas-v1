@@ -133,6 +133,9 @@ function HalamanLogin() {
         <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', color: 'var(--text-muted)' }}>
           Belum punya akun PJ? <Link to="/register" style={{ color: 'var(--color-primary)', fontWeight: '600' }}>Daftar PJ di sini</Link>
         </div>
+        <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '13px' }}>
+          📩 Belum tuntas verifikasi OTP? <Link to="/verify-email" style={{ color: '#2563eb', fontWeight: '600' }}>Lanjutkan Verifikasi Di Sini</Link>
+        </div>
         <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '14px' }}>
           <Link to="/" style={{ color: '#64748b', textDecoration: 'none', fontWeight: '500' }}>
             ⬅️ Kembali ke Beranda

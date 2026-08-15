@@ -50,36 +50,45 @@ router.post('/register', async (req, res) => {
             })
         }
 
-        // 2. Cek username Duplikat
-        const { data: existingUser } = await supabase
+        // 2. Cek NIM / NIP Duplikat
+        const { data: existingNim } = await supabase
             .from('users')
-            .select('id')
-            .eq('username', username)
+            .select('id, status, otp_expires_at')
+            .eq('nim_nip', nim_nip.trim())
             .maybeSingle()
 
-        if (existingUser) {
-            return res.status(409).json({
-                error: "Username sudah terdaftar, pilih username yang lain."
-            })
+        if (existingNim) {
+            const now = new Date()
+            const isPending = ['pending', 'pending_email_verification'].includes(existingNim.status)
+            const isPendingValid = isPending && existingNim.otp_expires_at && new Date(existingNim.otp_expires_at) > now
+            if (existingNim.status === 'verified' || isPendingValid) {
+                return res.status(409).json({ error: "NIM / NIP ini sudah terdaftar." })
+            }
         }
 
-        // 2b. Cek Email Duplikat
+        // 2b. Cek Email Duplikat (Auto-Overwrite jika akun pending)
         const { data: existingEmail } = await supabase
             .from('users')
-            .select('id')
+            .select('id, status')
             .eq('email', email.trim().toLowerCase())
             .maybeSingle()
 
         if (existingEmail) {
-            return res.status(409).json({
-                error: "Email ini telah memiliki akun."
-            })
+            const isPending = ['pending', 'pending_email_verification'].includes(existingEmail.status)
+            if (isPending) {
+                console.log(`🧹 [Register Overwrite] Menghapus akun pending email ${email}...`)
+                await supabase.from('users').delete().eq('id', existingEmail.id)
+            } else {
+                return res.status(409).json({
+                    error: "Email ini telah memiliki akun aktif."
+                })
+            }
         }
 
-        // 3. Cek double PJ
+        // 3. Cek double PJ & Pembersihan Instan Akun Gantung Expired
         const { data: existingPJ } = await supabase
             .from('users')
-            .select('id')
+            .select('id, username, status, otp_expires_at, email')
             .eq('role', 'pj')
             .eq('prodi', prodi)
             .eq('mata_kuliah', mata_kuliah)
@@ -87,10 +96,20 @@ router.post('/register', async (req, res) => {
             .maybeSingle()
 
         if (existingPJ) {
-            console.log(`❌ [REGISTER FAILED]: Double PJ untuk ${mata_kuliah} (${prodi}) Kelas ${kelas}`)
-            return res.status(400).json({
-                error: `Pendaftaran Ditolak: Mata kuliah ${mata_kuliah} (${prodi}) Kelas ${kelas} sudah memiliki Penanggung Jawab!`
-            })
+            const isOtpExpired = existingPJ.otp_expires_at && new Date() > new Date(existingPJ.otp_expires_at)
+            const isSameUser = existingPJ.email === email.trim().toLowerCase()
+            const isPending = ['pending', 'pending_email_verification'].includes(existingPJ.status)
+
+            // Pembersihan Instan: Jika akun lama 'pending' DAN (OTP expired ATAU pendaftar yang sama mendaftar ulang), hapus akun gantung lama tersebut!
+            if (isPending && (isOtpExpired || isSameUser)) {
+                console.log(`🧹 [Register Instant Cleanup] Menghapus akun gantung pending (ID: ${existingPJ.id}, User: ${existingPJ.username}) untuk mengosongkan matkul ${mata_kuliah}.`)
+                await supabase.from('users').delete().eq('id', existingPJ.id)
+            } else {
+                console.log(`❌ [REGISTER FAILED]: Double PJ untuk ${mata_kuliah} (${prodi}) Kelas ${kelas}`)
+                return res.status(400).json({
+                    error: `Pendaftaran Ditolak: Mata kuliah ${mata_kuliah} (${prodi}) Kelas ${kelas} sedang dalam proses verifikasi OTP oleh calon PJ lain (${existingPJ.username}, berlaku 15 menit).`
+                })
+            }
         }
 
         // 4. Hash password (enkripsi)
@@ -416,17 +435,23 @@ router.get('/available-courses', async (req, res) => {
 
         const { data: tokenPjs, error: userError } = await supabase
             .from('users')
-            .select('mata_kuliah')
+            .select('mata_kuliah, status, otp_expires_at')
             .eq('role', 'pj')
             .eq('prodi', prodi)
             .eq('kelas', kelas)
 
         if (userError) throw userError;
 
-        const tokenCourses = new Set((tokenPjs || []).map(u => u.mata_kuliah));
+        const now = new Date()
+        // Mata kuliah dianggap TERISI hanya jika PJ 'verified' ATAU 'pending' yang OTP-nya MASIH VALID (<15 menit)
+        const takenCourses = new Set(
+            (tokenPjs || [])
+                .filter(u => u.status === 'verified' || (['pending', 'pending_email_verification'].includes(u.status) && u.otp_expires_at && new Date(u.otp_expires_at) > now))
+                .map(u => u.mata_kuliah)
+        )
 
-        // FILTER: Hanya mengambil mata kuliah yang belum memiliki PJ
-        const availableCourses = allCourses.filter(course => !tokenCourses.has(course))
+        // FILTER: Hanya mengambil mata kuliah yang belum memiliki PJ aktif (atau yang OTP pendingnya sudah kadaluwarsa)
+        const availableCourses = allCourses.filter(course => !takenCourses.has(course))
 
         res.json({ courses: availableCourses })
     } catch (error) {
@@ -446,18 +471,67 @@ router.get('/check-email', async (req, res) => {
 
         const { data: existingEmail } = await supabase
             .from('users')
-            .select('id')
+            .select('id, status, otp_expires_at')
             .eq('email', email.trim().toLowerCase())
             .maybeSingle()
 
         if (existingEmail) {
-            return res.json({ exists: true, message: 'Email ini telah memiliki akun.' })
+            if (existingEmail.status === 'verified') {
+                return res.json({ exists: true, isVerified: true, message: 'Email ini telah memiliki akun aktif.' })
+            }
+            // Jika status === 'pending', email dianggap tersedia untuk ditimpa jika registrasi ulang
+            return res.json({ exists: false, isPending: true, message: 'Email tersedia.' })
         }
 
         return res.json({ exists: false, message: 'Email tersedia.' })
     } catch (error) {
         console.error('Check email error:', error)
         res.status(500).json({ error: 'Gagal memeriksa email.' })
+    }
+})
+
+// POST /api/auth/resume-otp - Melanjutkan verifikasi OTP yang belum kadaluwarsa
+router.post('/resume-otp', async (req, res) => {
+    try {
+        const { email } = req.body
+        if (!email) return res.status(400).json({ error: 'Email wajib diisi.' })
+
+        const { data: user } = await supabase
+            .from('users')
+            .select('id, username, email, status, otp_expires_at, mata_kuliah, prodi, kelas')
+            .eq('email', email.trim().toLowerCase())
+            .maybeSingle()
+
+        if (!user) {
+            return res.status(404).json({ error: 'Pendaftaran dengan email ini tidak ditemukan. Silakan mendaftar.' })
+        }
+
+        if (user.status === 'verified') {
+            return res.status(400).json({ error: 'Akun Anda sudah terverifikasi resmi. Silakan Login.' })
+        }
+
+        const now = new Date()
+        const isExpired = !user.otp_expires_at || now > new Date(user.otp_expires_at)
+
+        if (isExpired) {
+            return res.status(400).json({ error: 'Waktu verifikasi OTP Anda telah kadaluwarsa (>15 menit). Silakan lakukan pendaftaran ulang.' })
+        }
+
+        res.json({
+            message: 'Verifikasi OTP masih berlaku.',
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                mata_kuliah: user.mata_kuliah,
+                prodi: user.prodi,
+                kelas: user.kelas,
+                otp_expires_at: user.otp_expires_at
+            }
+        })
+    } catch (error) {
+        console.error('Resume OTP error:', error)
+        res.status(500).json({ error: 'Gagal melanjutkan verifikasi OTP.' })
     }
 })
 

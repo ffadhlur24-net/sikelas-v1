@@ -112,6 +112,25 @@ function ProfilPJ() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
   }
 
+  const isExpiredCheck = (tanggal, waktuMulai) => {
+    if (!tanggal || !waktuMulai) return false
+    const now = new Date()
+    const todayStr = now.toISOString().split('T')[0]
+    if (tanggal < todayStr) return true
+    if (tanggal === todayStr) {
+      const currentHour = String(now.getHours()).padStart(2, '0')
+      const currentMinute = String(now.getMinutes()).padStart(2, '0')
+      const currentTimeStr = `${currentHour}:${currentMinute}`
+
+      const [startH, startM] = waktuMulai.split(':').map(Number)
+      const expiryDateObj = new Date(2000, 0, 1, startH, startM + 15)
+      const expiryTimeStr = expiryDateObj.toTimeString().substring(0, 5)
+
+      return currentTimeStr > expiryTimeStr
+    }
+    return false
+  }
+
   const handleCheckIn = async (id) => {
     try {
       await api.patch(`/reservations/${id}/checkin`)
@@ -119,6 +138,7 @@ function ProfilPJ() {
       fetchReservations()
     } catch (error) {
       alert(error.response?.data?.error || 'Gagal check-in')
+      fetchReservations()
     }
   }
 
@@ -217,7 +237,13 @@ function ProfilPJ() {
                       </div>
                     )}
                     {res.status === 'expired' && <span className="badge badge-error">Hangus (Ghosting)</span>}
-                    {res.status === 'approved' && !res.is_checked_in && <span className="badge badge-success">Disetujui (Belum Check-In)</span>}
+                    {res.status === 'approved' && !res.is_checked_in && (
+                      isExpiredCheck(res.tanggal, res.waktu_mulai) ? (
+                        <span className="badge badge-error" style={{ background: '#ef4444', color: 'white' }}>Kadaluwarsa (&gt;15 Menit)</span>
+                      ) : (
+                        <span className="badge badge-success">Disetujui (Belum Check-In)</span>
+                      )
+                    )}
                     {res.status === 'approved' && res.is_checked_in && <span className="badge badge-success" style={{ background: '#10b981', color: 'white' }}>Sudah Check-In</span>}
                   </div>
                   <p style={{ fontSize: '14px', color: '#64748b' }}>
@@ -225,8 +251,8 @@ function ProfilPJ() {
                     Tanggal: {res.tanggal} | Waktu: {res.waktu_mulai} - {res.waktu_selesai}
                   </p>
 
-                  {/* TOMBOL CHECK IN MUNCUL JIKA STATUS APPROVED & BELUM CHECK IN */}
-                  {res.status === 'approved' && !res.is_checked_in && (
+                  {/* TOMBOL CHECK IN MUNCUL HANYA JIKA APPROVED & BELUM EXPIRED */}
+                  {res.status === 'approved' && !res.is_checked_in && !isExpiredCheck(res.tanggal, res.waktu_mulai) && (
                     <button
                       onClick={() => handleCheckIn(res.id)}
                       className="btn btn-primary"

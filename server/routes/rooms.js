@@ -8,10 +8,9 @@ import { verifyToken, adminOnly } from '../middleware/auth.js'
 
 const router = Router()
 
-//GET /api/rooms - Ambil semua ruangan (harus login)
+//GET /api/rooms - Ambil semua ruangan + Ketersediaan Spesifik Slot Waktu
 router.get('/', async (req, res) => {
     try {
-        // 1. Ambil semua data ruang dari database
         const { data: rooms, error: roomsError } = await supabase
             .from('rooms')
             .select('*')
@@ -19,63 +18,154 @@ router.get('/', async (req, res) => {
 
         if (roomsError) throw roomsError
 
-        // 2. TENTUKAN WAKTU KESARANG
-        const now = new Date();
-        const currentTime = now.toTimeString().split(' ')[0];         // format waktu HH:MM:SS
-        const yyyy = now.getFullYear();
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const dd = String(now.getDate()).padStart(2, '0');
-        const currentDate = `${yyyy}-${mm}-${dd}`;
-        const hariArray = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']        // Terjemahkan hari kedalam bahasa indonesia
-        const currentHari = hariArray[now.getDay()]
+        // Ambil query parameter filter slot waktu (jika dikirim oleh PJ)
+        const { tanggal, waktu_mulai, sks } = req.query
 
-        // 3. CARI JADWAL SIAKAD YANG SEDANG BERJALAN
+        const now = new Date()
+        const yyyy = now.getFullYear()
+        const mm = String(now.getMonth() + 1).padStart(2, '0')
+        const dd = String(now.getDate()).padStart(2, '0')
+        const todayStr = `${yyyy}-${mm}-${dd}`
+        const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+
+        // Tanggal target pencarian (default: hari ini)
+        const targetDate = tanggal || todayStr
+
+        // Hitung jam mulai & jam selesai target
+        let targetStart = waktu_mulai || currentTimeStr
+        if (targetStart.length === 5) targetStart = `${targetStart}:00`
+
+        const sksCount = parseInt(sks, 10) || 2
+        const totalMinutes = sksCount * 50
+        const [startH, startM] = targetStart.split(':').map(Number)
+        const endDateObj = new Date(2000, 0, 1, startH, startM + totalMinutes)
+        const targetEnd = endDateObj.toTimeString().substring(0, 5) + ':00'
+
+        // Dapatkan nama hari untuk tanggal target (Senin, Selasa, dll)
+        const hariArray = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+        const targetDateObj = new Date(targetDate + 'T00:00:00')
+        const targetHari = hariArray[targetDateObj.getDay()]
+
+        // 1. CARI JADWAL SIAKAD REGULER PADA SLOT TANGGAL & JAM TARGET
         const { data: activeSchedules } = await supabase
             .from('schedules')
-            .select('room_id')
-            .eq('hari', currentHari)
-            .lte('waktu_mulai', currentTime)
-            .gte('waktu_selesai', currentTime)
+            .select('room_id, mata_kuliah, waktu_mulai, waktu_selesai')
+            .eq('hari', targetHari)
+            .lt('waktu_mulai', targetEnd)
+            .gt('waktu_selesai', targetStart)
 
+        // Cari laporan kelas kosong yang sudah di-approve pada tanggal tersebut
         const { data: approvedReports } = await supabase
             .from('reports')
-            .select('room_id', 'mata_kuliah')
-            .eq('tanggal', currentDate)
+            .select('room_id')
+            .eq('tanggal', targetDate)
             .in('status', ['approved', 'verified'])
 
-        const cancelledroomIds = new Set((approvedReports || []).map(rep => rep.room_id))
-        const validScheduledRoomIds = new Set((activeSchedules || []).filter(sched => !cancelledroomIds.has(sched.room_id)).map(sched => sched.room_id))
+        const cancelledRoomIds = new Set((approvedReports || []).map(rep => rep.room_id))
 
-        // 4. CARI RESERVASI INSIDENTAL YANG SEDANG BERJALAN SAAT INI
+        // Peta ruangan bentrok jadwal SIAKAD
+        const scheduleConflictMap = new Map()
+        if (activeSchedules) {
+            activeSchedules.forEach(sched => {
+                if (!cancelledRoomIds.has(sched.room_id)) {
+                    scheduleConflictMap.set(sched.room_id, sched)
+                }
+            })
+        }
+
+        // 2. CARI RESERVASI INSIDENTAL APPROVED PADA SLOT TANGGAL & JAM TARGET
         const { data: activeReservations } = await supabase
             .from('reservations')
-            .select('room_id')
-            .eq('tanggal', currentDate)
+            .select('id, room_id, mata_kuliah, waktu_mulai, waktu_selesai, status')
+            .eq('tanggal', targetDate)
             .eq('status', 'approved')
-            .lte('waktu_mulai', currentTime)
-            .gte('waktu_selesai', currentTime)
+            .lt('waktu_mulai', targetEnd)
+            .gt('waktu_selesai', targetStart)
 
-        const reservationRoomIds = new Set((activeReservations || []).map(r => r.room_id));
-        // 5. SUNTIKAN STATUS KEDALAM DATA RUANGAN SECARA SPESIFIK
+        const expiredReservationIds = []
+        const validReservations = []
+
+        if (activeReservations) {
+            activeReservations.forEach(res => {
+                // Cek apakah reservasi hari ini sudah lewat 15 menit dari waktu_mulai tanpa check-in
+                if (targetDate === todayStr) {
+                    const [sH, sM] = res.waktu_mulai.split(':').map(Number)
+                    const [curH, curM] = currentTimeStr.split(':').map(Number)
+                    const startTotalMins = sH * 60 + sM
+                    const currentTotalMins = curH * 60 + curM
+
+                    // Toleransi 15 menit: Jika jam sekarang > waktu_mulai + 15 menit
+                    if (currentTotalMins > startTotalMins + 15) {
+                        expiredReservationIds.push(res.id)
+                        return // Abaikan dari reservasi aktif (ruangan bebas!)
+                    }
+                }
+                validReservations.push(res)
+            })
+        }
+
+        // Auto-update status di database Supabase ke 'expired' jika ada reservasi hangus
+        if (expiredReservationIds.length > 0) {
+            supabase
+                .from('reservations')
+                .update({ status: 'expired' })
+                .in('id', expiredReservationIds)
+                .then(() => console.log(`⚡ Auto-expired ${expiredReservationIds.length} phantom reservation(s).`))
+                .catch(err => console.error('Gagal auto-expire reservation:', err))
+        }
+
+        const reservationConflictMap = new Map()
+        validReservations.forEach(res => {
+            reservationConflictMap.set(res.room_id, res)
+        })
+
+        // 3. SUNTIKKAN STATUS KETERSEDIAAN SLOT WAKTU KEDALAM KARTU RUANGAN
         const virtualRooms = rooms.map(room => {
             if (room.status !== "tersedia") {
-                return room;
+                return {
+                    ...room,
+                    slot_available: false,
+                    conflict_reason: 'Ruangan sedang dalam perbaikan / tidak aktif oleh Admin.'
+                }
             }
 
-            // Cek Prioritas 1: Apakah sedang dipakai kuliah reguler?
-            if (validScheduledRoomIds.has(room.id)) {
-                return { ...room, status: 'sedang_digunakan' }
+            // Bentrok SIAKAD
+            if (scheduleConflictMap.has(room.id)) {
+                const conf = scheduleConflictMap.get(room.id)
+                return {
+                    ...room,
+                    slot_available: false,
+                    conflict_reason: `Terpakai Jadwal SIAKAD: "${conf.mata_kuliah}" (${conf.waktu_mulai.substring(0, 5)} - ${conf.waktu_selesai.substring(0, 5)} WIB)`
+                }
             }
 
-            // Cek Prioritas 2: Apakah sedang dipakai karena dipesan PJ?
-            if (reservationRoomIds.has(room.id)) {
-                return { ...room, status: 'dipesan' }
+            // Bentrok Peminjaman PJ Lain
+            if (reservationConflictMap.has(room.id)) {
+                const conf = reservationConflictMap.get(room.id)
+                return {
+                    ...room,
+                    slot_available: false,
+                    conflict_reason: `Dipesan PJ Lain: "${conf.mata_kuliah}" (${conf.waktu_mulai.substring(0, 5)} - ${conf.waktu_selesai.substring(0, 5)} WIB)`
+                }
             }
 
-            // jika tidak ada jadwal sama sekali saat ini, kembalikan normal
-            return room;
-        });
-        res.json({ rooms: virtualRooms });
+            // Slot Bebas & Kosong untuk Dipinjam!
+            return {
+                ...room,
+                slot_available: true,
+                conflict_reason: null
+            }
+        })
+
+        res.json({
+            rooms: virtualRooms,
+            target_filter: {
+                tanggal: targetDate,
+                waktu_mulai: targetStart.substring(0, 5),
+                waktu_selesai: targetEnd.substring(0, 5),
+                sks: sksCount
+            }
+        })
 
     } catch (error) {
         console.error('Get rooms error:', error)
@@ -101,6 +191,28 @@ router.get('/:id/schedule', verifyToken, async (req, res) => {
             .eq('room_id', id)
             .eq('hari', namaHari);
 
+        // 1b. Ambil laporan kelas kosong terverifikasi untuk tanggal tersebut
+        const { data: approvedReports } = await supabase
+            .from('reports')
+            .select('mata_kuliah')
+            .eq('room_id', id)
+            .eq('tanggal', date)
+            .in('status', ['approved', 'verified']);
+
+        const cancelledSubjects = new Set((approvedReports || []).map(r => r.mata_kuliah));
+
+        // 1c. Ambil laporan kelas kosong pending (menunggu verifikasi admin)
+        const { data: pendingReports } = await supabase
+            .from('reports')
+            .select('mata_kuliah')
+            .eq('room_id', id)
+            .eq('tanggal', date)
+            .eq('status', 'pending');
+
+        const pendingSubjects = new Set((pendingReports || []).map(r => r.mata_kuliah));
+
+        const validSchedules = (schedules || []).filter(s => !cancelledSubjects.has(s.mata_kuliah));
+
         // 2. Ambil peminjaman insidental yang di-ACC untuk tanggal tersebut
         const { data: reservations } = await supabase
             .from('reservations')
@@ -111,8 +223,12 @@ router.get('/:id/schedule', verifyToken, async (req, res) => {
 
         // 3. Gabungkan dan urutkan dari jam paling pagi
         const combined = [
-            ...(schedules || []).map(s => ({ ...s, type: 'Reguler' })),
-            ...(reservations || []).map(r => ({ ...r, type: 'Dipesan' }))
+            ...validSchedules.map(s => ({
+                ...s,
+                type: 'Reguler',
+                isPendingReport: pendingSubjects.has(s.mata_kuliah)
+            })),
+            ...(reservations || []).map(r => ({ ...r, type: 'Dipesan', isPendingReport: false }))
         ].sort((a, b) => a.waktu_mulai.localeCompare(b.waktu_mulai))
 
         // 4. Kirim hasil ke Front-end

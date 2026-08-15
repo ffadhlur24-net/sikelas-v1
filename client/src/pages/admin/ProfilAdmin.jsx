@@ -79,12 +79,12 @@ function ProfilAdmin() {
         updateUser(res.data.user)
       }
       setShowEditModal(false)
-      setEditForm(prev => ({ 
-        ...prev, 
-        old_password: '', 
-        new_password: '', 
-        confirm_password: '', 
-        otp_code: '' 
+      setEditForm(prev => ({
+        ...prev,
+        old_password: '',
+        new_password: '',
+        confirm_password: '',
+        otp_code: ''
       }))
     } catch (error) {
       alert(error.response?.data?.error || 'Gagal memperbarui profil.')
@@ -207,14 +207,14 @@ function ProfilAdmin() {
           <div className="card-flat" style={{ width: '100%', maxWidth: '480px', background: '#fff', padding: '24px', borderRadius: '12px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#dc2626', marginBottom: '12px' }}>⚠️ Konfirmasi Total Reset Akhir Semester</h2>
             <p style={{ fontSize: '14px', color: '#475569', marginBottom: '16px', lineHeight: '1.5' }}>
-              Tindakan ini akan menghapus semua akun PJ dan mereset status semester. Ketikkan <b>RESET-SEMESTER</b> untuk mengonfirmasi.
+              Tindakan ini akan menghapus semua akun PJ dan mereset status semester.
             </p>
             <form onSubmit={handleReset}>
               <input
                 type="text"
                 className="input-field"
                 style={{ marginBottom: '16px', textAlign: 'center', fontWeight: 'bold', letterSpacing: '1px', width: '100%', padding: '10px' }}
-                placeholder="Ketik RESET-SEMESTER"
+                placeholder="MASUKAN PASSWORD RESET"
                 value={confirmInput}
                 onChange={(e) => setConfirmInput(e.target.value)}
                 required

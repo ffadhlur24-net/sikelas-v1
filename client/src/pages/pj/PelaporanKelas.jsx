@@ -71,31 +71,45 @@ function PelaporanKelas() {
   }, [user])
 
 
-  // Helper kalkulasi tanggal pertemuan mendatang terdekat berdasarkan nama hari
-  const getNextDateForHari = (targetHari) => {
+  // Helper kalkulasi tanggal pertemuan berdasarkan nama hari & opsi offset minggu (0, 1, 2 minggu)
+  const getScheduleDateForHari = (targetHari, targetWaktuMulai, weekOffset = 0) => {
     const hariIdxMap = { 'Minggu': 0, 'Senin': 1, 'Selasa': 2, 'Rabu': 3, 'Kamis': 4, 'Jumat': 5, 'Sabtu': 6 }
     const now = new Date()
     const currentIdx = now.getDay()
     const targetIdx = hariIdxMap[targetHari]
+    
     let diff = targetIdx - currentIdx
-    if (diff <= 0) diff += 7 // Ambil pertemuan mendatang (bukan yang lalu)
+    if (diff < 0) {
+      diff += 7
+    } else if (diff === 0) {
+      // Jika hari ini, cek apakah jam mulai sudah lewat
+      const currentTimeStr = now.toTimeString().substring(0, 5)
+      if (targetWaktuMulai && currentTimeStr >= targetWaktuMulai) {
+        diff += 7
+      }
+    }
 
-    const resultDate = new Date(now.setDate(now.getDate() + diff))
+    diff += (weekOffset * 7)
+
+    const resultDate = new Date()
+    resultDate.setDate(resultDate.getDate() + diff)
     const yyyy = resultDate.getFullYear()
     const mm = String(resultDate.getMonth() + 1).padStart(2, '0')
     const dd = String(resultDate.getDate()).padStart(2, '0')
     return `${yyyy}-${mm}-${dd}`
   }
+
   const applySessionData = (idx, list = userSchedules) => {
     const session = list[idx]
     if (!session) return
     setSelectedSessionIndex(idx)
-    const nextDate = getNextDateForHari(session.hari)
+    const nextDate = getScheduleDateForHari(session.hari, session.waktu_mulai, 0)
     setFormData(prev => ({
       ...prev,
       room_id: session.room_id,
       mata_kuliah: session.mata_kuliah,
-      tanggal: nextDate
+      tanggal: nextDate,
+      waktu_mulai: session.waktu_mulai
     }))
   }
   const handleSessionChange = (e) => {
@@ -178,30 +192,52 @@ function PelaporanKelas() {
             </div>
             {/* Pilihan Sesi Pertemuan SIAKAD */}
             <div className="form-group" style={{ marginBottom: '16px' }}>
-              <label className="form-label">Pilih Pertemuan Jadwal Yang Ingin Dilaporkan Kosong</label>
+              <label className="form-label">Pilih Sesi Perkuliahan SIAKAD</label>
               {userSchedules.length === 1 ? (
                 <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '12px 16px', borderRadius: '8px', color: '#1e40af', fontSize: '14px', fontWeight: '500' }}>
-                  📌 <b>Sesi Tunggal:</b> {formatTanggalIndonesia(formData.tanggal)} ({userSchedules[0].waktu_mulai.substring(0, 5)} - {userSchedules[0].waktu_selesai.substring(0, 5)} WIB) @ Ruang {userSchedules[0].rooms?.nama || userSchedules[0].room_id}
+                  📌 <b>Sesi Tunggal ({userSchedules[0].hari}):</b> Jam {userSchedules[0].waktu_mulai.substring(0, 5)} - {userSchedules[0].waktu_selesai.substring(0, 5)} WIB @ Ruang {userSchedules[0].rooms?.nama || userSchedules[0].room_id}
                 </div>
               ) : (
                 <select className="input-field" value={selectedSessionIndex} onChange={handleSessionChange} required>
                   <option value="">-- Pilih Sesi Pertemuan Perkuliahan --</option>
-                  {userSchedules.map((sch, idx) => {
-                    const schDate = getNextDateForHari(sch.hari)
-                    return (
-                      <option key={idx} value={idx}>
-                        Pertemuan {formatTanggalIndonesia(schDate)} ({sch.waktu_mulai.substring(0, 5)} - {sch.waktu_selesai.substring(0, 5)} WIB) @ Ruang {sch.rooms?.nama || sch.room_id}
-                      </option>
-                    )
-                  })}
+                  {userSchedules.map((sch, idx) => (
+                    <option key={idx} value={idx}>
+                      {sch.hari} ({sch.waktu_mulai.substring(0, 5)} - {sch.waktu_selesai.substring(0, 5)} WIB) @ Ruang {sch.rooms?.nama || sch.room_id}
+                    </option>
+                  ))}
                 </select>
               )}
             </div>
-            {/* Ruangan & Tanggal Mendatang (Auto-Filled Readonly) */}
+
+            {/* Pilihan Tanggal Pertemuan (Hari Ini / 1 Minggu / 2 Minggu) */}
+            {activeSession && (
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label className="form-label">📅 Pilih Tanggal Pertemuan Yang Dilaporkan Kosong</label>
+                <select
+                  className="input-field"
+                  style={{ fontWeight: '500' }}
+                  value={formData.tanggal}
+                  onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
+                  required
+                >
+                  <option value={getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 0)}>
+                    📌 Pertemuan Terdekat: {formatTanggalIndonesia(getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 0))}
+                  </option>
+                  <option value={getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 1)}>
+                    🗓️ Pertemuan 1 Minggu Ke Depan: {formatTanggalIndonesia(getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 1))}
+                  </option>
+                  <option value={getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 2)}>
+                    🗓️ Pertemuan 2 Minggu Ke Depan: {formatTanggalIndonesia(getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 2))}
+                  </option>
+                </select>
+              </div>
+            )}
+
+            {/* Ruangan & Tanggal Mendatang (Auto-Filled Readonly Info) */}
             {activeSession && (
               <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '14px', borderRadius: '8px', marginBottom: '20px', fontSize: '13px' }}>
                 <p style={{ margin: '0 0 6px', color: '#475569' }}>📍 Ruangan Jadwal Asli: <b>Ruang {activeSession.rooms?.nama || activeSession.room_id} ({activeSession.rooms?.gedung || '-'})</b></p>
-                <p style={{ margin: 0, color: '#059669' }}>📅 Tanggal Pertemuan Mendatang: <b>{formatTanggalIndonesia(formData.tanggal)}</b></p>
+                <p style={{ margin: 0, color: '#059669' }}>📅 Tanggal Laporan Terpilih: <b>{formatTanggalIndonesia(formData.tanggal)}</b></p>
               </div>
             )}
             {/* NOTIFIKASI JIKA SUDAH PERNAH DILAPORKAN */}

@@ -135,8 +135,8 @@ function Register() {
         try {
             setEmailChecking(true)
             const res = await api.get(`/auth/check-email?email=${encodeURIComponent(formData.email.trim())}`)
-            if (res.data.exists) {
-                setEmailError('Email ini telah memiliki akun.')
+            if (res.data.exists && res.data.isVerified) {
+                setEmailError(res.data.message || 'Email ini telah memiliki akun aktif.')
             } else {
                 setEmailError('')
             }
@@ -439,6 +439,9 @@ function Register() {
                         Sudah punya akun? <Link to="/login" style={{ color: 'var(--color-primary)', fontWeight: '600' }}>Login di sini</Link>
                     </div>
                 )}
+                <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '13px' }}>
+                    📩 Belum tuntas verifikasi OTP? <Link to="/verify-email" style={{ color: '#2563eb', fontWeight: '600' }}>Lanjutkan Verifikasi Di Sini</Link>
+                </div>
                 <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '14px' }}>
                     <Link to="/" style={{ color: '#64748b', textDecoration: 'none', fontWeight: '500' }}>
                         ⬅️ Kembali ke Beranda

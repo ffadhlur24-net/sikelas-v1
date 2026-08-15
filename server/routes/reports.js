@@ -14,7 +14,7 @@ router.get('/', verifyToken, async (req, res) => {
     try {
         let query = supabase
             .from('reports')
-            .select('*, rooms(nama), users(username, nim_nip)')
+            .select('*, rooms(nama), users(username, nim_nip, no_hp)')
             .order('created_at', { ascending: false })
 
 
@@ -37,8 +37,29 @@ router.get('/', verifyToken, async (req, res) => {
 
 router.post('/', verifyToken, async (req, res) => {
     try {
-        const { room_id, mata_kuliah, alasan, tanggal } = req.body
+        const { room_id, mata_kuliah, alasan, tanggal, waktu_mulai } = req.body
         const reportDate = tanggal || new Date().toISOString().split('T')[0];
+
+        const now = new Date()
+        const todayStr = now.toISOString().split('T')[0]
+        const currentTimeStr = now.toTimeString().substring(0, 5) // Format HH:MM
+
+        // 1. Validasi Batas Tanggal (Maksimal 2 Minggu Ke Depan)
+        const reportDateObj = new Date(reportDate)
+        const maxAllowedDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
+
+        if (reportDateObj > maxAllowedDate) {
+            return res.status(400).json({ error: 'Laporan kelas kosong maksimal hanya dapat dibuat hingga 2 minggu ke depan.' })
+        }
+
+        // 2. Validasi Khusus H-0 (Hari Ini): Harus dibuat SEBELUM jam perkuliahan dimulai
+        if (reportDate === todayStr && waktu_mulai) {
+            if (currentTimeStr >= waktu_mulai) {
+                return res.status(400).json({
+                    error: `❌ Laporan kelas kosong hari ini hanya dapat dibuat SEBELUM jam kuliah dimulai (Sebelum jam ${waktu_mulai}).`
+                })
+            }
+        }
 
         const parsedRoomId = Number(room_id)
         if (!parsedRoomId || isNaN(parsedRoomId)) {
@@ -128,7 +149,7 @@ router.post('/', verifyToken, async (req, res) => {
 router.patch('/:id/resolve', verifyToken, adminOnly, async (req, res) => {
     try {
         const { id } = req.params;
-        const { status } = req.body;
+        const { status, alasan_penolakan } = req.body;
 
         let targetStatus = status === 'approved' || status === 'verified' ? 'verified' : 'rejected';
 
