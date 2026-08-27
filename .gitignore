@@ -1,0 +1,22 @@
+# Dependency directories
+node_modules/
+
+# Environment files
+.env
+*.env
+.env.local
+
+# Development & testing scripts
+scripts/
+server/scripts/
+
+# Build outputs & caches
+dist/
+dist-ssr/
+.cache/
+
+# Logs & temp
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db

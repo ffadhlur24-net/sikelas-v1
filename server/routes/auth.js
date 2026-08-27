@@ -7,9 +7,11 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import supabase from '../config/supabase.js'
 import { loginLimiter } from '../middleware/rateLimiter.js'
-import { sendOtpEmail } from '../untils/sendEmail.js'
-
+import { sendOtpEmail, checkEmailDeliveryStatus } from '../utils/sendEmail.js'
 const router = Router()
+
+// Tracker ID Email Pengiriman Terakhir untuk Real-time Bounce Detection
+const emailTracker = new Map()
 
 // POST/api/auth/register
 // untuk mendaftarkan PJ baru
@@ -17,25 +19,29 @@ const router = Router()
 router.post('/register', async (req, res) => {
     try {
         console.log('📩 [REGISTER REQUEST BODY]:', req.body)
-        const { username, nim_nip, email, password, prodi, semester, mata_kuliah, kelas, no_hp } = req.body
+        const { username, email, password, prodi, semester, mata_kuliah, kelas, no_hp } = req.body
 
         // 1. Validasi input kelengkapan
-        if (!username || !nim_nip || !email || !password || !prodi || !mata_kuliah || !kelas || !semester || !no_hp) {
+        if (!username || !email || !password || !prodi || !mata_kuliah || !kelas || !semester || !no_hp) {
             console.log('❌ [REGISTER FAILED]: Ada kolom yang kosong!')
             return res.status(400).json({
                 error: 'Semua kolom wajib diisi!'
             })
         }
+        const cleanEmail = email.trim().toLowerCase()
+        if (!cleanEmail.endsWith('@student.walisongo.ac.id')) {
+            return res.status(400).json({ error: 'Pendaftaran gagal: Wajib menggunakan email kampus(@student.walisongo.ac.id)' })
+        }
 
-        // 1b. Validasi Format Nama Lengkap / Username (Hanya huruf dan spasi, tanpa angka & karakter khusus)
-        const nameRegex = /^[a-zA-Z\s]+$/
-        if (!nameRegex.test(username.trim())) {
+        const nim_nip = cleanEmail.split("@")[0]
+        if (!nim_nip || nim_nip.length < 5) {
             return res.status(400).json({
-                error: 'Nama Lengkap / Username hanya boleh berisi huruf dan spasi (tanpa angka atau karakter khusus).'
+                error: 'Format email kampus tidak valid.'
             })
         }
 
-        // 1c. Validasi Format No. HP (Harus diawali 08, 10-15 digit angka)
+        // DNS MX lookup bypassed for reliability
+
         const phoneRegex = /^08[0-9]{8,13}$/
         if (!phoneRegex.test(no_hp.trim())) {
             return res.status(400).json({
@@ -119,7 +125,7 @@ router.post('/register', async (req, res) => {
         const otpCode = Math.floor(100000 + Math.random() * 900000).toString()
         const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000)
 
-        const parsedSemester = parseInt(String(semester).replace(/\D/g, ''), 10) || 1
+        const cleanSemester = String(semester || '1').trim()
 
         const insertPayload = {
             username,
@@ -127,7 +133,7 @@ router.post('/register', async (req, res) => {
             email,
             password: hashedPassword,
             prodi,
-            semester: parsedSemester,
+            semester: cleanSemester,
             mata_kuliah,
             kelas,
             no_hp,
@@ -167,13 +173,39 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: error.message || 'Gagal melakukan pendaftaran akun.' })
         }
 
-        const emailSent = await sendOtpEmail(email, otpCode, username)
+        // 5. Kirim email OTP & Lakukan Immediate Bounce Verification (Cegat Langsung Email Palsu)
+        const emailResult = await sendOtpEmail(cleanEmail, otpCode, username)
+
+        if (!emailResult || !emailResult.success) {
+            if (newUser && newUser.id) {
+                await supabase.from("users").delete().eq("id", newUser.id)
+            }
+            return res.status(400).json({
+                error: "Pendaftaran Gagal: Gagal mengirimkan email verifikasi. Pastikan format email Anda benar."
+            })
+        }
+
+        if (emailResult.emailId) {
+            emailTracker.set(cleanEmail, emailResult.emailId)
+
+            // Tunggu 2.5 detik untuk mendeteksi penolakan (Bounce) dari server kampus
+            await new Promise(r => setTimeout(r, 2500))
+            const delivery = await checkEmailDeliveryStatus(emailResult.emailId, cleanEmail)
+
+            if (delivery.isBounced) {
+                if (newUser && newUser.id) {
+                    await supabase.from("users").delete().eq("id", newUser.id)
+                }
+                emailTracker.delete(cleanEmail)
+                return res.status(400).json({
+                    error: "Pendaftaran Ditolak: Email kampus (" + cleanEmail + ") tidak ditemukan atau tidak aktif di server kampus. Periksa kembali NIM Anda."
+                })
+            }
+        }
 
         res.status(201).json({
-            message: emailSent ?
-                'Registrasi berhasil! Kode keramat telah dikirim ke email Anda.'
-                : 'Registrasi berhasil, Gagal mengirim email OTP, silahkan click "kirim ulang',
-            email: newUser?.email || email,
+            message: "Registrasi berhasil! Kode verifikasi telah dikirim ke email kampus Anda.",
+            email: newUser?.email || cleanEmail,
         })
     } catch (error) {
         console.error('Registrasi error:', error)
@@ -268,10 +300,12 @@ router.post('/resend-otp', async (req, res) => {
             .eq('id', user.id)
         if (updateErr) throw updateErr
         // 4. Kirim email OTP baru
-        const emailSent = await sendOtpEmail(email, newOtp, user.username)
+        const emailResult = await sendOtpEmail(email, newOtp, user.username)
+        if (emailResult && emailResult.emailId) {
+            emailTracker.set(email.toLowerCase(), emailResult.emailId)
+        }
         res.json({
-            message: emailSent
-                ? 'Kode OTP baru telah dikirim ke email Anda!'
+            message: (emailResult && emailResult.success) ? 'Kode OTP baru telah dikirim ke email Anda!'
                 : 'Gagal mengirim email. Silakan coba lagi nanti.'
         })
     } catch (error) {
@@ -532,6 +566,31 @@ router.post('/resume-otp', async (req, res) => {
     } catch (error) {
         console.error('Resume OTP error:', error)
         res.status(500).json({ error: 'Gagal melanjutkan verifikasi OTP.' })
+    }
+})
+
+
+// GET /api/auth/check-otp-status - Cek Status Pengiriman Email (Bounce Detection)
+router.get("/check-otp-status", async (req, res) => {
+    try {
+        const { email } = req.query
+        if (!email) return res.status(400).json({ error: "Email wajib diisi" })
+
+        const cleanEmail = email.trim().toLowerCase()
+        const emailId = emailTracker.get(cleanEmail)
+
+        const delivery = await checkEmailDeliveryStatus(emailId, cleanEmail)
+
+        // Jika Bounced, otomatis bersihkan data pendaftaran yang gagal agar user bisa langsung daftar ulang
+        if (delivery.isBounced) {
+            await supabase.from("users").delete().eq("email", cleanEmail).eq("status", "pending_email_verification")
+            emailTracker.delete(cleanEmail)
+        }
+
+        res.json(delivery)
+    } catch (error) {
+        console.error("Check OTP status error:", error)
+        res.status(500).json({ error: "Gagal memeriksa status email" })
     }
 })
 

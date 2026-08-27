@@ -60,7 +60,6 @@ function Register() {
         fetchInitialData()
     }, [])
 
-    // 100% MURNI CASCADING DARI DATABASE SUPABASE (Schedules Table)
     const dbProdisFromSchedules = [...new Set(availableSchedules.map(s => s.prodi))].filter(Boolean).sort()
     const dbProdisFromDepartemen = departments
         .filter(d => d.nama_prodi && !d.nama_prodi.includes('(Umum)') && d.kode_prodi !== 'UMUM')
@@ -70,9 +69,19 @@ function Register() {
         : dbProdisFromSchedules
 
     const filteredByProdi = availableSchedules.filter(s => s.prodi === formData.prodi)
-    const semesterOptions = [...new Set(filteredByProdi.map(s => Number(s.semester)))].filter(Boolean).sort((a, b) => a - b)
+    // Mendukung Semester Angka (1-8) dan Semester Khusus (SPB/Antara)
+    const semesterOptions = [...new Set(filteredByProdi.map(s => String(s.semester || "").trim()))]
+        .filter(Boolean)
+        .sort((a, b) => {
+            const numA = parseInt(a, 10)
+            const numB = parseInt(b, 10)
+            if (!isNaN(numA) && !isNaN(numB)) return numA - numB
+            if (!isNaN(numA)) return -1
+            if (!isNaN(numB)) return 1
+            return a.localeCompare(b)
+        })
 
-    const filteredBySemester = filteredByProdi.filter(s => Number(s.semester) === Number(formData.semester))
+    const filteredBySemester = filteredByProdi.filter(s => String(s.semester || "").trim() === String(formData.semester || "").trim())
     const kelasOptions = [...new Set(filteredBySemester.map(s => s.kelas))].filter(Boolean).sort()
 
     const filteredByKelas = filteredBySemester.filter(s => s.kelas === formData.kelas)
@@ -99,7 +108,9 @@ function Register() {
         if (name === 'email') {
             setEmailError('')
             setError('')
-            setFormData(prev => ({ ...prev, email: value }))
+
+            const extractedNim = value.includes('@') ? value.split('@')[0] : value
+            setFormData(prev => ({ ...prev, email: value, nim_nip: extractedNim }))
             return
         }
 
@@ -131,7 +142,7 @@ function Register() {
 
     // Pengecekan Email Duplikat saat User selesai mengetik (onBlur)
     const handleEmailBlur = async () => {
-        if (!formData.email || !formData.email.includes('@')) return
+        if (!formData.email || !formData.nim_nip || formData.nim_nip.length < 5) return
         try {
             setEmailChecking(true)
             const res = await api.get(`/auth/check-email?email=${encodeURIComponent(formData.email.trim())}`)
@@ -289,30 +300,57 @@ function Register() {
                             </small>
                         </div>
 
-                        {/* Email dengan Real-Time Check */}
-                        <div className="form-group" style={{ marginBottom: '16px' }}>
-                            <label className="form-label">Email</label>
-                            <input
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                onBlur={handleEmailBlur}
-                                className="input-field"
-                                placeholder="nama@student.walisongo.ac.id"
-                                style={{ borderColor: emailError ? '#dc2626' : undefined }}
-                                required
-                            />
+                        {/* NIM Mahasiswa & Email Kampus Otomatis (Input Group) */}
+                        <div className="form-group" style={{ marginBottom: "16px" }}>
+                            <label className="form-label">NIM Mahasiswa (Email Kampus Otomatis)</label>
+                            <div style={{ display: "flex", alignItems: "stretch" }}>
+                                <input
+                                    type="text"
+                                    name="nim_nip"
+                                    value={formData.nim_nip}
+                                    onChange={handleChange}
+                                    onBlur={handleEmailBlur}
+                                    className="input-field"
+                                    placeholder="Contoh: 2108096001"
+                                    maxLength={15}
+                                    style={{
+                                        flex: 1,
+                                        borderTopRightRadius: 0,
+                                        borderBottomRightRadius: 0,
+                                        borderColor: emailError ? "#dc2626" : undefined
+                                    }}
+                                    required
+                                />
+                                <div style={{
+                                    background: "#f1f5f9",
+                                    color: "#334155",
+                                    padding: "0 14px",
+                                    fontSize: "13px",
+                                    fontWeight: "600",
+                                    border: "1px solid #cbd5e1",
+                                    borderLeft: "none",
+                                    borderTopRightRadius: "8px",
+                                    borderBottomRightRadius: "8px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    userSelect: "none"
+                                }}>
+                                    @student.walisongo.ac.id
+                                </div>
+                            </div>
                             {emailChecking && (
-                                <small style={{ fontSize: '11px', color: '#3b82f6', marginTop: '4px', display: 'block' }}>
-                                    🔍 Memeriksa ketersediaan email...
+                                <small style={{ fontSize: "11px", color: "#3b82f6", marginTop: "4px", display: "block" }}>
+                                    🔍 Memeriksa ketersediaan NIM / Email...
                                 </small>
                             )}
                             {emailError && (
-                                <small style={{ fontSize: '12px', color: '#dc2626', marginTop: '4px', fontWeight: 'bold', display: 'block' }}>
-                                    ⚠️ {emailError} <Link to="/login" style={{ color: '#0284c7', textDecoration: 'underline' }}>Login di sini</Link>
+                                <small style={{ fontSize: "12px", color: "#dc2626", marginTop: "4px", fontWeight: "bold", display: "block" }}>
+                                    ⚠️ {emailError} <Link to="/login" style={{ color: "#0284c7", textDecoration: "underline" }}>Login di sini</Link>
                                 </small>
                             )}
+                            <small style={{ fontSize: "11px", color: "#64748b", marginTop: "4px", display: "block" }}>
+                                📧 Surat OTP akan dikirim ke: <b style={{ color: "#0f172a" }}>{formData.email || "NIM@student.walisongo.ac.id"}</b>
+                            </small>
                         </div>
 
                         {/* Password dengan Toggle Mata */}
@@ -347,29 +385,24 @@ function Register() {
                             </small>
                         </div>
 
-                        {/* NIM & No. HP */}
-                        <div className="form-row" style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                            <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-                                <label className="form-label">NIM / NIP</label>
-                                <input type="text" name="nim_nip" value={formData.nim_nip} onChange={handleChange} className="input-field" placeholder="Contoh: 210801001" required />
-                            </div>
-                            <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-                                <label className="form-label">No. HP (WhatsApp)</label>
-                                <input
-                                    type="text"
-                                    name="no_hp"
-                                    value={formData.no_hp}
-                                    onChange={handleChange}
-                                    className="input-field"
-                                    placeholder="08123456789"
-                                    maxLength={15}
-                                    required
-                                />
-                                <small style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
-                                    ℹ️ Harus berawalan 08 (10-15 digit angka).
-                                </small>
-                            </div>
+                        {/* No. HP */}
+                        <div className="form-group" style={{ marginBottom: '16px' }}>
+                            <label className="form-label">No. HP (WhatsApp)</label>
+                            <input
+                                type="text"
+                                name="no_hp"
+                                value={formData.no_hp}
+                                onChange={handleChange}
+                                className="input-field"
+                                placeholder="08123456789"
+                                maxLength={15}
+                                required
+                            />
+                            <small style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                                ℹ️ Harus berawalan 08 (10-15 digit angka).
+                            </small>
                         </div>
+
 
                         {/* SMART CASCADING FILTER DROPDOWNS (100% DINAMIS DATABASE) */}
                         <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '18px', borderRadius: '10px', marginBottom: '20px' }}>
@@ -448,7 +481,7 @@ function Register() {
                     </Link>
                 </div>
             </div>
-        </div>
+        </div >
     )
 }
 

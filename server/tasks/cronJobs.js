@@ -2,7 +2,7 @@ import supabase from "../config/supabase.js";
 
 const runPhantomBookingCleaner = async () => {
     try {
-        const now = new Date();
+        const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
         const currentDate = now.toISOString().split('T')[0];
 
         // Hitung waktu (Sekarang - 15 Menit) dalam format HH:MM:SS lokal

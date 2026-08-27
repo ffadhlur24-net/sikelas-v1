@@ -6,7 +6,7 @@ import { Router } from "express"
 import bcrypt from 'bcryptjs'
 import supabase from "../config/supabase.js";
 import { verifyToken, adminOnly } from "../middleware/auth.js"
-import { sendPasswordOtpEmail } from '../untils/sendEmail.js'
+import { sendPasswordOtpEmail } from '../utils/sendEmail.js'
 
 const router = Router()
 

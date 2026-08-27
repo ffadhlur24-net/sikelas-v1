@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { exportToCSV } from '../../untils/exportExcel'
-import { sendWANotifications } from '../../untils/waNotification'
+import { exportToCSV } from '../../utils/exportExcel'
+import { sendWANotifications } from '../../utils/waNotification'
 import api from '../../api/axios'
 function LogPelaporan() {
   const [reports, setReports] = useState([])

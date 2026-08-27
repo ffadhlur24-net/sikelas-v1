@@ -10,14 +10,20 @@ const router = Router()
 // 1. GET /api/schedules
 router.get('/', verifyToken, async (req, res) => {
     try {
-        const { room_id } = req.query
+        const { room_id, departemen_id, hari } = req.query
         let query = supabase
             .from('schedules')
-            .select('*, rooms(nama, gedung, kampus)')
+            .select('*, rooms(nama, gedung, kampus), departemen(id, nama_prodi, fakultas, kode_prodi)')
             .order('hari', { ascending: true })
 
         if (room_id) {
             query = query.eq('room_id', room_id)
+        }
+        if (departemen_id) {
+            query = query.eq('departemen_id', departemen_id)
+        }
+        if (hari) {
+            query = query.eq('hari', hari)
         }
 
         const { data, error } = await query

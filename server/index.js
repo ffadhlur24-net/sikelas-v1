@@ -29,8 +29,23 @@ const PORT = process.env.PORT || 5000
 // Parse JSON body
 app.use(express.json())
 // menyambungkan localhost ke frontend
+const allowedOrigins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    process.env.FRONTEND_URL,
+    "https://sikelas.online",
+    "https://www.sikelas.online"
+].filter(Boolean)
+
 app.use(cors({
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+    origin: (origin, callback) => {
+        // Izinkan request tanpa origin (seperti mobile apps, curl, server-to-server) atau yang terdaftar
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true)
+        } else {
+            callback(null, true) // fallback permisif agar pendaftar tidak terblokir
+        }
+    },
     credentials: true
 }))
 // Routes API
@@ -58,46 +73,4 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`Health check: http://localhost:${PORT}/api/health\n`)
 })
 
-//========================================================
-// BACKGROUND JOB: Sweeper Auto-Cancel & Auto-Expire
-//========================================================
-
-// setInterval(async () => {
-//     try {
-//         const now = new Date();
-//         const currentTime = now.toTimeString().split(' ')[0]; // format "HH:MM:SS"
-//         const currentDate = now.toISOString().split('T')[0]; // format "YYYY-MM-DD"
-
-//         // Hitung waktu toleransi: Waktu sekarang dikurangi 15 menit
-//         const checkTimeObj = new Date(now.getTime() - 15 * 60000)
-//         const checkTime = checkTimeObj.toTimeString().split(' ')[0];
-
-//         // Cari dan Tolak
-//         const { data, error } = await supabase
-//             .from('reservations')
-//             .update({ status: 'rejected' })
-//             .eq('status', 'approved')
-//             .eq('is_checked_in', false)
-//             .eq('tanggal', currentDate)
-//             .lt('waktu_mulai', checkTime) // waktu mulainya lebih sudah lewat dari waktu toleran
-//             .select();
-
-//         if (data && data.length > 0) {
-//             console.log(`[Sweeper] Membatalkan ${data.length} reservasi karena PJ gaje banget.`)
-//         }
-
-//         const { data: repData } = await supabase
-//             .from('reports')
-//             .update({ status: 'expired' })
-//             .eq('status', 'pending')
-//             .lt('tanggal', currentDate)
-//             .select('*')
-
-//         if (repData && repData.length > 0) {
-//             console.log(`[Sweeper] mengubah ${repData.length} laporan menjadi expired karena sudah kadaluarsa`)
-//         }
-//     } catch (error) {
-//         console.error('[Sweeper] Error:', error.message)
-//     }
-// }, 60000) // Berdetak setiap 1 menit
 initCronJobs()

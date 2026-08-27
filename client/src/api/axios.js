@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // Instance axios khusus dengan URL backend
 const api = axios.create({
-    baseURL: 'http://127.0.0.1:5000/api', // URL Node.js Backend IPv4 Presisi
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000/api', // URL Node.js Backend IPv4 Presisi
     headers: {
         'Content-Type': 'application/json'
     }
@@ -19,7 +19,6 @@ api.interceptors.request.use((config) => {
     return Promise.reject(error)
 })
 
-// Interceptor Response: Mencegat status 401 Unauthorized (Token Sesi Expired)
 api.interceptors.response.use(
     (response) => response,
     (error) => {
@@ -27,7 +26,7 @@ api.interceptors.response.use(
             console.warn('⚠️ Sesi login telah berakhir. Menghapus token & redirect ke login...')
             localStorage.removeItem('sikelas_token')
             localStorage.removeItem('sikelas_user')
-            
+
             if (window.location.pathname !== '/login') {
                 window.location.href = '/login?expired=true'
             }

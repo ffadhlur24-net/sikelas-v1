@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { exportToCSV } from '../../untils/exportExcel'
+import { exportToCSV } from '../../utils/exportExcel'
 import api from '../../api/axios'
 function LogKerusakanFasilitas() {
     const [reports, setReports] = useState([])

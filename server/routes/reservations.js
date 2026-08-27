@@ -5,6 +5,7 @@
 import { Router } from "express";
 import supabase from "../config/supabase.js";
 import { verifyToken, adminOnly } from "../middleware/auth.js";
+import { sendReservationNotificationEmail } from '../utils/sendEmail.js'
 
 const router = Router()
 
@@ -309,6 +310,20 @@ router.patch('/:id/status', verifyToken, adminOnly, async (req, res) => {
             .single()
 
         if (error) throw error
+
+        if (data && data.users && data.users.email) {
+            const timeSlot = `${data.waktu_mulai} - ${data.waktu_selesai}`
+            sendReservationNotificationEmail(
+                data.users.email,
+                data.users.username,
+                status,
+                data.rooms?.nama || 'Ruangan',
+                data.tanggal,
+                timeSlot,
+                alasan_penolakan || ''
+            )
+        }
+
 
         res.json({ message: `Status reservasi berhasil diubah menjadi ${status}.`, reservation: data })
     } catch (error) {

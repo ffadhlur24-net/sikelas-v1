@@ -2,7 +2,7 @@ import { Routes, Route, NavLink, useNavigate } from 'react-router-dom'
 import ProfilPJ from './pj/ProfilPJ'
 import DaftarKelas from './pj/DaftarKelas'
 import PelaporanKelas from './pj/PelaporanKelas'
-import Pelaporankerusakan from './pj/Pelaporankerusakan'
+import PelaporanKerusakan from './pj/PelaporanKerusakan'
 import Notification from '../components/Notification'
 import './DashboardPJ.css'
 import { useContext } from 'react'
@@ -91,7 +91,7 @@ function DashboardPJ() {
             <Route path="profil" element={<ProfilPJ />} />
             <Route path="daftar-kelas" element={<DaftarKelas />} />
             <Route path="pelaporan" element={<PelaporanKelas />} />
-            <Route path="pelaporan-kerusakan" element={<Pelaporankerusakan />} />
+            <Route path="pelaporan-kerusakan" element={<PelaporanKerusakan />} />
           </Routes>
         </div>
       </main>

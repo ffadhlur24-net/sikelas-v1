@@ -17,7 +17,7 @@ function ManajemenRuangan() {
   // Form Tambah Kampus / Gedung / Ruangan Baru
   const [newKampusInput, setNewKampusInput] = useState('')
   const [newGedungInput, setNewGedungInput] = useState('')
-  
+
   const [formData, setFormData] = useState({
     nama: '',
     lantai: 1,
@@ -262,7 +262,7 @@ function ManajemenRuangan() {
 
   const handleEditScheduleClick = (sched) => {
     const matchedDep = departments.find(d => d.nama_prodi === sched.prodi)
-    
+
     // Hitung SKS dari selisih waktu_mulai dan waktu_selesai
     let derivedSks = '3'
     if (sched.waktu_mulai && sched.waktu_selesai) {
@@ -539,7 +539,7 @@ function ManajemenRuangan() {
                       <div className="form-group" style={{ flex: 1, minWidth: '110px' }}>
                         <label className="form-label">Hari</label>
                         <select className="input-field" value={initialSched.hari} onChange={(e) => setInitialSched({ ...initialSched, hari: e.target.value })} required={addWithSchedule}>
-                          {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'].map(h => <option key={h} value={h}>{h}</option>)}
+                          {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
                       </div>
 
@@ -694,7 +694,7 @@ function ManajemenRuangan() {
                 <h3 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px' }}>
                   {editingSchedId ? '✏️ Edit Jadwal' : '➕ Tambah Jadwal Baru'}
                 </h3>
-                
+
                 <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
                   {/* DROPDOWN FAKULTAS (CASCADING 1) */}
                   <div className="form-group" style={{ flex: 1, minWidth: '160px' }}>
@@ -761,7 +761,7 @@ function ManajemenRuangan() {
                   <div className="form-group" style={{ flex: 1, minWidth: '110px' }}>
                     <label className="form-label">Hari</label>
                     <select className="input-field" value={schedForm.hari} onChange={(e) => setSchedForm({ ...schedForm, hari: e.target.value })} required>
-                      {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'].map(h => <option key={h} value={h}>{h}</option>)}
+                      {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map(h => <option key={h} value={h}>{h}</option>)}
                     </select>
                   </div>
 
