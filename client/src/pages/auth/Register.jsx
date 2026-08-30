@@ -9,10 +9,11 @@ function Register() {
         password: '',
         nim_nip: '',
         no_hp: '',
+        fakultas: '',
         prodi: '',
         semester: '',
-        kelas: '',
-        mata_kuliah: ''
+        mata_kuliah: '',
+        kelas: ''
     })
 
     const [departments, setDepartments] = useState([])
@@ -60,16 +61,19 @@ function Register() {
         fetchInitialData()
     }, [])
 
-    const dbProdisFromSchedules = [...new Set(availableSchedules.map(s => s.prodi))].filter(Boolean).sort()
-    const dbProdisFromDepartemen = departments
-        .filter(d => d.nama_prodi && !d.nama_prodi.includes('(Umum)') && d.kode_prodi !== 'UMUM')
-        .map(d => d.nama_prodi)
-    const prodiOptions = dbProdisFromDepartemen.length > 0
-        ? dbProdisFromDepartemen
-        : dbProdisFromSchedules
+        // 1. Opsi Fakultas (Dinamis dari Master Departemen)
+    const fakultasOptions = [...new Set(departments.map(d => d.fakultas))].filter(Boolean).sort()
 
+    // 2. Opsi Prodi (Tersaring per Fakultas)
+    const prodisInFakultas = departments
+        .filter(d => (!formData.fakultas || d.fakultas === formData.fakultas) && d.nama_prodi && !d.nama_prodi.includes('(Umum)') && d.kode_prodi !== 'UMUM')
+        .map(d => d.nama_prodi)
+    const prodiOptions = prodisInFakultas.length > 0
+        ? prodisInFakultas.sort()
+        : [...new Set(availableSchedules.map(s => s.prodi))].filter(Boolean).sort()
+
+    // 3. Opsi Semester (Tersaring per Prodi)
     const filteredByProdi = availableSchedules.filter(s => s.prodi === formData.prodi)
-    // Mendukung Semester Angka (1-8) dan Semester Khusus (SPB/Antara)
     const semesterOptions = [...new Set(filteredByProdi.map(s => String(s.semester || "").trim()))]
         .filter(Boolean)
         .sort((a, b) => {
@@ -81,11 +85,13 @@ function Register() {
             return a.localeCompare(b)
         })
 
+    // 4. Opsi Mata Kuliah (Tersaring per Prodi & Semester - Matkul yang seluruh kelasnya terisi otomatis hilang)
     const filteredBySemester = filteredByProdi.filter(s => String(s.semester || "").trim() === String(formData.semester || "").trim())
-    const kelasOptions = [...new Set(filteredBySemester.map(s => s.kelas))].filter(Boolean).sort()
+    const uniqueCourseOptions = [...new Set(filteredBySemester.map(s => s.mata_kuliah))].filter(Boolean).sort()
 
-    const filteredByKelas = filteredBySemester.filter(s => s.kelas === formData.kelas)
-    const uniqueCourseOptions = [...new Set(filteredByKelas.map(s => s.mata_kuliah))].filter(Boolean).sort()
+    // 5. Opsi Kelas (Tersaring per Prodi, Semester & Mata Kuliah - Hanya kelas yang belum diambil PJ yang muncul)
+    const filteredByMatkul = filteredBySemester.filter(s => s.mata_kuliah === formData.mata_kuliah)
+    const kelasOptions = [...new Set(filteredByMatkul.map(s => s.kelas))].filter(Boolean).sort()
 
     // Form Change Handlers dengan Auto-Reset Bertingkat & Input Sanitization
     const handleChange = (e) => {
@@ -105,35 +111,61 @@ function Register() {
             return
         }
 
-        if (name === 'email') {
-            setEmailError('')
-            setError('')
-
-            const extractedNim = value.includes('@') ? value.split('@')[0] : value
-            setFormData(prev => ({ ...prev, email: value, nim_nip: extractedNim }))
+        // 3. Sanitasi & Konstruksi Email Kampus Otomatis dari NIM
+        if (name === "nim_nip") {
+            setEmailError("")
+            setError("")
+            const cleanNim = value.replace(/\D/g, "") // hanya angka
+            const fullEmail = cleanNim ? `${cleanNim}@student.walisongo.ac.id` : ""
+            setFormData(prev => ({
+                ...prev,
+                nim_nip: cleanNim,
+                email: fullEmail
+            }))
             return
         }
 
-        if (name === 'prodi') {
+        if (name === "email") {
+            setEmailError("")
+            setError("")
+            const extractedNim = value.includes("@") ? value.split("@")[0] : value
+            setFormData(prev => ({ ...prev, email: value, nim_nip: extractedNim }))
+            return
+        }
+        if (name === 'fakultas') {
+            setFormData(prev => ({
+                ...prev,
+                fakultas: value,
+                prodi: '',
+                semester: '',
+                mata_kuliah: '',
+                kelas: ''
+            }))
+        } else if (name === 'prodi') {
             setFormData(prev => ({
                 ...prev,
                 prodi: value,
                 semester: '',
-                kelas: '',
-                mata_kuliah: ''
+                mata_kuliah: '',
+                kelas: ''
             }))
         } else if (name === 'semester') {
             setFormData(prev => ({
                 ...prev,
                 semester: value,
-                kelas: '',
-                mata_kuliah: ''
+                mata_kuliah: '',
+                kelas: ''
+            }))
+        } else if (name === 'mata_kuliah') {
+            setFormData(prev => ({
+                ...prev,
+                mata_kuliah: value,
+                kelas: ''
             }))
         } else if (name === 'kelas') {
             setFormData(prev => ({
                 ...prev,
-                kelas: value,
-                mata_kuliah: ''
+                kelas: value
             }))
         } else {
             setFormData(prev => ({ ...prev, [name]: value }))
@@ -410,58 +442,91 @@ function Register() {
                                 🎯 Alokasi Kelas & Mata Kuliah (Dinamis Database)
                             </h4>
 
-                            {/* Dropdown 1: Program Studi (Database) */}
+                            {/* Dropdown 1: Fakultas */}
                             <div className="form-group" style={{ marginBottom: '14px' }}>
-                                <label className="form-label">1. Program Studi (Prodi)</label>
-                                <select name="prodi" value={formData.prodi} onChange={handleChange} className="input-field" required>
+                                <label className="form-label">1. Fakultas</label>
+                                <select name="fakultas" value={formData.fakultas} onChange={handleChange} className="input-field" required>
+                                    <option value="">-- Pilih Fakultas --</option>
+                                    {fakultasOptions.map(f => (
+                                        <option key={f} value={f}>{f}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Dropdown 2: Program Studi (Tersaring per Fakultas) */}
+                            <div className="form-group" style={{ marginBottom: '14px' }}>
+                                <label className="form-label">2. Program Studi (Prodi)</label>
+                                <select name="prodi" value={formData.prodi} onChange={handleChange} className="input-field" required disabled={!formData.fakultas}>
                                     <option value="">-- Pilih Program Studi --</option>
                                     {prodiOptions.map(p => (
                                         <option key={p} value={p}>{p}</option>
                                     ))}
                                 </select>
+                                {!formData.fakultas && (
+                                    <small style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px', display: 'block' }}>
+                                        ℹ️ Pilih Fakultas terlebih dahulu.
+                                    </small>
+                                )}
                             </div>
 
-                            {/* Dropdown 2: Semester (Database) & Dropdown 3: Kelas (Database) */}
-                            <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '14px' }}>
-                                <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-                                    <label className="form-label">2. Semester (Aktif)</label>
-                                    <select name="semester" value={formData.semester} onChange={handleChange} className="input-field" required disabled={!formData.prodi}>
-                                        <option value="">-- Pilih --</option>
-                                        {semesterOptions.map(s => (
-                                            <option key={s} value={s}>Semester {s}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-                                    <label className="form-label">3. Kelas (Aktif)</label>
-                                    <select name="kelas" value={formData.kelas} onChange={handleChange} className="input-field" required disabled={!formData.semester}>
-                                        <option value="">-- Pilih --</option>
-                                        {kelasOptions.map(k => (
-                                            <option key={k} value={k}>Kelas {k}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                            {/* Dropdown 3: Semester (Tersaring per Prodi) */}
+                            <div className="form-group" style={{ marginBottom: '14px' }}>
+                                <label className="form-label">3. Semester (Aktif)</label>
+                                <select name="semester" value={formData.semester} onChange={handleChange} className="input-field" required disabled={!formData.prodi}>
+                                    <option value="">-- Pilih Semester --</option>
+                                    {semesterOptions.map(s => (
+                                        <option key={s} value={s}>Semester {s}</option>
+                                    ))}
+                                </select>
+                                {!formData.prodi && (
+                                    <small style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px', display: 'block' }}>
+                                        ℹ️ Pilih Program Studi terlebih dahulu.
+                                    </small>
+                                )}
                             </div>
 
-                            {/* Dropdown 4: Mata Kuliah (Database Anti-Double PJ) */}
-                            <div className="form-group" style={{ marginBottom: 0 }}>
+                            {/* Dropdown 4: Mata Kuliah (Bebas PJ - Tersaring per Prodi & Semester) */}
+                            <div className="form-group" style={{ marginBottom: '14px' }}>
                                 <label className="form-label">4. Mata Kuliah (Bebas PJ)</label>
-                                <select name="mata_kuliah" value={formData.mata_kuliah} onChange={handleChange} className="input-field" required disabled={!formData.kelas}>
+                                <select name="mata_kuliah" value={formData.mata_kuliah} onChange={handleChange} className="input-field" required disabled={!formData.semester}>
                                     <option value="">-- Pilih Mata Kuliah dari Database --</option>
                                     {uniqueCourseOptions.map(mk => (
                                         <option key={mk} value={mk}>{mk}</option>
                                     ))}
                                 </select>
-                                {formData.kelas && uniqueCourseOptions.length === 0 && (
+                                {!formData.semester ? (
+                                    <small style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px', display: 'block' }}>
+                                        ℹ️ Pilih Semester terlebih dahulu.
+                                    </small>
+                                ) : uniqueCourseOptions.length === 0 ? (
                                     <p style={{ color: '#dc2626', fontSize: '12px', marginTop: '6px', fontWeight: 'bold' }}>
-                                        ⚠️ Seluruh Mata Kuliah pada {formData.prodi} (Semester {formData.semester} Kelas {formData.kelas}) di database sudah memiliki Penanggung Jawab!
+                                        ⚠️ Seluruh Mata Kuliah pada {formData.prodi} (Semester {formData.semester}) di database sudah memiliki Penanggung Jawab!
                                     </p>
-                                )}
+                                ) : null}
+                            </div>
+
+                            {/* Dropdown 5: Kelas (Bebas PJ - Tersaring per Mata Kuliah) */}
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label className="form-label">5. Kelas (Bebas PJ)</label>
+                                <select name="kelas" value={formData.kelas} onChange={handleChange} className="input-field" required disabled={!formData.mata_kuliah}>
+                                    <option value="">-- Pilih Kelas --</option>
+                                    {kelasOptions.map(k => (
+                                        <option key={k} value={k}>Kelas {k}</option>
+                                    ))}
+                                </select>
+                                {!formData.mata_kuliah ? (
+                                    <small style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px', display: 'block' }}>
+                                        ℹ️ Pilih Mata Kuliah terlebih dahulu.
+                                    </small>
+                                ) : kelasOptions.length === 0 ? (
+                                    <p style={{ color: '#dc2626', fontSize: '12px', marginTop: '6px', fontWeight: 'bold' }}>
+                                        ⚠️ Seluruh Kelas untuk mata kuliah ini sudah terisi penuh oleh Penanggung Jawab lain!
+                                    </p>
+                                ) : null}
                             </div>
                         </div>
 
-                        <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading || (formData.kelas && uniqueCourseOptions.length === 0)}>
+                        <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading || (formData.mata_kuliah && kelasOptions.length === 0)}>
                             {loading ? 'Mendaftarkan...' : 'Daftar Sekarang'}
                         </button>
                     </form>
