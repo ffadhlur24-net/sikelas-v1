@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react'
 import { AuthContext } from '../../context/AuthContext'
 import api from '../../api/axios'
+import './PelaporanKelas.css'
 function PelaporanKelas() {
   const { user } = useContext(AuthContext)
   const [userSchedules, setUserSchedules] = useState([])
@@ -161,14 +162,14 @@ function PelaporanKelas() {
     }
   }
   return (
-    <div className="animate-fade-in">
-      <div className="page-header">
+    <div className="empty-class-report-page animate-fade-in">
+      <div className="empty-report-heading page-header">
         <h1 className="page-title">Pelaporan Kelas Kosong</h1>
         <p className="page-subtitle">Laporkan ketidakhadiran dosen untuk jadwal pertemuan mendatang agar ruangan dapat digunakan kelas lain.</p>
       </div>
-      <div className="card-flat" style={{ maxWidth: '600px' }}>
+      <div className="empty-report-card card-flat" style={{ maxWidth: '600px' }}>
         {message.text && (
-          <div style={{
+          <div className={`report-message report-message-${message.type}`} style={{
             background: message.type === 'success' ? 'var(--color-success-bg)' : 'var(--color-error-bg)',
             color: message.type === 'success' ? 'var(--color-success)' : 'var(--color-error)',
             padding: '12px', borderRadius: '8px', marginBottom: '20px', fontWeight: '500'
@@ -177,24 +178,30 @@ function PelaporanKelas() {
           </div>
         )}
         {loadingSchedules ? (
-          <p style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>Memuat jadwal pertemuan Anda...</p>
+          <div className="report-empty-state report-loading-state">
+            <span className="report-state-icon" aria-hidden="true">◷</span>
+            <strong>Memuat jadwal pertemuan Anda...</strong>
+            <p>Data sesi SIAKAD sedang disinkronkan.</p>
+          </div>
         ) : userSchedules.length === 0 ? (
-          <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#991b1b', padding: '16px', borderRadius: '8px', textAlign: 'center' }}>
+          <div className="report-empty-state report-no-schedule" style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#991b1b', padding: '16px', borderRadius: '8px', textAlign: 'center' }}>
+            <span className="report-state-icon" aria-hidden="true">!</span>
             ⚠️ <b>Jadwal Pertemuan Tidak Ditemukan!</b><br />
-            Mata Kuliah ({user?.mata_kuliah || '-'}) belum terdaftar dalam jadwal perkuliahan SIAKAD. Silakan hubungi Admin.
+            <p>Mata Kuliah ({user?.mata_kuliah || '-'}) belum terdaftar dalam jadwal perkuliahan SIAKAD.</p>
+            <small>Silakan hubungi Admin agar jadwal Anda didaftarkan sebelum mengirim laporan.</small>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
             {/* Auto-Filled Mata Kuliah */}
-            <div className="form-group" style={{ marginBottom: '16px' }}>
+            <div className="report-field form-group" style={{ marginBottom: '16px' }}>
               <label className="form-label">Mata Kuliah Penanggung Jawab</label>
               <input type="text" className="input-field" value={formData.mata_kuliah} readOnly style={{ background: '#f8fafc', fontWeight: 'bold' }} />
             </div>
             {/* Pilihan Sesi Pertemuan SIAKAD */}
-            <div className="form-group" style={{ marginBottom: '16px' }}>
+            <div className="report-field report-session-field form-group" style={{ marginBottom: '16px' }}>
               <label className="form-label">Pilih Sesi Perkuliahan SIAKAD</label>
               {userSchedules.length === 1 ? (
-                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '12px 16px', borderRadius: '8px', color: '#1e40af', fontSize: '14px', fontWeight: '500' }}>
+                <div className="single-session-info" style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '12px 16px', borderRadius: '8px', color: '#1e40af', fontSize: '14px', fontWeight: '500' }}>
                   📌 <b>Sesi Tunggal ({userSchedules[0].hari}):</b> Jam {userSchedules[0].waktu_mulai.substring(0, 5)} - {userSchedules[0].waktu_selesai.substring(0, 5)} WIB @ Ruang {userSchedules[0].rooms?.nama || userSchedules[0].room_id}
                 </div>
               ) : (
@@ -211,7 +218,7 @@ function PelaporanKelas() {
 
             {/* Pilihan Tanggal Pertemuan (Hari Ini / 1 Minggu / 2 Minggu) */}
             {activeSession && (
-              <div className="form-group" style={{ marginBottom: '16px' }}>
+              <div className="report-field form-group" style={{ marginBottom: '16px' }}>
                 <label className="form-label">📅 Pilih Tanggal Pertemuan Yang Dilaporkan Kosong</label>
                 <select
                   className="input-field"
@@ -235,7 +242,7 @@ function PelaporanKelas() {
 
             {/* Ruangan & Tanggal Mendatang (Auto-Filled Readonly Info) */}
             {activeSession && (
-              <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '14px', borderRadius: '8px', marginBottom: '20px', fontSize: '13px' }}>
+              <div className="report-location-info" style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '14px', borderRadius: '8px', marginBottom: '20px', fontSize: '13px' }}>
                 <p style={{ margin: '0 0 6px', color: '#475569' }}>📍 Ruangan Jadwal Asli: <b>Ruang {activeSession.rooms?.nama || activeSession.room_id} ({activeSession.rooms?.gedung || '-'})</b></p>
                 <p style={{ margin: 0, color: '#059669' }}>📅 Tanggal Laporan Terpilih: <b>{formatTanggalIndonesia(formData.tanggal)}</b></p>
               </div>
@@ -271,7 +278,7 @@ function PelaporanKelas() {
                 ></textarea>
               </div>
             )}
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', background: 'var(--color-error)' }} disabled={loading || selectedSessionIndex === ''}>
+            <button type="submit" className="report-submit-button btn btn-primary" style={{ width: '100%', background: 'var(--color-error)' }} disabled={loading || selectedSessionIndex === ''}>
               {loading ? 'Mengirim Laporan...' : '🚨 Kirim Laporan Kelas Kosong'}
             </button>
           </form>

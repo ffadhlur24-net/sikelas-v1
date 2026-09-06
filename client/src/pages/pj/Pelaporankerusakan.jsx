@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import api from '../../api/axios.js'
+import './PelaporanKerusakan.css'
 
 function PelaporanKerusakan() {
     const [rooms, setRooms] = useState([])
@@ -7,11 +8,13 @@ function PelaporanKerusakan() {
     const [kategori, setKategori] = useState('')
     const [rincian, setRincian] = useState('')
     const [loading, setLoading] = useState(false)
+    const [loadError, setLoadError] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const [message, setMessage] = useState({ text: '', type: '' })
     const [selectedKampus, setSelectedKampus] = useState('')
     const [selectedGedung, setSelectedGedung] = useState('')
     const [selectedRoomId, setSelectedRoomId] = useState('')
+    const [currentTime, setCurrentTime] = useState(new Date())
 
     const daftarKategori = [
         { id: 'AC', label: 'AC / pendingin' },
@@ -21,19 +24,27 @@ function PelaporanKerusakan() {
         { id: 'Lainnya', label: '❓ Lainnya / Kendala Khusus' }
     ]
 
-    useEffect(() => {
-        const fetchRooms = async () => {
+    const fetchRooms = async () => {
             try {
                 setLoading(true)
+                setLoadError('')
                 const res = await api.get('/rooms')
                 setRooms(res.data.rooms || [])
             } catch (error) {
                 console.error('Gagal mengambil data ruangan:', error)
+                setLoadError(error.response?.data?.error || 'Data ruangan belum dapat dimuat. Periksa koneksi server.')
             } finally {
                 setLoading(false)
             }
-        }
+    }
+
+    useEffect(() => {
         fetchRooms()
+    }, [])
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+        return () => clearInterval(timer)
     }, [])
     const listKampus = Array.from(new Set(rooms.map(r => r.kampus).filter(Boolean)))
     const filteredByKampus = selectedKampus
@@ -89,13 +100,17 @@ function PelaporanKerusakan() {
     }
     const activeCategoryIds = activeCategories.map(c => c.kategori)
     return (
-        <div className="animate-fade-in" style={{ maxWidth: '720px', margin: '0 auto' }}>
-            <div className="page-header">
-                <h1 className="page-title">🛠️ Laporan Kerusakan Fasilitas Kelas</h1>
-                <p className="page-subtitle">Laporkan kerusakan fisik aset/fasilitas kelas (AC, Proyektor, Kelistrikan) ke Staf Sarpras.</p>
+        <div className="damage-report-page animate-fade-in" style={{ maxWidth: '1120px', margin: '0 auto' }}>
+            <section className="damage-report-clock">
+                <div><span className="damage-clock-icon" aria-hidden="true">◷</span><span>Waktu Sistem Server: <strong>{currentTime.toLocaleTimeString('id-ID')}</strong></span></div>
+                <span className="damage-online"><i /> Sistem Online</span>
+            </section>
+            <div className="damage-report-heading page-header">
+                <div><p className="damage-eyebrow">PENANGGUNG JAWAB KELAS / FACILITY REPORT</p><h1 className="page-title">Pelaporan Kerusakan Fasilitas</h1><p className="page-subtitle">Laporkan kerusakan sarana prasarana kelas untuk penanganan cepat oleh tim teknis.</p></div>
+                <span className="priority-badge">PRIORITY ACTION</span>
             </div>
             {message.text && (
-                <div style={{
+                <div className={`damage-report-message ${message.type}`} style={{
                     background: message.type === 'success' ? 'var(--color-success-bg)' : 'var(--color-error-bg)',
                     color: message.type === 'success' ? 'var(--color-success)' : 'var(--color-error)',
                     padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', fontWeight: '500'
@@ -103,11 +118,19 @@ function PelaporanKerusakan() {
                     {message.text}
                 </div>
             )}
-            <div className="card-flat" style={{ background: '#fff', padding: '24px', borderRadius: '12px' }}>
+            {loadError && (
+                <div className="damage-report-message error damage-load-error" role="alert">
+                    <strong>Data lokasi belum tersedia.</strong>
+                    <span>{loadError}</span>
+                    <button type="button" onClick={fetchRooms}>Coba Muat Ulang</button>
+                </div>
+            )}
+            <div className="damage-report-card card-flat" style={{ background: '#fff', padding: '24px', borderRadius: '12px' }}>
+                {loading && <div className="damage-loading-bar" aria-live="polite">Memuat lokasi ruangan...</div>}
                 <form onSubmit={handleSubmit}>
 
                     {/* 1. PILIH RUANGAN */}
-                    <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                    <div className="damage-location-grid" style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
 
                         {/* 1. DROPDOWN KAMPUS */}
                         <div className="form-group" style={{ flex: 1, minWidth: '150px' }}>
@@ -169,7 +192,7 @@ function PelaporanKerusakan() {
                     </div>
                     {/* INFORMASI TIKET AKTIF */}
                     {activeCategories.length > 0 && (
-                        <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', fontSize: '13px' }}>
+                        <div className="active-damage-tickets" style={{ background: '#fef3c7', border: '1px solid #f59e0b', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', fontSize: '13px' }}>
                             <strong style={{ color: '#b45309' }}>ℹ️ Kendala yang sedang dalam penanganan di ruangan ini:</strong>
                             <ul style={{ margin: '6px 0 0 18px', padding: 0 }}>
                                 {activeCategories.map((ac, idx) => (
@@ -183,7 +206,7 @@ function PelaporanKerusakan() {
                     {/* 2. PILIH KATEGORI KERUSAKAN */}
                     <div className="form-group" style={{ marginBottom: '20px' }}>
                         <label className="form-label">2. Pilih Kategori Fasilitas yang Bermasalah</label>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                        <div className="damage-category-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                             {daftarKategori.map(kat => {
                                 const isLocked = activeCategoryIds.includes(kat.id)
                                 const isSelected = kategori === kat.id
@@ -193,6 +216,7 @@ function PelaporanKerusakan() {
                                         type="button"
                                         disabled={isLocked || !selectedRoomId}
                                         onClick={() => setKategori(kat.id)}
+                                        className={`damage-category-tile ${isSelected ? 'selected' : ''} ${isLocked ? 'locked' : ''}`}
                                         style={{
                                             padding: '12px',
                                             borderRadius: '8px',
@@ -227,6 +251,7 @@ function PelaporanKerusakan() {
                     <button
                         type="submit"
                         className="btn btn-primary"
+                        className="damage-submit-button btn btn-primary"
                         style={{ width: '100%', padding: '12px' }}
                         disabled={submitting || !selectedRoomId || !kategori || !rincian.trim()}
                     >

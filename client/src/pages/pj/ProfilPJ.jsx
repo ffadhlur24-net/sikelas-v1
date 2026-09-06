@@ -143,15 +143,16 @@ function ProfilPJ() {
   }
 
   return (
-    <div className='animate-fade-in'>
-      <div className='page-header'>
-        <h1 className='page-title'>Profil Saya & Reservasi Saya</h1>
-        <p className='page-subtitle'>Kelola data Anda dan lakukan Check-In untuk ruangan yang disetujui.</p>
+    <div className='profil-pj-page animate-fade-in'>
+      <div className='pj-page-heading'>
+        <p className='pj-eyebrow'>PENANGGUNG JAWAB KELAS / ACCOUNT CONTROL</p>
+        <h1>Profil & Reservasi PJ</h1>
+        <p>Kelola data Anda dan lakukan Check-In untuk ruangan yang disetujui.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px' }}>
+      <div className='pj-profile-layout' style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px' }}>
         {/* kolom kiri: Profil */}
-        <div className='profile-card card-flat' style={{ height: 'fit-content' }}>
+        <div className='profile-card pj-account-card card-flat' style={{ height: 'fit-content' }}>
           <div className="profile-header">
             <div className="profile-avatar">
               {getInitials(user?.username)}
@@ -217,8 +218,8 @@ function ProfilPJ() {
         </div>
 
         {/* Kolom Kanan: Riwayat Reservasi dan check-in*/}
-        <div className="card-flat">
-          <h2 style={{ fontSize: '18px', marginBottom: '16px' }}>Riwayat Reservasi Saya</h2>
+        <div className="pj-reservations-card card-flat">
+          <h2 className='pj-section-heading'>Riwayat Reservasi PJ</h2>
           {loading ? (
             <p>Memuat riwayat...</p>
           ) : reservations.length === 0 ? (
@@ -227,7 +228,7 @@ function ProfilPJ() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {reservations.map(res => (
-                <div key={res.id} style={{ border: '1px solid #e2e8f0', padding: '16px', borderRadius: '8px' }}>
+                <div key={res.id} className='pj-reservation-item' style={{ border: '1px solid #e2e8f0', padding: '16px', borderRadius: '8px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <h3 style={{ fontSize: '16px', fontWeight: 'bold' }}>{res.mata_kuliah}</h3>
                     {res.status === 'pending' && <span className="badge badge-warning">Menunggu</span>}
@@ -267,6 +268,26 @@ function ProfilPJ() {
           )}
         </div>
       </div>
+
+      <section className='pj-feature-section'>
+        <h2 className='pj-section-heading'>Ringkasan Fitur</h2>
+        <article className='pj-feature-card feature-blue'>
+          <span className='pj-feature-icon' aria-hidden='true'>♙</span>
+          <div><h3>Profil Saya & Reservasi Saya</h3><p>Menampilkan data akun akademik PJ, status keaktifan, riwayat reservasi, serta tombol Check-In kehadiran ruangan.</p></div>
+        </article>
+        <article className='pj-feature-card feature-green'>
+          <span className='pj-feature-icon' aria-hidden='true'>▣</span>
+          <div><h3>Daftar Kelas & Ketersediaan Ruangan</h3><p>Memantau status fisik ruangan secara real-time, melihat jadwal perkuliahan, dan mengajukan reservasi dengan kalkulasi durasi SKS.</p></div>
+        </article>
+        <article className='pj-feature-card feature-orange'>
+          <span className='pj-feature-icon' aria-hidden='true'>◴</span>
+          <div><h3>Pelaporan Kelas Kosong</h3><p>Melaporkan kendala operasional perkuliahan agar sistem dapat melepaskan hak guna ruangan untuk kelas lain.</p></div>
+        </article>
+        <article className='pj-feature-card feature-warning'>
+          <span className='pj-feature-icon' aria-hidden='true'>△</span>
+          <div><h3>Pelaporan Kerusakan</h3><p>Melaporkan kerusakan aset dan fasilitas kelas dengan detail lokasi, kategori fasilitas, dan rincian masalah.</p></div>
+        </article>
+      </section>
 
       {/* MODAL FORM EDIT PROFIL */}
       {showEditModal && (

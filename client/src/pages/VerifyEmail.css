@@ -1,0 +1,544 @@
+/* ===================================================
+   Neobrutalist Campus Core - Verifikasi Email Kampus
+   SiKelas Retro Edition
+   =================================================== */
+
+.verify-page-wrapper {
+  min-height: 100vh;
+  background-color: #eee8d5;
+  background-image: radial-gradient(#bbb49e 1.25px, transparent 1.25px);
+  background-size: 18px 18px;
+  font-family: 'Space Grotesk', sans-serif;
+  color: #000000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  box-sizing: border-box;
+  user-select: text;
+}
+
+/* Force zero radius for all Brutalist elements */
+.verify-page-wrapper,
+.verify-page-wrapper * {
+  border-radius: 0 !important;
+  box-sizing: border-box;
+}
+
+/* Outer Container */
+.verify-container {
+  width: 100%;
+  max-width: 550px;
+  position: relative;
+  margin: 24px auto;
+}
+
+/* Retro Top Corner Badge */
+.verify-stamp-badge {
+  position: absolute;
+  top: -20px;
+  right: -12px;
+  z-index: 25;
+  border: 3px solid #000000;
+  background-color: #ff4757;
+  color: #ffffff;
+  padding: 4px 12px;
+  font-family: 'Space Mono', 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 3px 3px 0px #000000;
+  transform: rotate(6deg);
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+  .verify-stamp-badge {
+    top: -22px;
+    right: -18px;
+    font-size: 13px;
+    padding: 5px 14px;
+  }
+}
+
+/* Outer Card Shell */
+.verify-card {
+  background-color: #fcfaf5;
+  border: 3.5px solid #000000;
+  box-shadow: 8px 8px 0px #000000;
+  position: relative;
+  overflow: visible;
+}
+
+/* Header Subtitle Strip */
+.verify-substrip {
+  border-bottom: 3.5px solid #000000;
+  background-color: #ffffff;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.verify-substrip-left {
+  font-family: 'Space Mono', 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.verify-substrip-box {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: #000000;
+  flex-shrink: 0;
+}
+
+.verify-substrip-ref {
+  font-family: 'Space Mono', 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #4b5563;
+  background-color: #e5e7eb;
+  padding: 2px 8px;
+  border: 1px solid #000000;
+  letter-spacing: 0.04em;
+}
+
+/* Main Header Details */
+.verify-header-details {
+  padding: 28px 24px 16px;
+  text-align: center;
+}
+
+/* Retro Envelope Icon */
+.verify-envelope-wrapper {
+  margin: 0 auto 16px;
+  width: 64px;
+  height: 54px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.verify-envelope-body {
+  width: 56px;
+  height: 44px;
+  background-color: #ffffff;
+  border: 3px solid #000000;
+  box-shadow: 3px 3px 0px #000000;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.verify-envelope-arrow {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ff4757;
+  color: #ffffff;
+  border: 2px solid #000000;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 3px 3px 0px #000000;
+  font-weight: 900;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.verify-title {
+  margin: 0 0 8px 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(22px, 3.5vw, 28px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: #000000;
+  line-height: 1.15;
+}
+
+.verify-subtitle {
+  margin: 0 auto;
+  font-family: 'Space Mono', 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: #374151;
+  max-width: 440px;
+  line-height: 1.5;
+}
+
+.verify-email-pill {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #f5e9c9;
+  border: 2px solid #000000;
+  padding: 4px 12px;
+  font-family: 'Space Mono', 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 3px 3px 0px #000000;
+}
+
+.verify-email-pill span.underline-text {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+/* Form Section */
+.verify-form-section {
+  padding: 16px 24px 20px;
+}
+
+@media (min-width: 640px) {
+  .verify-form-section {
+    padding: 16px 32px 24px;
+  }
+}
+
+.verify-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Alert Boxes */
+.verify-alert {
+  padding: 12px 16px;
+  border: 2.5px solid #000000;
+  box-shadow: 3px 3px 0px #000000;
+  font-family: 'Space Mono', 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.verify-alert-success {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.verify-alert-error {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Campus Email Field */
+.verify-label {
+  display: block;
+  font-family: 'Space Mono', 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+  color: #000000;
+}
+
+.verify-email-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.verify-email-icon {
+  position: absolute;
+  left: 14px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+}
+
+.verify-email-input {
+  width: 100%;
+  background-color: #f9f7f0 !important;
+  border: 2.5px solid #000000 !important;
+  padding: 11px 80px 11px 40px !important;
+  font-family: 'Space Mono', 'JetBrains Mono', monospace !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #1f2937 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.verify-email-input:focus,
+.verify-email-input:focus-visible {
+  border-color: #000000 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.verify-email-valid-badge {
+  position: absolute;
+  right: 14px;
+  font-family: 'Space Mono', 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #15803d;
+  text-transform: uppercase;
+  pointer-events: none;
+  letter-spacing: 0.05em;
+}
+
+/* OTP 6-Digit Grid */
+.verify-otp-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.verify-timer-badge {
+  font-family: 'Space Mono', 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  background-color: #fed330;
+  border: 2px solid #000000;
+  padding: 2px 8px;
+  box-shadow: 3px 3px 0px #000000;
+}
+
+.verify-otp-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .verify-otp-grid {
+    gap: 12px;
+  }
+}
+
+.verify-otp-box {
+  width: 100%;
+  height: 52px;
+  text-align: center;
+  font-family: 'Space Mono', 'JetBrains Mono', monospace !important;
+  font-weight: 900 !important;
+  font-size: 22px !important;
+  background-color: #ffffff !important;
+  border: 3px solid #000000 !important;
+  box-shadow: 3px 3px 0px #000000 !important;
+  transition: all 0.08s ease;
+  outline: none !important;
+  box-sizing: border-box;
+  color: #000000 !important;
+}
+
+@media (min-width: 640px) {
+  .verify-otp-box {
+    height: 58px;
+    font-size: 26px !important;
+  }
+}
+
+.verify-otp-box::placeholder {
+  color: #9ca3af;
+  font-weight: 700;
+  opacity: 0.5;
+}
+
+/* Brutalist Focus State */
+.verify-otp-box:focus,
+.verify-otp-box:focus-visible {
+  outline: none !important;
+  border-color: #000000 !important;
+  background-color: #fdfae7 !important;
+  transform: translate(-1px, -1px) !important;
+  box-shadow: 4px 4px 0px #000000 !important;
+}
+
+.verify-otp-hint {
+  margin: 6px 0 0 0;
+  font-family: 'Space Mono', 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+/* Submit CTA Button */
+.verify-btn-submit {
+  width: 100%;
+  padding: 14px 18px;
+  background-color: #2de0a5;
+  border: 3.5px solid #000000 !important;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 900;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 5px 5px 0px #000000 !important;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.08s ease-in-out;
+  color: #000000;
+}
+
+.verify-btn-submit:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0px #000000 !important;
+}
+
+.verify-btn-submit:active:not(:disabled) {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0px #000000 !important;
+}
+
+.verify-btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Resend Button */
+.verify-resend-wrapper {
+  text-align: center;
+  padding-top: 2px;
+}
+
+.verify-btn-resend {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Space Mono', 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  background-color: #ffffff;
+  border: 2px solid #000000 !important;
+  padding: 8px 16px;
+  box-shadow: 3px 3px 0px #000000 !important;
+  cursor: pointer;
+  transition: all 0.08s ease;
+  color: #000000;
+}
+
+.verify-btn-resend:hover:not(:disabled) {
+  background-color: #f3f4f6;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px #000000 !important;
+}
+
+.verify-btn-resend:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: none !important;
+}
+
+.verify-btn-resend:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+  background-color: #f9fafb;
+  opacity: 0.8;
+}
+
+/* Perforation Divider */
+.verify-perforation-divider {
+  width: 100%;
+  position: relative;
+  padding: 6px 0;
+}
+
+.verify-perforation-line {
+  width: 100%;
+  border-top: 3px dashed #000000;
+}
+
+/* Return Link */
+.verify-return-container {
+  padding: 10px 24px 18px;
+  text-align: center;
+}
+
+.verify-link-return {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Space Mono', 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #000000;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.verify-link-return:hover {
+  color: #ff4757;
+}
+
+.verify-return-arrow {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+.verify-link-return:hover .verify-return-arrow {
+  transform: translateX(-4px);
+}
+
+.verify-link-return span.underline-text {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+/* Ticket Bottom Strip */
+.verify-card-footer {
+  border-top: 3px solid #000000;
+  background-color: #f0ecdc;
+  padding: 9px 16px;
+  text-align: center;
+  font-family: 'Space Mono', 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #1f2937;
+  user-select: none;
+}
+
+/* External Helpdesk */
+.verify-helpdesk-footer {
+  margin-top: 16px;
+  text-align: center;
+  font-family: 'Space Mono', 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #374151;
+}
+
+.verify-helpdesk-link {
+  font-weight: 700;
+  color: #000000;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  padding: 2px 4px;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.verify-helpdesk-link:hover {
+  background-color: #fed330;
+  border-color: #000000;
+}

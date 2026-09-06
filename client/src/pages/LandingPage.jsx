@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from '../api/axios'
+import './LandingPage.css'
 
 function LandingPage() {
     const navigate = useNavigate();
@@ -42,7 +43,7 @@ function LandingPage() {
         : filteredBykampus.filter(r => r.gedung === selectedGedung)
 
     return (
-        <div style={{ background: '#f8fafc', minHeight: '100vh', color: '#0f172a', fontFamily: 'sans-serif' }}>
+        <div className="landing-page" style={{ background: '#f8fafc', minHeight: '100vh', color: '#0f172a', fontFamily: 'sans-serif' }}>
 
             {/* 📍 1. NAVBAR FLOATING */}
             <nav style={{
@@ -193,6 +194,14 @@ function LandingPage() {
                         </div>
                     </div>
                 </div>
+            </section>
+            <section className="landing-cta">
+                <div>
+                    <span className="landing-pill">AKSES KAMPUS TERPADU</span>
+                    <h2>Ingin Meminjam Ruangan untuk Kegiatan?</h2>
+                    <p>Ajukan reservasi sekarang sebagai Penanggung Jawab (PJ) kelas. Proses persetujuan tercatat transparan.</p>
+                </div>
+                <button type="button" className="landing-cta-button" onClick={() => navigate('/register')}>🚀 Mulai Pinjam Kelas</button>
             </section>
             {/* 🏁 5. FOOTER */}
             <footer style={{ background: '#0f172a', color: '#94a3b8', padding: '32px', textAlign: 'center', fontSize: '14px' }}>

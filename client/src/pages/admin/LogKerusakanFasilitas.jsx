@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { exportToCSV } from '../../utils/exportExcel'
 import api from '../../api/axios'
+import './LogKerusakanFasilitas.css'
 function LogKerusakanFasilitas() {
     const [reports, setReports] = useState([])
     const [loading, setLoading] = useState(true)
@@ -63,18 +64,19 @@ function LogKerusakanFasilitas() {
         window.print()
     }
     return (
-        <div className="animate-fade-in">
-            <div className="page-header">
-                <h1 className="page-title">🛠️ Log Kerusakan Fasilitas Kampus</h1>
-                <p className="page-subtitle">Kelola perbaikan sarana kelas dan kunci ruangan jika terjadi kerusakan parah.</p>
+        <div className="damage-log-page animate-fade-in">
+            <div className="damage-log-heading">
+                <p className="damage-eyebrow">ADMINISTRATOR / FACILITY INCIDENTS</p>
+                <h1><span aria-hidden="true">🔧</span> Log Kerusakan Fasilitas Kampus</h1>
+                <p>Kelola perbaikan sarana kelas dan kunci ruangan jika terjadi kerusakan parah.</p>
             </div>
             {/* Filter Status Penanganan (Terarah & Profesional) */}
-            <div className="card-flat no-print" style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: 'bold', fontSize: '14px', color: '#334155' }}>📌 Status:</span>
+            <div className="damage-filter-bar no-print">
+                <span className="damage-filter-label">Status:</span>
 
                 {/* 1. Menunggu Perbaikan (Default Active) */}
                 <button
-                    className="btn btn-secondary btn-sm"
+                    className={`damage-filter-btn ${filterStatus === 'pending' ? 'is-active status-pending' : ''}`}
                     style={{
                         background: filterStatus === 'pending' ? '#f59e0b' : '#e2e8f0',
                         color: filterStatus === 'pending' ? '#fff' : '#475569',
@@ -87,7 +89,7 @@ function LogKerusakanFasilitas() {
 
                 {/* 2. Sedang Dikerjakan */}
                 <button
-                    className="btn btn-secondary btn-sm"
+                    className={`damage-filter-btn ${filterStatus === 'in_progress' ? 'is-active status-progress' : ''}`}
                     style={{
                         background: filterStatus === 'in_progress' ? '#3b82f6' : '#e2e8f0',
                         color: filterStatus === 'in_progress' ? '#fff' : '#475569',
@@ -100,7 +102,7 @@ function LogKerusakanFasilitas() {
 
                 {/* 3. Selesai Diperbaiki */}
                 <button
-                    className="btn btn-secondary btn-sm"
+                    className={`damage-filter-btn ${filterStatus === 'resolved' ? 'is-active status-resolved' : ''}`}
                     style={{
                         background: filterStatus === 'resolved' ? '#059669' : '#e2e8f0',
                         color: filterStatus === 'resolved' ? '#fff' : '#475569',
@@ -113,7 +115,7 @@ function LogKerusakanFasilitas() {
 
                 {/* 4. Semua Laporan (Dipindah ke Paling Akhir) */}
                 <button
-                    className="btn btn-secondary btn-sm"
+                    className={`damage-filter-btn ${filterStatus === 'Semua' ? 'is-active status-all' : ''}`}
                     style={{
                         background: filterStatus === 'Semua' ? '#64748b' : '#e2e8f0',
                         color: filterStatus === 'Semua' ? '#fff' : '#475569',
@@ -125,10 +127,10 @@ function LogKerusakanFasilitas() {
                 </button>
             </div>
             {/* Tabel Log Tiket */}
-            <div className="card-flat" style={{ background: '#fff', padding: '20px', borderRadius: '12px' }}>
-                <div className="no-print" style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
-                    <button className="btn btn-secondary btn-sm" onClick={handlePrintPDF}>🖨️ Cetak PDF Resmi</button>
-                    <button className="btn btn-secondary btn-sm" onClick={handleExportExcel}>📊 Ekspor Excel (.CSV)</button>
+            <div className="damage-table-card">
+                <div className="damage-toolbar no-print">
+                    <button className="damage-action-btn" onClick={handlePrintPDF}>▣ Cetak PDF Resmi</button>
+                    <button className="damage-action-btn" onClick={handleExportExcel}>▧ Ekspor Excel (.CSV)</button>
                 </div>
                 {/* ELEMEN KOP SURAT KHUSUS CETAK */}
                 <div className="print-only">
@@ -141,7 +143,10 @@ function LogKerusakanFasilitas() {
                 {loading ? (
                     <p>Memuat tiket kerusakan...</p>
                 ) : filteredReports.length === 0 ? (
-                    <p style={{ color: '#64748b' }}>Belum ada laporan kerusakan fasilitas pada kategori ini.</p>
+                    <div className="damage-empty-state">
+                        <div className="damage-empty-icon" aria-hidden="true">▱</div>
+                        <p>Belum ada laporan kerusakan fasilitas pada kategori ini.</p>
+                    </div>
                 ) : (
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
                         <thead>

@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
 import api from '../../api/axios'
+import './ManajemenAkunPJ.css'
 
 function ManajemenAkunPJ() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [currentTime, setCurrentTime] = useState(new Date())
   const [availableSchedules, setAvailableSchedules] = useState([])
   const [editingUser, setEditingUser] = useState(null)
   const [editForm, setEditForm] = useState({
@@ -40,6 +43,11 @@ function ManajemenAkunPJ() {
 
   useEffect(() => {
     fetchUsers()
+  }, [])
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+    return () => clearInterval(timer)
   }, [])
 
   // Handler hapus PJ
@@ -131,22 +139,66 @@ function ManajemenAkunPJ() {
     .map(s => s.mata_kuliah)
   )];
 
+  const filteredUsers = users.filter(user => {
+    const query = searchTerm.trim().toLowerCase()
+    if (!query) return true
+    return [user.username, user.nim_nip, user.email, user.prodi, user.mata_kuliah]
+      .filter(Boolean)
+      .some(value => String(value).toLowerCase().includes(query))
+  })
+  const activeUsers = users.filter(user => user.status === 'aktif').length
+  const pendingUsers = users.filter(user => user.status === 'pending').length
+  const inactiveUsers = users.filter(user => user.status === 'nonaktif').length
+
 
   return (
-    <div className="animate-fade-in">
-      <div className="page-header">
-        <h1 className="page-title">Manajemen Akun PJ</h1>
-        <p className="page-subtitle">Kelola persetujuan, perbarui data, dan hapus akun penanggung jawab kelas.</p>
+    <div className="pj-management-page animate-fade-in">
+      <section className="pj-clock-card">
+        <div className="pj-clock-icon" aria-hidden="true">◷</div>
+        <div>
+          <p className="pj-eyebrow">WAKTU SISTEM SERVER</p>
+          <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
+        </div>
+        <span className="pj-online"><span /> SISTEM ONLINE</span>
+      </section>
+
+      <section className="pj-stats-grid" aria-label="Ringkasan akun PJ">
+        <article className="pj-stat stat-navy"><span>Total Akun PJ</span><strong>{users.length}</strong></article>
+        <article className="pj-stat stat-blue"><span>PJ Aktif</span><strong>{activeUsers}</strong></article>
+        <article className="pj-stat stat-green"><span>Menunggu ACC</span><strong>{pendingUsers}</strong></article>
+        <article className="pj-stat stat-orange"><span>Nonaktif</span><strong>{inactiveUsers}</strong></article>
+      </section>
+
+      <div className="pj-page-heading">
+        <p className="pj-eyebrow">ADMINISTRATOR / ACCOUNT CONTROL</p>
+        <h1>Manajemen Akun PJ</h1>
+        <p>Kelola persetujuan, perbarui data, dan hapus akun penanggung jawab kelas.</p>
       </div>
       {message && (
         <div style={{ background: 'var(--color-success-bg)', color: 'var(--color-success)', padding: '12px', borderRadius: '8px', marginBottom: '20px', fontWeight: '500' }}>
           {message}
         </div>
       )}
+      {!loading && (
+        <section className="pj-search-card">
+          <div>
+            <p className="pj-eyebrow">ACCOUNT DIRECTORY</p>
+            <h2>Penelusuran Akun PJ</h2>
+          </div>
+          <div className="pj-search-row">
+            <input type="search" className="pj-search-input" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Masukkan NIM, username, email, atau prodi..." aria-label="Cari akun PJ" />
+            <button type="button" className="pj-search-button" onClick={() => setSearchTerm(searchTerm.trim())}>⌕ Cari</button>
+          </div>
+        </section>
+      )}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Memuat data pengguna...</div>
       ) : (
-        <div className="card-flat" style={{ overflowX: 'auto' }}>
+        <div className="pj-table-card">
+          <div className="pj-table-heading">
+            <h2>Daftar Penanggung Jawab Kelas</h2>
+            <span>{filteredUsers.length} akun ditampilkan</span>
+          </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
@@ -158,7 +210,7 @@ function ManajemenAkunPJ() {
               </tr>
             </thead>
             <tbody>
-              {users.length > 0 ? users.map((u) => (
+              {filteredUsers.length > 0 ? filteredUsers.map((u) => (
                 <tr key={u.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                   <td style={{ padding: '16px' }}>
                     <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>{u.username}</div>
@@ -182,15 +234,15 @@ function ManajemenAkunPJ() {
                   <td style={{ padding: '16px', textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                       {u.status === 'pending' ? (
-                        <button className="btn btn-primary btn-sm" disabled={actionLoading} onClick={() => handleUpdateStatus(u.id, 'aktif')}>
+                        <button className="btn btn-primary btn-sm pj-action-approve" disabled={actionLoading} onClick={() => handleUpdateStatus(u.id, 'aktif')}>
                           ACC
                         </button>
                       ) : (
-                        <button className="btn btn-secondary btn-sm" disabled={actionLoading} onClick={() => handleOpenEdit(u)}>
+                        <button className="btn btn-secondary btn-sm pj-action-edit" disabled={actionLoading} onClick={() => handleOpenEdit(u)}>
                           ✏️ Edit
                         </button>
                       )}
-                      <button className="btn btn-secondary btn-sm" style={{ color: 'var(--color-error)' }} disabled={actionLoading} onClick={() => handleDeleteUser(u.id, u.username)}>
+                      <button className="btn btn-secondary btn-sm pj-action-delete" disabled={actionLoading} onClick={() => handleDeleteUser(u.id, u.username)}>
                         🗑️ Hapus
                       </button>
                     </div>

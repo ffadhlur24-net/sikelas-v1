@@ -1,0 +1,51 @@
+/* Neo-Institutional landing page */
+.landing-page { --landing-paper:#fbf9f2; --landing-ink:#1b1c18; --landing-border:#000; --landing-blue:#3b82f6; --landing-green:#2dd4a3; --landing-yellow:#ffe500; --landing-orange:#ff4500; color:var(--landing-ink); background-image:radial-gradient(#000 1px,transparent 1px) !important; background-size:20px 20px !important; font-family:'Inter',sans-serif !important; }
+.landing-page nav { position:sticky !important; display:flex !important; min-height:112px; padding:20px 5vw !important; border-bottom:4px solid var(--landing-border) !important; background:#fff !important; box-shadow:0 4px 0 var(--landing-border); backdrop-filter:none !important; }
+.landing-page nav > div:first-child { gap:12px !important; }
+.landing-page nav > div:first-child > div { border:4px solid var(--landing-border); border-radius:0 !important; box-shadow:3px 3px 0 var(--landing-border); background:var(--landing-green) !important; font-size:26px !important; }
+.landing-page nav > div:first-child span { color:var(--landing-ink) !important; font-family:'Archivo Black',sans-serif; font-size:34px !important; }
+.landing-page nav > div:nth-child(2) { gap:0 !important; border:4px solid var(--landing-border); box-shadow:3px 3px 0 var(--landing-border); }
+.landing-page nav > div:nth-child(2) a { padding:14px 24px; border-right:2px solid var(--landing-border); color:var(--landing-ink) !important; font-weight:900 !important; text-transform:uppercase; }
+.landing-page nav > div:nth-child(2) a:first-child { background:var(--landing-yellow); }
+.landing-page nav > div:nth-child(2) a:nth-child(2) { background:var(--landing-green); }
+.landing-page nav > div:nth-child(2) a:last-child { background:#55cbea; border-right:0; }
+.landing-page nav button { border:4px solid var(--landing-border) !important; border-radius:0 !important; box-shadow:4px 4px 0 var(--landing-border); font-weight:900 !important; padding:13px 20px !important; }
+.landing-page nav button.btn-primary { background:var(--landing-green) !important; color:var(--landing-ink) !important; }
+.landing-page nav button.btn-secondary { background:#fff !important; color:var(--landing-ink) !important; }
+
+.landing-page #hero { position:relative; display:flex; max-width:1280px !important; min-height:650px; align-items:center; flex-direction:column; justify-content:center; padding:100px 6vw 80px !important; text-align:center; background:linear-gradient(90deg,rgba(251,249,242,.95),rgba(251,249,242,.78)),url('/assets/gemini_generate.jpg') center/cover; border-bottom:4px solid var(--landing-border); }
+.landing-page #hero::after { content:'SIKELAS'; position:absolute; right:7%; bottom:8%; color:rgba(0,0,0,.08); font:100px 'Archivo Black',sans-serif; transform:rotate(-8deg); pointer-events:none; }
+.landing-page #hero > span { border:4px solid var(--landing-border); border-radius:999px !important; box-shadow:3px 3px 0 var(--landing-border); padding:10px 24px !important; background:var(--landing-yellow) !important; color:var(--landing-ink) !important; font-size:16px !important; z-index:1; }
+.landing-page #hero h1 { max-width:940px; color:var(--landing-ink); font:clamp(42px,6vw,76px)/1.03 'Archivo Black',sans-serif; letter-spacing:0 !important; z-index:1; }
+.landing-page #hero h1 span { display:inline-block; border:4px solid var(--landing-border); padding:4px 18px; background:var(--landing-green); color:var(--landing-ink) !important; box-shadow:4px 4px 0 var(--landing-border); }
+.landing-page #hero p { max-width:760px; color:#26364e !important; font-size:20px !important; font-weight:600; z-index:1; }
+.landing-page #hero a,.landing-page #hero button { border:4px solid var(--landing-border) !important; border-radius:0 !important; box-shadow:4px 4px 0 var(--landing-border); font-weight:900 !important; padding:16px 28px !important; }
+.landing-page #hero a { background:var(--landing-green) !important; color:var(--landing-ink) !important; }
+.landing-page #hero button { background:#fff !important; color:var(--landing-ink) !important; }
+
+.landing-page #live-status { max-width:1400px !important; padding:90px 4vw !important; }
+.landing-page #live-status > div:first-child h2 { display:inline-block; border:4px solid var(--landing-border); box-shadow:3px 3px 0 var(--landing-border); padding:10px 24px; background:#fff; font:32px 'Archivo Black',sans-serif; }
+.landing-page #live-status > div:nth-child(2) { border:4px solid var(--landing-border) !important; border-radius:0 !important; box-shadow:4px 4px 0 var(--landing-border); background:#fff !important; padding:24px !important; }
+.landing-page #live-status .input-field { min-height:52px; border:4px solid var(--landing-border); border-radius:0; background:#fff; font-weight:800; }
+.landing-page #live-status > div:last-child { grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:24px !important; }
+.landing-page #live-status > div:last-child .card-flat { min-height:190px; border:4px solid var(--landing-border) !important; border-left-width:8px !important; border-radius:0 !important; box-shadow:4px 4px 0 var(--landing-border); background:#fff !important; padding:24px !important; }
+.landing-page #live-status > div:last-child .card-flat h3 { font:22px 'Archivo Black',sans-serif; }
+.landing-page #live-status > div:last-child .badge { border:2px solid var(--landing-border); border-radius:999px; font-weight:900; }
+
+.landing-page #keunggulan { padding:100px 5vw !important; border-top:4px solid var(--landing-border) !important; }
+.landing-page #keunggulan > div > div:first-child span { border:4px solid var(--landing-border); border-radius:999px; box-shadow:3px 3px 0 var(--landing-border); padding:10px 22px !important; background:var(--landing-yellow) !important; color:var(--landing-ink) !important; }
+.landing-page #keunggulan > div > div:first-child h2 { font:clamp(32px,5vw,58px)/1.05 'Archivo Black',sans-serif; }
+.landing-page #keunggulan > div > div:last-child { grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+.landing-page #keunggulan .card-flat { min-height:360px; border:4px solid var(--landing-border) !important; border-radius:0 !important; box-shadow:4px 4px 0 var(--landing-border); padding:28px !important; }
+.landing-page #keunggulan .card-flat h3 { font-size:22px !important; font-weight:900 !important; }
+
+.landing-cta { display:flex; align-items:center; justify-content:space-between; gap:32px; margin:0; border-top:4px solid var(--landing-border); border-bottom:4px solid var(--landing-border); padding:70px 8vw; background:var(--landing-yellow); }
+.landing-pill { display:inline-block; border:3px solid var(--landing-border); padding:8px 14px; background:var(--landing-green); font-size:13px; font-weight:900; }
+.landing-cta h2 { max-width:700px; margin:18px 0 10px; font:clamp(32px,4vw,56px)/1.05 'Archivo Black',sans-serif; }
+.landing-cta p { max-width:680px; color:#26364e; font-size:18px; font-weight:600; }
+.landing-cta-button { border:4px solid var(--landing-border); box-shadow:5px 5px 0 var(--landing-border); padding:20px 28px; background:var(--landing-green); color:var(--landing-ink); font-size:18px; font-weight:900; cursor:pointer; }
+.landing-cta-button:hover { transform:translate(2px,2px); box-shadow:2px 2px 0 var(--landing-border); }
+.landing-page footer { border-top:4px solid var(--landing-border); background:#000 !important; color:var(--landing-yellow) !important; font-weight:800; }
+
+@media (max-width:900px) { .landing-page nav > div:nth-child(2) { display:none; } .landing-page #live-status > div:last-child,.landing-page #keunggulan > div > div:last-child { grid-template-columns:repeat(2,minmax(0,1fr)) !important; } }
+@media (max-width:600px) { .landing-page nav { padding:14px 16px !important; } .landing-page nav > div:last-child button:first-child { display:none; } .landing-page nav > div:first-child span { font-size:24px !important; } .landing-page #hero { min-height:600px; padding:70px 20px !important; } .landing-page #hero h1 { font-size:40px; } .landing-page #hero p { font-size:16px !important; } .landing-page #live-status > div:last-child,.landing-page #keunggulan > div > div:last-child { grid-template-columns:1fr !important; } .landing-cta { align-items:flex-start; flex-direction:column; padding:50px 24px; } .landing-cta-button { width:100%; } }

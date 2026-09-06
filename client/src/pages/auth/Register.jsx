@@ -1,553 +1,753 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import api from "../../api/axios"
+import api from '../../api/axios'
+import './Register.css'
 
 function Register() {
-    const [formData, setFormData] = useState({
-        username: '',
-        email: '',
-        password: '',
-        nim_nip: '',
-        no_hp: '',
-        fakultas: '',
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    nim_nip: '',
+    no_hp: '',
+    fakultas: '',
+    prodi: '',
+    semester: '',
+    mata_kuliah: '',
+    kelas: ''
+  })
+
+  const [currentStep, setCurrentStep] = useState(1)
+  const [departments, setDepartments] = useState([])
+  const [availableSchedules, setAvailableSchedules] = useState([])
+  const [isRegistrationClosed, setIsRegistrationClosed] = useState(false)
+  const [closedMessage, setClosedMessage] = useState('')
+  const [loadingOptions, setLoadingOptions] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [emailError, setEmailError] = useState('')
+  const [emailChecking, setEmailChecking] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [fetchError, setFetchError] = useState(false)
+  const navigate = useNavigate()
+
+  // 1. Fetch Data Master & Jadwal Bebas PJ Murni dari Database Supabase
+  const fetchInitialData = async () => {
+    try {
+      setLoadingOptions(true)
+      setFetchError(false)
+      // Fetch Master Prodi dari Database
+      const depRes = await api.get('/departemen')
+      setDepartments(depRes.data.departemen || [])
+
+      // Fetch Schedules Bebas PJ dari Database
+      const optRes = await api.get('/auth/registration-options')
+      if (optRes.data.isOpen === false || (optRes.data.availableSchedules && optRes.data.availableSchedules.length === 0)) {
+        setIsRegistrationClosed(true)
+        setClosedMessage(optRes.data.message || 'Pendaftaran penanggung jawab telah ditutup (Semua Mata Kuliah sudah memiliki PJ).')
+      } else {
+        setAvailableSchedules(optRes.data.availableSchedules || [])
+        setIsRegistrationClosed(false)
+      }
+    } catch (err) {
+      console.error('Gagal mengambil opsi pendaftaran dari database:', err)
+      setFetchError(true)
+    } finally {
+      setLoadingOptions(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchInitialData()
+  }, [])
+
+  // 1. Opsi Fakultas (Dinamis dari Master Departemen)
+  const fakultasOptions = [...new Set(departments.map(d => d.fakultas))].filter(Boolean).sort()
+
+  // 2. Opsi Prodi (Tersaring per Fakultas)
+  const prodisInFakultas = departments
+    .filter(d => (!formData.fakultas || d.fakultas === formData.fakultas) && d.nama_prodi && !d.nama_prodi.includes('(Umum)') && d.kode_prodi !== 'UMUM')
+    .map(d => d.nama_prodi)
+  const prodiOptions = prodisInFakultas.length > 0
+    ? prodisInFakultas.sort()
+    : [...new Set(availableSchedules.map(s => s.prodi))].filter(Boolean).sort()
+
+  // 3. Opsi Semester (Tersaring per Prodi)
+  const filteredByProdi = availableSchedules.filter(s => s.prodi === formData.prodi)
+  const semesterOptions = [...new Set(filteredByProdi.map(s => String(s.semester || '').trim()))]
+    .filter(Boolean)
+    .sort((a, b) => {
+      const numA = parseInt(a, 10)
+      const numB = parseInt(b, 10)
+      if (!isNaN(numA) && !isNaN(numB)) return numA - numB
+      if (!isNaN(numA)) return -1
+      if (!isNaN(numB)) return 1
+      return a.localeCompare(b)
+    })
+
+  // 4. Opsi Mata Kuliah (Tersaring per Prodi & Semester)
+  const filteredBySemester = filteredByProdi.filter(s => String(s.semester || '').trim() === String(formData.semester || '').trim())
+  const uniqueCourseOptions = [...new Set(filteredBySemester.map(s => s.mata_kuliah))].filter(Boolean).sort()
+
+  // 5. Opsi Kelas (Tersaring per Prodi, Semester & Mata Kuliah)
+  const filteredByMatkul = filteredBySemester.filter(s => s.mata_kuliah === formData.mata_kuliah)
+  const kelasOptions = [...new Set(filteredByMatkul.map(s => s.kelas))].filter(Boolean).sort()
+
+  // Form Change Handlers dengan Auto-Reset Bertingkat & Input Sanitization
+  const handleChange = (e) => {
+    const { name, value } = e.target
+
+    // Sanitasi Nama Lengkap: Hanya huruf dan spasi
+    if (name === 'username') {
+      const filteredName = value.replace(/[^a-zA-Z\s]/g, '')
+      setFormData(prev => ({ ...prev, username: filteredName }))
+      return
+    }
+
+    // Sanitasi No. HP: Hanya angka & maksimal 15 digit
+    if (name === 'no_hp') {
+      const filteredPhone = value.replace(/\D/g, '').slice(0, 15)
+      setFormData(prev => ({ ...prev, no_hp: filteredPhone }))
+      return
+    }
+
+    // Sanitasi & Konstruksi Email Kampus Otomatis dari NIM
+    if (name === 'nim_nip') {
+      setEmailError('')
+      setError('')
+      const cleanNim = value.replace(/\D/g, '')
+      const fullEmail = cleanNim ? `${cleanNim}@student.walisongo.ac.id` : ''
+      setFormData(prev => ({
+        ...prev,
+        nim_nip: cleanNim,
+        email: fullEmail
+      }))
+      return
+    }
+
+    // Cascading selection resets
+    if (name === 'fakultas') {
+      setFormData(prev => ({
+        ...prev,
+        fakultas: value,
         prodi: '',
         semester: '',
         mata_kuliah: '',
         kelas: ''
-    })
+      }))
+    } else if (name === 'prodi') {
+      setFormData(prev => ({
+        ...prev,
+        prodi: value,
+        semester: '',
+        mata_kuliah: '',
+        kelas: ''
+      }))
+    } else if (name === 'semester') {
+      setFormData(prev => ({
+        ...prev,
+        semester: value,
+        mata_kuliah: '',
+        kelas: ''
+      }))
+    } else if (name === 'mata_kuliah') {
+      setFormData(prev => ({
+        ...prev,
+        mata_kuliah: value,
+        kelas: ''
+      }))
+    } else if (name === 'kelas') {
+      setFormData(prev => ({
+        ...prev,
+        kelas: value
+      }))
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }))
+    }
+  }
 
-    const [departments, setDepartments] = useState([])
-    const [availableSchedules, setAvailableSchedules] = useState([])
-    const [isRegistrationClosed, setIsRegistrationClosed] = useState(false)
-    const [closedMessage, setClosedMessage] = useState('')
-    const [loadingOptions, setLoadingOptions] = useState(true)
-    const [loading, setLoading] = useState(false)
-    const [showPassword, setShowPassword] = useState(false)
-    const [emailError, setEmailError] = useState('')
-    const [emailChecking, setEmailChecking] = useState(false)
-    const [error, setError] = useState('')
-    const [success, setSuccess] = useState('')
-    const navigate = useNavigate()
+  // Pengecekan Email Duplikat saat User selesai mengetik (onBlur)
+  const handleEmailBlur = async () => {
+    if (!formData.email || !formData.nim_nip || formData.nim_nip.length < 5) return
+    try {
+      setEmailChecking(true)
+      const res = await api.get(`/auth/check-email?email=${encodeURIComponent(formData.email.trim())}`)
+      if (res.data.exists && res.data.isVerified) {
+        setEmailError(res.data.message || 'Email ini telah memiliki akun aktif.')
+      } else {
+        setEmailError('')
+      }
+    } catch (err) {
+      console.error('Pengecekan email gagal:', err)
+    } finally {
+      setEmailChecking(false)
+    }
+  }
 
-    const [fetchError, setFetchError] = useState(false)
+  // Stepper navigation
+  const handleStepClick = (step) => {
+    setCurrentStep(step)
+  }
 
-    // 1. Fetch Data Master & Jadwal Bebas PJ Murni dari Database Supabase
-    const fetchInitialData = async () => {
-        try {
-            setLoadingOptions(true)
-            setFetchError(false)
-            // Fetch Master Prodi dari Database
-            const depRes = await api.get('/departemen')
-            setDepartments(depRes.data.departemen || [])
+  const handleNextStep = () => {
+    if (currentStep < 5) {
+      setCurrentStep(prev => prev + 1)
+    } else {
+      // Step 5 -> scroll down smoothly to submit button
+      const submitBtn = document.getElementById('btn-pj-submit')
+      if (submitBtn) {
+        submitBtn.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }
+  }
 
-            // Fetch Schedules Bebas PJ dari Database
-            const optRes = await api.get('/auth/registration-options')
-            if (optRes.data.isOpen === false || (optRes.data.availableSchedules && optRes.data.availableSchedules.length === 0)) {
-                setIsRegistrationClosed(true)
-                setClosedMessage(optRes.data.message || 'Pendaftaran penanggung jawab telah ditutup (Semua Mata Kuliah sudah memiliki PJ).')
-            } else {
-                setAvailableSchedules(optRes.data.availableSchedules || [])
-                setIsRegistrationClosed(false)
-            }
-        } catch (err) {
-            console.error("Gagal mengambil opsi pendaftaran dari database:", err)
-            setFetchError(true)
-        } finally {
-            setLoadingOptions(false)
-        }
+  const handleBackStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(prev => prev - 1)
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (isRegistrationClosed) return
+
+    setError('')
+    setSuccess('')
+
+    // Validasi Frontend 1: Nama Lengkap / Username
+    const nameRegex = /^[a-zA-Z\s]+$/
+    if (!nameRegex.test(formData.username.trim())) {
+      setError('Nama Lengkap / Username hanya boleh berisi huruf dan spasi (tanpa angka atau karakter khusus).')
+      return
     }
 
-    useEffect(() => {
-        fetchInitialData()
-    }, [])
-
-        // 1. Opsi Fakultas (Dinamis dari Master Departemen)
-    const fakultasOptions = [...new Set(departments.map(d => d.fakultas))].filter(Boolean).sort()
-
-    // 2. Opsi Prodi (Tersaring per Fakultas)
-    const prodisInFakultas = departments
-        .filter(d => (!formData.fakultas || d.fakultas === formData.fakultas) && d.nama_prodi && !d.nama_prodi.includes('(Umum)') && d.kode_prodi !== 'UMUM')
-        .map(d => d.nama_prodi)
-    const prodiOptions = prodisInFakultas.length > 0
-        ? prodisInFakultas.sort()
-        : [...new Set(availableSchedules.map(s => s.prodi))].filter(Boolean).sort()
-
-    // 3. Opsi Semester (Tersaring per Prodi)
-    const filteredByProdi = availableSchedules.filter(s => s.prodi === formData.prodi)
-    const semesterOptions = [...new Set(filteredByProdi.map(s => String(s.semester || "").trim()))]
-        .filter(Boolean)
-        .sort((a, b) => {
-            const numA = parseInt(a, 10)
-            const numB = parseInt(b, 10)
-            if (!isNaN(numA) && !isNaN(numB)) return numA - numB
-            if (!isNaN(numA)) return -1
-            if (!isNaN(numB)) return 1
-            return a.localeCompare(b)
-        })
-
-    // 4. Opsi Mata Kuliah (Tersaring per Prodi & Semester - Matkul yang seluruh kelasnya terisi otomatis hilang)
-    const filteredBySemester = filteredByProdi.filter(s => String(s.semester || "").trim() === String(formData.semester || "").trim())
-    const uniqueCourseOptions = [...new Set(filteredBySemester.map(s => s.mata_kuliah))].filter(Boolean).sort()
-
-    // 5. Opsi Kelas (Tersaring per Prodi, Semester & Mata Kuliah - Hanya kelas yang belum diambil PJ yang muncul)
-    const filteredByMatkul = filteredBySemester.filter(s => s.mata_kuliah === formData.mata_kuliah)
-    const kelasOptions = [...new Set(filteredByMatkul.map(s => s.kelas))].filter(Boolean).sort()
-
-    // Form Change Handlers dengan Auto-Reset Bertingkat & Input Sanitization
-    const handleChange = (e) => {
-        const { name, value } = e.target
-
-        // 1. Sanitasi Nama Lengkap / Username: Hanya huruf dan spasi (tanpa angka / karakter khusus)
-        if (name === 'username') {
-            const filteredName = value.replace(/[^a-zA-Z\s]/g, '')
-            setFormData(prev => ({ ...prev, username: filteredName }))
-            return
-        }
-
-        // 2. Sanitasi No. HP: Hanya angka & maksimal 15 digit
-        if (name === 'no_hp') {
-            const filteredPhone = value.replace(/\D/g, '').slice(0, 15)
-            setFormData(prev => ({ ...prev, no_hp: filteredPhone }))
-            return
-        }
-
-        // 3. Sanitasi & Konstruksi Email Kampus Otomatis dari NIM
-        if (name === "nim_nip") {
-            setEmailError("")
-            setError("")
-            const cleanNim = value.replace(/\D/g, "") // hanya angka
-            const fullEmail = cleanNim ? `${cleanNim}@student.walisongo.ac.id` : ""
-            setFormData(prev => ({
-                ...prev,
-                nim_nip: cleanNim,
-                email: fullEmail
-            }))
-            return
-        }
-
-        if (name === "email") {
-            setEmailError("")
-            setError("")
-            const extractedNim = value.includes("@") ? value.split("@")[0] : value
-            setFormData(prev => ({ ...prev, email: value, nim_nip: extractedNim }))
-            return
-        }
-        if (name === 'fakultas') {
-            setFormData(prev => ({
-                ...prev,
-                fakultas: value,
-                prodi: '',
-                semester: '',
-                mata_kuliah: '',
-                kelas: ''
-            }))
-        } else if (name === 'prodi') {
-            setFormData(prev => ({
-                ...prev,
-                prodi: value,
-                semester: '',
-                mata_kuliah: '',
-                kelas: ''
-            }))
-        } else if (name === 'semester') {
-            setFormData(prev => ({
-                ...prev,
-                semester: value,
-                mata_kuliah: '',
-                kelas: ''
-            }))
-        } else if (name === 'mata_kuliah') {
-            setFormData(prev => ({
-                ...prev,
-                mata_kuliah: value,
-                kelas: ''
-            }))
-        } else if (name === 'kelas') {
-            setFormData(prev => ({
-                ...prev,
-                kelas: value
-            }))
-        } else {
-            setFormData(prev => ({ ...prev, [name]: value }))
-        }
+    // Validasi Frontend 2: Check Email Duplikat
+    if (emailError) {
+      setError('Email ini telah memiliki akun.')
+      return
     }
 
-    // Pengecekan Email Duplikat saat User selesai mengetik (onBlur)
-    const handleEmailBlur = async () => {
-        if (!formData.email || !formData.nim_nip || formData.nim_nip.length < 5) return
-        try {
-            setEmailChecking(true)
-            const res = await api.get(`/auth/check-email?email=${encodeURIComponent(formData.email.trim())}`)
-            if (res.data.exists && res.data.isVerified) {
-                setEmailError(res.data.message || 'Email ini telah memiliki akun aktif.')
-            } else {
-                setEmailError('')
-            }
-        } catch (err) {
-            console.error('Pengecekan email gagal:', err)
-        } finally {
-            setEmailChecking(false)
-        }
+    // Validasi Frontend 3: Password Minimal 8 Karakter
+    if (formData.password.length < 8) {
+      setError('Password minimal harus 8 karakter.')
+      return
     }
 
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-        if (isRegistrationClosed) return
-
-        setError('')
-        setSuccess('')
-
-        // Validasi Frontend 1: Nama Lengkap / Username
-        const nameRegex = /^[a-zA-Z\s]+$/
-        if (!nameRegex.test(formData.username.trim())) {
-            setError('Nama Lengkap / Username hanya boleh berisi huruf dan spasi (tanpa angka atau karakter khusus).')
-            return
-        }
-
-        // Validasi Frontend 2: Check Email Duplikat dari State Blur
-        if (emailError) {
-            setError('Email ini telah memiliki akun.')
-            return
-        }
-
-        // Validasi Frontend 3: Password Minimal 8 Karakter
-        if (formData.password.length < 8) {
-            setError('Password minimal harus 8 karakter.')
-            return
-        }
-
-        // Validasi Frontend 4: No. HP (Harus 08... dan 10-15 digit)
-        const phoneRegex = /^08[0-9]{8,13}$/
-        if (!phoneRegex.test(formData.no_hp.trim())) {
-            setError('Nomor HP harus berawalan 08 dan terdiri dari 10 hingga 15 digit angka.')
-            return
-        }
-
-        setLoading(true)
-
-        try {
-            const response = await api.post('/auth/register', formData)
-            setSuccess(response.data.message)
-            setTimeout(() => {
-                navigate('/verify-email', { state: { email: formData.email } })
-            }, 1500)
-        } catch (err) {
-            if (err.response && err.response.data.error) {
-                setError(err.response.data.error)
-                if (err.response.data.error.includes('Email ini telah memiliki akun')) {
-                    setEmailError('Email ini telah memiliki akun.')
-                }
-            } else {
-                setError('Terjadi kesalahan jaringan/server.')
-            }
-        } finally {
-            setLoading(false)
-        }
+    // Validasi Frontend 4: No. HP
+    const phoneRegex = /^08[0-9]{8,13}$/
+    if (!phoneRegex.test(formData.no_hp.trim())) {
+      setError('Nomor HP harus berawalan 08 dan terdiri dari 10 hingga 15 digit angka.')
+      return
     }
 
-    return (
-        <div style={{
-            minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'var(--bg-main)', padding: '20px'
-        }}>
-            <div className="card-flat" style={{ width: '100%', maxWidth: '540px', padding: '32px' }}>
-                <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                    <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-main)' }}>Daftar Akun PJ Kelas</h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>
-                        Pilih alokasi penanggung jawab mata kuliah sesuai data jadwal kampus.
-                    </p>
-                </div>
+    // Validasi Frontend 5: Alokasi Jadwal Lengkap
+    if (!formData.fakultas || !formData.prodi || !formData.semester || !formData.mata_kuliah || !formData.kelas) {
+      setError('Harap lengkapi seluruh langkah Alokasi Jadwal (Fakultas, Prodi, Semester, Mata Kuliah, dan Kelas).')
+      return
+    }
 
-                {loadingOptions ? (
-                    <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                        Memeriksa ketersediaan kuota pendaftaran...
-                    </div>
-                ) : fetchError ? (
-                    <div style={{ textAlign: 'center', padding: '24px 16px' }}>
-                        <div style={{ fontSize: '36px', marginBottom: '12px' }}>⚠️</div>
-                        <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#0f172a', marginBottom: '8px' }}>
-                            Gagal Memuat Data Pendaftaran
-                        </h3>
-                        <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px' }}>
-                            Server backend baru saja di-restart atau sedang menyiapkan koneksi. Silakan muat ulang.
-                        </p>
-                        <button onClick={fetchInitialData} className="btn btn-primary" style={{ padding: '10px 20px' }}>
-                            🔄 Muat Ulang Opsi Pendaftaran
-                        </button>
-                    </div>
-                ) : isRegistrationClosed ? (
-                    /* TAMPILAN KHUSUS: PENDAFTARAN DITUTUP (100% PULIH) */
-                    <div style={{ textAlign: 'center', padding: '20px 10px' }}>
-                        <div style={{
-                            width: '64px', height: '64px', background: '#fef2f2', borderRadius: '50%',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
-                            fontSize: '32px', border: '1px solid #fca5a5'
-                        }}>
-                            🔒
-                        </div>
-                        <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#991b1b', marginBottom: '8px' }}>
-                            Pendaftaran PJ Ditutup!
-                        </h2>
-                        <p style={{ color: '#475569', fontSize: '14px', lineHeight: '1.6', marginBottom: '24px' }}>
-                            {closedMessage || 'Seluruh Mata Kuliah pada semester ini telah memiliki Penanggung Jawab (PJ) yang terdaftar di database.'}
-                            <br /><span style={{ fontSize: '13px', color: '#64748b' }}>Hubungi Admin Kampus jika Anda membutuhkan informasi lebih lanjut.</span>
-                        </p>
-                        <Link to="/login" className="btn btn-primary" style={{ display: 'inline-block', width: '100%', textAlign: 'center', padding: '12px' }}>
-                            👈 Kembali ke Halaman Login
-                        </Link>
-                    </div>
-                ) : (
-                    /* FORM REGISTRASI DENGAN FULL SMART CASCADING FILTER */
-                    <form onSubmit={handleSubmit}>
-                        {error && (
-                            <div style={{
-                                background: '#fee2e2', color: '#dc2626', padding: '14px', borderRadius: '10px',
-                                marginBottom: '16px', fontSize: '14px', border: '1px solid #fca5a5',
-                                display: 'flex', flexDirection: 'column', gap: '8px'
-                            }}>
-                                <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    ⚠️ {error}
-                                </div>
-                                {error.includes('Email ini telah memiliki akun') && (
-                                    <div style={{ marginTop: '4px' }}>
-                                        <Link to="/login" className="btn btn-secondary" style={{
-                                            display: 'inline-block', padding: '6px 14px', fontSize: '13px',
-                                            textDecoration: 'none', background: '#dc2626', color: '#ffffff',
-                                            borderRadius: '6px', fontWeight: '600'
-                                        }}>
-                                            👉 Klik di sini untuk Login ke Akun Anda
-                                        </Link>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        {success && <div style={{ background: '#dcfce7', color: '#15803d', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px' }}>{success}</div>}
+    setLoading(true)
 
-                        {/* Username */}
-                        <div className="form-group" style={{ marginBottom: '16px' }}>
-                            <label className="form-label">Username / Nama Lengkap</label>
-                            <input type="text" name="username" value={formData.username} onChange={handleChange} className="input-field" placeholder="Masukkan nama lengkap (hanya huruf)" required />
-                            <small style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
-                                ℹ️ Hanya boleh huruf dan spasi (tanpa angka / karakter khusus).
-                            </small>
-                        </div>
+    try {
+      const response = await api.post('/auth/register', formData)
+      setSuccess(response.data.message || 'Pendaftaran berhasil! Mengalihkan ke halaman verifikasi...')
+      setTimeout(() => {
+        navigate('/verify-email', { state: { email: formData.email } })
+      }, 1500)
+    } catch (err) {
+      if (err.response && err.response.data.error) {
+        setError(err.response.data.error)
+        if (err.response.data.error.includes('Email ini telah memiliki akun')) {
+          setEmailError('Email ini telah memiliki akun.')
+        }
+      } else {
+        setError('Terjadi kesalahan jaringan/server.')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
 
-                        {/* NIM Mahasiswa & Email Kampus Otomatis (Input Group) */}
-                        <div className="form-group" style={{ marginBottom: "16px" }}>
-                            <label className="form-label">NIM Mahasiswa (Email Kampus Otomatis)</label>
-                            <div style={{ display: "flex", alignItems: "stretch" }}>
-                                <input
-                                    type="text"
-                                    name="nim_nip"
-                                    value={formData.nim_nip}
-                                    onChange={handleChange}
-                                    onBlur={handleEmailBlur}
-                                    className="input-field"
-                                    placeholder="Contoh: 2108096001"
-                                    maxLength={15}
-                                    style={{
-                                        flex: 1,
-                                        borderTopRightRadius: 0,
-                                        borderBottomRightRadius: 0,
-                                        borderColor: emailError ? "#dc2626" : undefined
-                                    }}
-                                    required
-                                />
-                                <div style={{
-                                    background: "#f1f5f9",
-                                    color: "#334155",
-                                    padding: "0 14px",
-                                    fontSize: "13px",
-                                    fontWeight: "600",
-                                    border: "1px solid #cbd5e1",
-                                    borderLeft: "none",
-                                    borderTopRightRadius: "8px",
-                                    borderBottomRightRadius: "8px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    userSelect: "none"
-                                }}>
-                                    @student.walisongo.ac.id
-                                </div>
-                            </div>
-                            {emailChecking && (
-                                <small style={{ fontSize: "11px", color: "#3b82f6", marginTop: "4px", display: "block" }}>
-                                    🔍 Memeriksa ketersediaan NIM / Email...
-                                </small>
-                            )}
-                            {emailError && (
-                                <small style={{ fontSize: "12px", color: "#dc2626", marginTop: "4px", fontWeight: "bold", display: "block" }}>
-                                    ⚠️ {emailError} <Link to="/login" style={{ color: "#0284c7", textDecoration: "underline" }}>Login di sini</Link>
-                                </small>
-                            )}
-                            <small style={{ fontSize: "11px", color: "#64748b", marginTop: "4px", display: "block" }}>
-                                📧 Surat OTP akan dikirim ke: <b style={{ color: "#0f172a" }}>{formData.email || "NIM@student.walisongo.ac.id"}</b>
-                            </small>
-                        </div>
+  const stepTitles = ['FAKULTAS', 'PRODI', 'SEMESTER', 'MATKUL', 'KELAS']
 
-                        {/* Password dengan Toggle Mata */}
-                        <div className="form-group" style={{ marginBottom: '16px' }}>
-                            <label className="form-label">Password</label>
-                            <div style={{ position: 'relative' }}>
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    name="password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    className="input-field"
-                                    placeholder="Minimal 8 karakter"
-                                    required
-                                    style={{ paddingRight: '44px' }}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    style={{
-                                        position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
-                                        background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', color: '#64748b',
-                                        padding: '4px'
-                                    }}
-                                    title={showPassword ? "Sembunyikan Password" : "Tampilkan Password"}
-                                >
-                                    {showPassword ? '🙈' : '👁️'}
-                                </button>
-                            </div>
-                            <small style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
-                                ℹ️ Password minimal 8 karakter.
-                            </small>
-                        </div>
+  return (
+    <div className="pj-register-wrapper">
+      <main className="pj-register-container">
+        {/* Retro Floating Stamp / Badge */}
+        <div className="pj-floating-badge">
+          SIKELAS • 2026
+        </div>
 
-                        {/* No. HP */}
-                        <div className="form-group" style={{ marginBottom: '16px' }}>
-                            <label className="form-label">No. HP (WhatsApp)</label>
-                            <input
-                                type="text"
-                                name="no_hp"
-                                value={formData.no_hp}
-                                onChange={handleChange}
-                                className="input-field"
-                                placeholder="08123456789"
-                                maxLength={15}
-                                required
-                            />
-                            <small style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
-                                ℹ️ Harus berawalan 08 (10-15 digit angka).
-                            </small>
-                        </div>
+        {/* Card Container */}
+        <div className="pj-register-card">
+          {/* Top Title Header */}
+          <header className="pj-register-header">
+            <p className="pj-header-tag">MEMBER · ACCESS · PORTAL</p>
+            <h1 className="pj-header-title">DAFTAR AKUN PJ KELAS</h1>
+            <p className="pj-header-subtitle">
+              Pilih alokasi penanggung jawab mata kuliah sesuai data jadwal kampus.
+            </p>
+          </header>
 
+          {/* Navigation Tabs (Sign Up / Sign In) */}
+          <nav aria-label="Tab Akses" className="pj-nav-tabs">
+            <span className="pj-nav-tab pj-nav-tab-active">
+              SIGN UP (DAFTAR)
+            </span>
+            <Link to="/login" className="pj-nav-tab pj-nav-tab-inactive">
+              SIGN IN (MASUK)
+            </Link>
+          </nav>
 
-                        {/* SMART CASCADING FILTER DROPDOWNS (100% DINAMIS DATABASE) */}
-                        <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '18px', borderRadius: '10px', marginBottom: '20px' }}>
-                            <h4 style={{ fontSize: '13px', fontWeight: 'bold', color: '#0f172a', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                🎯 Alokasi Kelas & Mata Kuliah (Dinamis Database)
-                            </h4>
-
-                            {/* Dropdown 1: Fakultas */}
-                            <div className="form-group" style={{ marginBottom: '14px' }}>
-                                <label className="form-label">1. Fakultas</label>
-                                <select name="fakultas" value={formData.fakultas} onChange={handleChange} className="input-field" required>
-                                    <option value="">-- Pilih Fakultas --</option>
-                                    {fakultasOptions.map(f => (
-                                        <option key={f} value={f}>{f}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Dropdown 2: Program Studi (Tersaring per Fakultas) */}
-                            <div className="form-group" style={{ marginBottom: '14px' }}>
-                                <label className="form-label">2. Program Studi (Prodi)</label>
-                                <select name="prodi" value={formData.prodi} onChange={handleChange} className="input-field" required disabled={!formData.fakultas}>
-                                    <option value="">-- Pilih Program Studi --</option>
-                                    {prodiOptions.map(p => (
-                                        <option key={p} value={p}>{p}</option>
-                                    ))}
-                                </select>
-                                {!formData.fakultas && (
-                                    <small style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px', display: 'block' }}>
-                                        ℹ️ Pilih Fakultas terlebih dahulu.
-                                    </small>
-                                )}
-                            </div>
-
-                            {/* Dropdown 3: Semester (Tersaring per Prodi) */}
-                            <div className="form-group" style={{ marginBottom: '14px' }}>
-                                <label className="form-label">3. Semester (Aktif)</label>
-                                <select name="semester" value={formData.semester} onChange={handleChange} className="input-field" required disabled={!formData.prodi}>
-                                    <option value="">-- Pilih Semester --</option>
-                                    {semesterOptions.map(s => (
-                                        <option key={s} value={s}>Semester {s}</option>
-                                    ))}
-                                </select>
-                                {!formData.prodi && (
-                                    <small style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px', display: 'block' }}>
-                                        ℹ️ Pilih Program Studi terlebih dahulu.
-                                    </small>
-                                )}
-                            </div>
-
-                            {/* Dropdown 4: Mata Kuliah (Bebas PJ - Tersaring per Prodi & Semester) */}
-                            <div className="form-group" style={{ marginBottom: '14px' }}>
-                                <label className="form-label">4. Mata Kuliah (Bebas PJ)</label>
-                                <select name="mata_kuliah" value={formData.mata_kuliah} onChange={handleChange} className="input-field" required disabled={!formData.semester}>
-                                    <option value="">-- Pilih Mata Kuliah dari Database --</option>
-                                    {uniqueCourseOptions.map(mk => (
-                                        <option key={mk} value={mk}>{mk}</option>
-                                    ))}
-                                </select>
-                                {!formData.semester ? (
-                                    <small style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px', display: 'block' }}>
-                                        ℹ️ Pilih Semester terlebih dahulu.
-                                    </small>
-                                ) : uniqueCourseOptions.length === 0 ? (
-                                    <p style={{ color: '#dc2626', fontSize: '12px', marginTop: '6px', fontWeight: 'bold' }}>
-                                        ⚠️ Seluruh Mata Kuliah pada {formData.prodi} (Semester {formData.semester}) di database sudah memiliki Penanggung Jawab!
-                                    </p>
-                                ) : null}
-                            </div>
-
-                            {/* Dropdown 5: Kelas (Bebas PJ - Tersaring per Mata Kuliah) */}
-                            <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">5. Kelas (Bebas PJ)</label>
-                                <select name="kelas" value={formData.kelas} onChange={handleChange} className="input-field" required disabled={!formData.mata_kuliah}>
-                                    <option value="">-- Pilih Kelas --</option>
-                                    {kelasOptions.map(k => (
-                                        <option key={k} value={k}>Kelas {k}</option>
-                                    ))}
-                                </select>
-                                {!formData.mata_kuliah ? (
-                                    <small style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px', display: 'block' }}>
-                                        ℹ️ Pilih Mata Kuliah terlebih dahulu.
-                                    </small>
-                                ) : kelasOptions.length === 0 ? (
-                                    <p style={{ color: '#dc2626', fontSize: '12px', marginTop: '6px', fontWeight: 'bold' }}>
-                                        ⚠️ Seluruh Kelas untuk mata kuliah ini sudah terisi penuh oleh Penanggung Jawab lain!
-                                    </p>
-                                ) : null}
-                            </div>
-                        </div>
-
-                        <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading || (formData.mata_kuliah && kelasOptions.length === 0)}>
-                            {loading ? 'Mendaftarkan...' : 'Daftar Sekarang'}
-                        </button>
-                    </form>
-                )}
-
-                {!isRegistrationClosed && (
-                    <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', color: 'var(--text-muted)' }}>
-                        Sudah punya akun? <Link to="/login" style={{ color: 'var(--color-primary)', fontWeight: '600' }}>Login di sini</Link>
-                    </div>
-                )}
-                <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '13px' }}>
-                    📩 Belum tuntas verifikasi OTP? <Link to="/verify-email" style={{ color: '#2563eb', fontWeight: '600' }}>Lanjutkan Verifikasi Di Sini</Link>
-                </div>
-                <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '14px' }}>
-                    <Link to="/" style={{ color: '#64748b', textDecoration: 'none', fontWeight: '500' }}>
-                        ⬅️ Kembali ke Beranda
-                    </Link>
-                </div>
+          {/* State: Loading Initial Options */}
+          {loadingOptions ? (
+            <div style={{ padding: '60px 24px', textAlign: 'center', fontFamily: 'Chivo Mono, monospace' }}>
+              <p style={{ fontWeight: 'bold', fontSize: '14px' }}>⏳ Memeriksa ketersediaan kuota pendaftaran...</p>
             </div>
-        </div >
-    )
+          ) : fetchError ? (
+            <div style={{ padding: '40px 24px', textAlign: 'center', fontFamily: 'Chivo Mono, monospace' }}>
+              <div style={{ fontSize: '36px', marginBottom: '12px' }}>⚠️</div>
+              <h3 style={{ fontSize: '16px', fontWeight: '900', textTransform: 'uppercase' }}>Gagal Memuat Data</h3>
+              <p style={{ fontSize: '13px', color: '#525252', margin: '8px 0 20px 0' }}>
+                Server sedang menyiapkan koneksi database. Silakan muat ulang.
+              </p>
+              <button
+                type="button"
+                onClick={fetchInitialData}
+                className="pj-btn-submit"
+                style={{ width: 'auto', display: 'inline-flex', padding: '10px 24px', fontSize: '13px' }}
+              >
+                🔄 Muat Ulang Opsi
+              </button>
+            </div>
+          ) : isRegistrationClosed ? (
+            /* Special State: Registration Closed */
+            <div style={{ padding: '40px 24px', textAlign: 'center', fontFamily: 'Chivo Mono, monospace' }}>
+              <div style={{ fontSize: '42px', marginBottom: '12px' }}>🔒</div>
+              <h2 style={{ fontSize: '20px', fontWeight: '900', textTransform: 'uppercase', color: '#b91c1c' }}>
+                Pendaftaran PJ Ditutup
+              </h2>
+              <p style={{ fontSize: '13px', color: '#404040', lineHeight: '1.6', margin: '12px auto 24px auto', maxWidth: '440px' }}>
+                {closedMessage || 'Seluruh Mata Kuliah pada semester ini telah memiliki Penanggung Jawab (PJ) terdaftar.'}
+              </p>
+              <Link to="/login" className="pj-btn-submit" style={{ textDecoration: 'none', display: 'inline-flex', width: 'auto' }}>
+                👈 Kembali ke Halaman Login
+              </Link>
+            </div>
+          ) : (
+            /* Form Registrasi */
+            <form onSubmit={handleSubmit} className="pj-form-body">
+              {/* Alert Error / Success */}
+              {error && (
+                <div className="pj-alert-box pj-alert-error">
+                  <span>⚠️</span>
+                  <div style={{ flex: 1 }}>
+                    <span>{error}</span>
+                    {error.includes('Email ini telah memiliki akun') && (
+                      <div style={{ marginTop: '8px' }}>
+                        <Link
+                          to="/login"
+                          style={{
+                            display: 'inline-block',
+                            background: '#000000',
+                            color: '#ffffff',
+                            padding: '6px 12px',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            textDecoration: 'none'
+                          }}
+                        >
+                          👉 Login ke Akun Anda
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {success && (
+                <div className="pj-alert-box pj-alert-success">
+                  <span>✅</span>
+                  <span>{success}</span>
+                </div>
+              )}
+
+              {/* Field 1: Username / Nama Lengkap */}
+              <div className="pj-input-group">
+                <div className="pj-label-row">
+                  <label className="pj-label" htmlFor="username">
+                    <span>👤</span> Username / Nama Lengkap
+                  </label>
+                  <span className="pj-badge-tag">WAJIB</span>
+                </div>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  required
+                  className="pj-input-text"
+                  placeholder="Contoh: Muhammad Rafli"
+                  value={formData.username}
+                  onChange={handleChange}
+                />
+                <p className="pj-input-hint">
+                  <span>ℹ️</span> Hanya boleh huruf dan spasi (tanpa angka / karakter khusus).
+                </p>
+              </div>
+
+              {/* Field 2: NIM Mahasiswa & Email Otomatis */}
+              <div className="pj-input-group">
+                <div className="pj-label-row">
+                  <label className="pj-label" htmlFor="nim_nip">
+                    <span>🎓</span> NIM Mahasiswa (Email Kampus Otomatis)
+                  </label>
+                  <span className="pj-badge-tag">SSO KAMPUS</span>
+                </div>
+                <div className="pj-nim-combo">
+                  <input
+                    id="nim_nip"
+                    name="nim_nip"
+                    type="text"
+                    required
+                    maxLength={15}
+                    className="pj-nim-input"
+                    placeholder="Contoh: 2108096001"
+                    value={formData.nim_nip}
+                    onChange={handleChange}
+                    onBlur={handleEmailBlur}
+                  />
+                  <div className="pj-nim-suffix">
+                    @student.walisongo.ac.id
+                  </div>
+                </div>
+                <p className="pj-input-hint">
+                  <span>✉️</span> Surat OTP akan dikirim ke:{' '}
+                  <strong>{formData.email || 'NIM@student.walisongo.ac.id'}</strong>
+                  {emailChecking && <span style={{ color: '#0284c7', marginLeft: '6px' }}>(memeriksa...)</span>}
+                </p>
+                {emailError && (
+                  <p className="pj-input-hint" style={{ color: '#b91c1c', fontWeight: 'bold' }}>
+                    <span>⚠️</span> {emailError}
+                  </p>
+                )}
+              </div>
+
+              {/* Field 3: Password */}
+              <div className="pj-input-group">
+                <label className="pj-label" htmlFor="password">
+                  <span>🔒</span> Password
+                </label>
+                <div className="pj-password-wrapper">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    className="pj-input-text"
+                    style={{ paddingRight: '48px' }}
+                    placeholder="Minimal 8 karakter..."
+                    value={formData.password}
+                    onChange={handleChange}
+                  />
+                  <button
+                    type="button"
+                    aria-label="Toggle password visibility"
+                    className={`pj-password-toggle ${showPassword ? 'active' : ''}`}
+                    onClick={() => setShowPassword(prev => !prev)}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#000000' }}>
+                      {showPassword ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
+                </div>
+                <p className="pj-input-hint">
+                  <span>ℹ️</span> Password minimal 8 karakter.
+                </p>
+              </div>
+
+              {/* Field 4: No. HP (WhatsApp) */}
+              <div className="pj-input-group">
+                <label className="pj-label" htmlFor="no_hp">
+                  <span>📱</span> No. HP (WhatsApp)
+                </label>
+                <input
+                  id="no_hp"
+                  name="no_hp"
+                  type="tel"
+                  required
+                  pattern="[0-9]{10,15}"
+                  className="pj-input-text"
+                  placeholder="08123456789"
+                  value={formData.no_hp}
+                  onChange={handleChange}
+                />
+                <p className="pj-input-hint">
+                  <span>ℹ️</span> Harus berawalan 08 (10-15 digit angka).
+                </p>
+              </div>
+
+              {/* Field 5: Stepper Alokasi Jadwal (Steps 1 of 5) */}
+              <section className="pj-stepper-box">
+                <div className="pj-stepper-top">
+                  <p className="pj-stepper-counter">
+                    ALOKASI JADWAL · STEP {currentStep} OF 5
+                  </p>
+                </div>
+
+                {/* Stepper Track Nodes */}
+                <div className="pj-stepper-track">
+                  {[1, 2, 3, 4, 5].map((step, idx) => {
+                    const isCompleted = step < currentStep
+                    const isActive = step === currentStep
+
+                    return (
+                      <div key={step} style={{ display: 'contents' }}>
+                        <button
+                          type="button"
+                          className="pj-step-node"
+                          onClick={() => handleStepClick(step)}
+                          title={`Langkah ${step}: ${stepTitles[idx]}`}
+                        >
+                          <div
+                            className={`pj-step-box ${
+                              isCompleted
+                                ? 'pj-step-box-completed'
+                                : isActive
+                                ? 'pj-step-box-active'
+                                : 'pj-step-box-inactive'
+                            }`}
+                          >
+                            {isCompleted ? '✓' : step}
+                          </div>
+                          <span
+                            className={`pj-step-label ${
+                              isActive ? 'pj-step-label-active' : 'pj-step-label-inactive'
+                            }`}
+                          >
+                            {stepTitles[idx]}
+                          </span>
+                        </button>
+                        {idx < 4 && <div className="pj-step-connector" />}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Stepper Dashed Content Pane */}
+                <div className="pj-stepper-pane">
+                  {/* Step 1: Fakultas */}
+                  {currentStep === 1 && (
+                    <>
+                      <div className="pj-pane-header">
+                        <h3><span>🏛️</span> 1. PILIH FAKULTAS</h3>
+                        <p>
+                          Pilih unit fakultas tempat mata kuliah Anda diselenggarakan. Data prodi akan disesuaikan otomatis.
+                        </p>
+                      </div>
+                      <select
+                        id="faculty"
+                        name="fakultas"
+                        required
+                        className="pj-select-brutal"
+                        value={formData.fakultas}
+                        onChange={handleChange}
+                      >
+                        <option value="">-- Pilih Fakultas --</option>
+                        {fakultasOptions.map((f, i) => (
+                          <option key={i} value={f}>{f}</option>
+                        ))}
+                      </select>
+                    </>
+                  )}
+
+                  {/* Step 2: Program Studi */}
+                  {currentStep === 2 && (
+                    <>
+                      <div className="pj-pane-header">
+                        <h3><span>📚</span> 2. PROGRAM STUDI (PRODI)</h3>
+                        <p>Tentukan program studi resmi di bawah naungan fakultas terpilih.</p>
+                      </div>
+                      <select
+                        id="major"
+                        name="prodi"
+                        required
+                        className="pj-select-brutal"
+                        value={formData.prodi}
+                        onChange={handleChange}
+                      >
+                        <option value="">-- Pilih Program Studi --</option>
+                        {prodiOptions.map((p, i) => (
+                          <option key={i} value={p}>{p}</option>
+                        ))}
+                      </select>
+                      <p className="pj-input-hint">
+                        <span>ℹ️</span> Terverifikasi berdasarkan fakultas terpilih.
+                      </p>
+                    </>
+                  )}
+
+                  {/* Step 3: Semester */}
+                  {currentStep === 3 && (
+                    <>
+                      <div className="pj-pane-header">
+                        <h3><span>🗓️</span> 3. SEMESTER (AKTIF)</h3>
+                        <p>Pilih semester perkuliahan berjalan sesuai kalender akademik kampus.</p>
+                      </div>
+                      <select
+                        id="semester"
+                        name="semester"
+                        required
+                        className="pj-select-brutal"
+                        value={formData.semester}
+                        onChange={handleChange}
+                      >
+                        <option value="">-- Pilih Semester --</option>
+                        {semesterOptions.map((s, i) => (
+                          <option key={i} value={s}>Semester {s}</option>
+                        ))}
+                      </select>
+                      <p className="pj-input-hint">
+                        <span>ℹ️</span> Database kurikulum aktif otomatis terhubung.
+                      </p>
+                    </>
+                  )}
+
+                  {/* Step 4: Mata Kuliah */}
+                  {currentStep === 4 && (
+                    <>
+                      <div className="pj-pane-header">
+                        <h3><span>📖</span> 4. MATA KULIAH (BEBAS PJ)</h3>
+                        <p>Pilih mata kuliah yang belum memiliki penanggung jawab (PJ).</p>
+                      </div>
+                      <select
+                        id="course"
+                        name="mata_kuliah"
+                        required
+                        className="pj-select-brutal"
+                        value={formData.mata_kuliah}
+                        onChange={handleChange}
+                      >
+                        <option value="">-- Pilih Mata Kuliah dari Database --</option>
+                        {uniqueCourseOptions.map((m, i) => (
+                          <option key={i} value={m}>{m}</option>
+                        ))}
+                      </select>
+                      <p className="pj-input-hint">
+                        <span>ℹ️</span> Kuota PJ tersedia untuk semester yang dipilih.
+                      </p>
+                    </>
+                  )}
+
+                  {/* Step 5: Kelas */}
+                  {currentStep === 5 && (
+                    <>
+                      <div className="pj-pane-header">
+                        <h3><span>🏷️</span> 5. KELAS (BEBAS PJ)</h3>
+                        <p>Tentukan rombongan belajar kelas yang Anda ampu sebagai perwakilan.</p>
+                      </div>
+                      <select
+                        id="classGroup"
+                        name="kelas"
+                        required
+                        className="pj-select-brutal"
+                        value={formData.kelas}
+                        onChange={handleChange}
+                      >
+                        <option value="">-- Pilih Kelas --</option>
+                        {kelasOptions.map((k, i) => (
+                          <option key={i} value={k}>Kelas {k}</option>
+                        ))}
+                      </select>
+                      <p className="pj-input-hint">
+                        <span>ℹ️</span> Alokasi kelas ini akan langsung tersinkron ke daftar jadwal kuliah.
+                      </p>
+                    </>
+                  )}
+                </div>
+
+                {/* Stepper Navigation Buttons */}
+                <div className="pj-stepper-actions">
+                  <button
+                    type="button"
+                    className="pj-btn-back"
+                    disabled={currentStep === 1}
+                    onClick={handleBackStep}
+                  >
+                    ← BACK
+                  </button>
+                  <button
+                    type="button"
+                    className="pj-btn-next"
+                    onClick={handleNextStep}
+                  >
+                    {currentStep === 5 ? (
+                      <>
+                        <span>SELESAI</span> <span>✓</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>NEXT</span> <span>→</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </section>
+
+              {/* Final Submit Button */}
+              <button
+                id="btn-pj-submit"
+                type="submit"
+                disabled={loading}
+                className="pj-btn-submit"
+              >
+                <span>{loading ? 'MEMPROSES PENDAFTARAN...' : 'DAFTAR SEKARANG'}</span>
+                <span>➜</span>
+              </button>
+
+              {/* Form Footer Navigation & Links */}
+              <footer className="pj-form-footer">
+                <p className="pj-footer-login-text">
+                  Sudah punya akun?{' '}
+                  <Link to="/login" className="pj-link-login">
+                    Login di sini
+                  </Link>
+                </p>
+
+                <div className="pj-otp-banner">
+                  <span>📌 Belum tuntas verifikasi OTP?</span>
+                  <Link to="/verify-email" className="pj-link-otp">
+                    Lanjutkan Verifikasi Di Sini
+                  </Link>
+                </div>
+
+                <div>
+                  <Link to="/" className="pj-btn-home">
+                    <span>⬅</span> Kembali ke Beranda
+                  </Link>
+                </div>
+              </footer>
+            </form>
+          )}
+
+          {/* Ticket Perforated Footer */}
+          <div className="pj-ticket-footer">
+            <p>★ ESTABLISHED 2026 ★ SIKELAS KAMPUS ★ ALL RIGHTS RESERVED ★</p>
+          </div>
+        </div>
+
+        {/* Help Desk Link */}
+        <div className="pj-helpdesk-box">
+          <p>
+            Butuh bantuan?{' '}
+            <a href="https://wa.me/6281234567890?text=Halo%20Admin%20SiKelas,%20saya%20membutuhkan%20bantuan%20terkait%20pendaftaran%20PJ" target="_blank" rel="noopener noreferrer">
+              Hubungi Admin Helpdesk
+            </a>
+          </p>
+        </div>
+      </main>
+    </div>
+  )
 }
 
 export default Register

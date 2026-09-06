@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react'
 import { AuthContext } from '../../context/AuthContext'
 import api from '../../api/axios'
 import { supabaseClient } from '../../config/supabase'
+import './DaftarKelas.css'
 
 function DaftarKelas() {
   const { user } = useContext(AuthContext)
@@ -297,14 +298,14 @@ function DaftarKelas() {
   })
 
   return (
-    <div className="animate-fade-in">
+    <div className="reservation-page animate-fade-in">
       {/* HEADER + JAM DIGITAL */}
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="reservation-heading page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 className="page-title">Daftar Kelas & Ketersediaan Ruangan</h1>
           <p className="page-subtitle">Cari slot waktu peminjaman spesifik dan pantau ketersediaan ruangan secara real-time.</p>
         </div>
-        <div style={{ textAlign: 'right', background: '#f8fafc', padding: '10px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+        <div className="reservation-clock" style={{ textAlign: 'right', background: '#f8fafc', padding: '10px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
           <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '2px' }}>
             WAKTU SERVER REAL-TIME
           </div>
@@ -315,7 +316,7 @@ function DaftarKelas() {
       </div>
 
       {/* PANEL FILTER LOKASI BERJENJANG (CASCADING DYNAMIC LOCATION FILTER) */}
-      <div className="card-flat" style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '16px 20px', borderRadius: '12px', marginBottom: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+      <div className="reservation-location-filter card-flat" style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '16px 20px', borderRadius: '12px', marginBottom: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
           <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
             🏢 Filter Lokasi Ruangan (Kampus ➔ Gedung ➔ Lantai)
@@ -380,7 +381,7 @@ function DaftarKelas() {
       </div>
 
       {/* PANEL FILTER SLOT WAKTU (TIME-SLOT DRIVEN AVAILABILITY) */}
-      <div className="card-flat" style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '16px 20px', borderRadius: '12px', marginBottom: '24px' }}>
+      <div className="reservation-slot-filter card-flat" style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '16px 20px', borderRadius: '12px', marginBottom: '24px' }}>
         <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: '0 0 12px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
           ⏰ Slot Waktu Peminjaman Target
         </h3>
@@ -430,7 +431,7 @@ function DaftarKelas() {
       </div>
 
       {/* FILTER TABS STATUS RUANG & STATISTIK FINISHED */}
-      <div className="tabs-container" style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+      <div className="reservation-tabs tabs-container" style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button className={`tab-btn ${activeFilter === 'semua' ? 'active' : ''}`} onClick={() => setActiveFilter('semua')}>Semua ({filteredRooms.length})</button>
           <button className={`tab-btn ${activeFilter === 'tersedia' ? 'active' : ''}`} onClick={() => setActiveFilter('tersedia')}>Tersedia Slot Ini ({filteredRooms.filter(r => r.slot_available).length})</button>
@@ -449,9 +450,9 @@ function DaftarKelas() {
           Tidak ada ruangan untuk kriteria filter ini.
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+        <div className="reservation-room-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
           {filteredRooms.map(room => (
-            <div key={room.id} className="card-flat" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: room.slot_available ? '1px solid #86efac' : '1px solid #fca5a5' }}>
+            <div key={room.id} className={`reservation-room-card card-flat ${room.slot_available ? 'room-available' : 'room-occupied'}`} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: room.slot_available ? '1px solid #86efac' : '1px solid #fca5a5' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                   <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Ruang {room.nama}</h3>

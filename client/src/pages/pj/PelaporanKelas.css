@@ -1,0 +1,57 @@
+/* Neo-Institutional empty class report */
+.empty-class-report-page {
+  --report-paper: #fbf9f2;
+  --report-surface: #ffffff;
+  --report-ink: #1b1c18;
+  --report-muted: #43474e;
+  --report-border: #000000;
+  --report-blue: #3b82f6;
+  --report-green: #4ade80;
+  --report-red: #c51b1b;
+  color: var(--report-ink);
+  font-family: 'Inter', sans-serif;
+  background-image: radial-gradient(#000 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.empty-report-heading { margin-bottom: 28px; }
+.empty-report-heading .page-title { color:var(--report-ink); font:clamp(30px, 4vw, 44px)/1.15 'Archivo Black', sans-serif; }
+.empty-report-heading .page-subtitle { color:var(--report-muted); font-size:18px; font-weight:600; }
+.empty-report-card { width:100%; max-width:100% !important; padding:40px !important; border:4px solid var(--report-border); border-radius:0; box-shadow:4px 4px 0 var(--report-border); background:var(--report-surface); }
+.empty-report-card .form-label { display:block; margin-bottom:8px; color:var(--report-muted); font-size:18px; font-weight:600; }
+.empty-report-card .input-field { min-height:52px; border:4px solid var(--report-border); border-radius:0; background:#fff; color:var(--report-ink); font-size:16px; font-weight:600; }
+.empty-report-card .input-field:focus { border-color:var(--report-border); outline:3px solid var(--report-blue); outline-offset:2px; box-shadow:none; }
+.empty-report-card .report-field:first-child .input-field { background:#e5e7eb !important; font-weight:800; }
+.single-session-info { min-height:84px; display:flex; align-items:center; border:4px solid var(--report-blue) !important; border-radius:0 !important; background:#dbeafe !important; color:var(--report-ink) !important; font-size:18px !important; font-weight:700 !important; line-height:1.45; }
+.single-session-info b { color:var(--report-blue); }
+.report-location-info { border:4px solid var(--report-border) !important; border-radius:0 !important; background:var(--report-paper) !important; color:var(--report-muted); font-size:18px !important; line-height:1.6; }
+.report-location-info p { color:var(--report-muted) !important; }
+.report-location-info b { color:var(--report-ink); }
+.report-location-info p:last-child { color:var(--report-green) !important; font-weight:700; }
+.empty-report-card .btn { border:4px solid var(--report-border); border-radius:0; box-shadow:4px 4px 0 var(--report-border); font-weight:900; }
+.report-submit-button { min-height:68px; margin-top:12px; background:var(--report-red) !important; color:#fff; font-size:20px; }
+.report-submit-button:hover:not(:disabled) { transform:translate(2px,2px); box-shadow:2px 2px 0 var(--report-border); }
+.report-submit-button:disabled { cursor:not-allowed; opacity:.6; }
+.report-message { margin-bottom:20px; border:2px solid var(--report-border); border-radius:0 !important; padding:12px; font-weight:700; }
+.report-message-success { background:var(--report-green) !important; color:var(--report-ink) !important; }
+.report-message-error { background:#fee2e2 !important; color:#991b1b !important; }
+.report-empty-state { display:flex; min-height:220px; align-items:center; justify-content:center; flex-direction:column; gap:12px; border:4px solid var(--report-border) !important; border-radius:0 !important; padding:28px !important; text-align:center; box-shadow:4px 4px 0 var(--report-border); }
+.report-empty-state .report-state-icon { display:grid; width:64px; height:64px; place-items:center; border:4px solid var(--report-border); background:var(--report-blue); color:#fff; font:900 34px 'Archivo Black', sans-serif; }
+.report-empty-state p { margin:0; font-size:16px; font-weight:700; }
+.report-empty-state small { color:var(--report-muted); font-size:13px; font-weight:600; }
+.report-loading-state { background:#dbeafe; color:var(--report-ink); }
+.report-no-schedule { background:#fee2e2 !important; color:#991b1b !important; }
+.report-no-schedule .report-state-icon { background:var(--report-red); }
+
+@media (max-width:700px) {
+  .empty-report-card { padding:20px !important; }
+  .empty-report-heading .page-title { font-size:30px; }
+  .empty-report-heading .page-subtitle { font-size:15px; }
+  .empty-report-card .form-label, .single-session-info, .report-location-info { font-size:15px !important; }
+  .report-submit-button { min-height:58px; font-size:17px; }
+  .report-empty-state { min-height:180px; padding:20px !important; }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .report-submit-button { transition:none; }
+}

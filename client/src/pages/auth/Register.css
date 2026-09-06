@@ -1,0 +1,725 @@
+/* ===================================================
+   Neobrutalist Campus Core - Register PJ Kelas
+   SiKelas Institutional Management
+   =================================================== */
+
+.pj-register-wrapper {
+  min-height: 100vh;
+  background-color: #f5f0e6;
+  background-image: radial-gradient(#1c1917 1.1px, transparent 1.1px);
+  background-size: 20px 20px;
+  padding: 40px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Chivo Mono', monospace;
+  color: #000000;
+  box-sizing: border-box;
+}
+
+.pj-register-container {
+  width: 100%;
+  max-width: 680px;
+  position: relative;
+  margin: auto;
+}
+
+/* Retro Floating Badge */
+.pj-floating-badge {
+  position: absolute;
+  top: -16px;
+  right: -8px;
+  z-index: 20;
+  background-color: #FF4A4A;
+  color: #ffffff;
+  font-family: 'Chivo Mono', monospace;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 6px 14px;
+  border: 2.5px solid #000000;
+  box-shadow: 2px 2px 0px #000000;
+  transform: rotate(6deg);
+  transition: transform 0.2s ease;
+  user-select: none;
+}
+
+.pj-floating-badge:hover {
+  transform: rotate(0deg);
+}
+
+/* Card Container */
+.pj-register-card {
+  width: 100%;
+  background-color: #ffffff;
+  border: 3.5px solid #000000;
+  box-shadow: 8px 8px 0px #000000;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Top Title Header */
+.pj-register-header {
+  padding: 36px 24px 24px;
+  text-align: center;
+  background-color: #fffdfa;
+  border-bottom: 4px solid #000000;
+}
+
+.pj-header-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: #525252;
+  margin: 0 0 8px 0;
+}
+
+.pj-header-title {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  font-family: 'Space Grotesk', sans-serif;
+  color: #000000;
+  line-height: 1.1;
+}
+
+.pj-header-subtitle {
+  margin: 12px auto 0 auto;
+  font-size: 13px;
+  font-weight: 500;
+  color: #404040;
+  max-width: 440px;
+  line-height: 1.5;
+}
+
+/* Navigation Tabs (Sign In / Sign Up) */
+.pj-nav-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 4px solid #000000;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.pj-nav-tab {
+  padding: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.pj-nav-tab-active {
+  background-color: #000000;
+  color: #ffffff;
+  border-right: 2px solid #000000;
+}
+
+.pj-nav-tab-inactive {
+  background-color: #eae5d9;
+  color: #000000;
+  border-left: 2px solid #000000;
+}
+
+.pj-nav-tab-inactive:hover {
+  background-color: #dcd6c8;
+}
+
+/* Form Container */
+.pj-form-body {
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background-color: #ffffff;
+}
+
+@media (min-width: 640px) {
+  .pj-form-body {
+    padding: 36px 40px;
+  }
+}
+
+/* Input Groups */
+.pj-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pj-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pj-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #000000;
+}
+
+.pj-badge-tag {
+  font-size: 10px;
+  font-weight: 700;
+  background-color: #f5f5f5;
+  padding: 2px 6px;
+  border: 1px solid #000000;
+  letter-spacing: 0.05em;
+}
+
+.pj-input-text {
+  width: 100%;
+  background-color: #fcfbf7;
+  border: 2.5px solid #000000;
+  box-shadow: 2px 2px 0px #000000;
+  padding: 12px 16px;
+  font-family: 'Chivo Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #000000;
+  outline: none;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.pj-input-text:focus {
+  background-color: #ffffff;
+  box-shadow: 4px 4px 0px #000000;
+}
+
+.pj-input-text::placeholder {
+  color: #a3a3a3;
+  font-weight: 500;
+}
+
+/* NIM Combo Input */
+.pj-nim-combo {
+  display: flex;
+  flex-direction: column;
+  border: 2.5px solid #000000;
+  box-shadow: 2px 2px 0px #000000;
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+@media (min-width: 640px) {
+  .pj-nim-combo {
+    flex-direction: row;
+  }
+}
+
+.pj-nim-input {
+  flex: 1;
+  border: none;
+  padding: 12px 16px;
+  font-family: 'Chivo Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #000000;
+  background-color: #fcfbf7;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.pj-nim-input:focus {
+  background-color: #ffffff;
+}
+
+.pj-nim-suffix {
+  background-color: #eeeae2;
+  border-top: 2px solid #000000;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #262626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+@media (min-width: 640px) {
+  .pj-nim-suffix {
+    border-top: none;
+    border-left: 2.5px solid #000000;
+  }
+}
+
+/* Password Input Wrapper */
+.pj-password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pj-password-toggle {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.pj-password-toggle:hover {
+  background-color: #e5e5e5;
+  border-color: #000000;
+}
+
+.pj-password-toggle.active {
+  background-color: #FFE344;
+  border-color: #000000;
+}
+
+/* Helper Hint Texts */
+.pj-input-hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: #404040;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 2px 0 0 0;
+}
+
+.pj-input-hint strong {
+  text-decoration: underline;
+  color: #000000;
+}
+
+/* Stepper Container (5 Steps) */
+.pj-stepper-box {
+  border: 3.5px solid #000000;
+  background-color: #fbf9f4;
+  padding: 20px 16px;
+  box-shadow: 4px 4px 0px #000000;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (min-width: 640px) {
+  .pj-stepper-box {
+    padding: 28px 24px;
+  }
+}
+
+.pj-stepper-top {
+  text-align: center;
+}
+
+.pj-stepper-counter {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: #525252;
+  margin: 0;
+}
+
+/* Stepper Track Nodes */
+.pj-stepper-track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 520px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 4px;
+}
+
+.pj-step-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.pj-step-box {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Chivo Mono', monospace;
+  font-weight: 900;
+  font-size: 13px;
+  border: 2px solid #000000;
+  transition: all 0.15s ease;
+}
+
+@media (min-width: 640px) {
+  .pj-step-box {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+}
+
+.pj-step-box-completed {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.pj-step-box-active {
+  background-color: #e77963;
+  color: #000000;
+  box-shadow: 3px 3px 0px #000000;
+}
+
+.pj-step-box-inactive {
+  background-color: #ffffff;
+  color: #737373;
+  border-color: #737373;
+}
+
+.pj-step-label {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 640px) {
+  .pj-step-label {
+    font-size: 11px;
+  }
+}
+
+.pj-step-label-active {
+  color: #000000;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+
+.pj-step-label-inactive {
+  color: #737373;
+  font-weight: 500;
+}
+
+.pj-step-connector {
+  flex: 1;
+  border-top: 2px dashed #a3a3a3;
+  margin: 0 6px;
+  margin-bottom: 20px;
+}
+
+/* Stepper Dashed Content Pane */
+.pj-stepper-pane {
+  border: 2px dashed #000000;
+  background-color: #ffffff;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pj-pane-header h3 {
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 900;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  color: #000000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pj-pane-header p {
+  margin: 4px 0 0 0;
+  font-family: 'Chivo Mono', monospace;
+  font-size: 12px;
+  color: #525252;
+  line-height: 1.4;
+}
+
+/* Custom Brutal Select */
+.pj-select-brutal {
+  width: 100%;
+  background-color: #fcfbf7;
+  border: 2.5px solid #000000;
+  box-shadow: 2px 2px 0px #000000;
+  padding: 12px 14px;
+  font-family: 'Chivo Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #000000;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23000'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+  appearance: none;
+  box-sizing: border-box;
+}
+
+.pj-select-brutal:focus {
+  background-color: #ffffff;
+  box-shadow: 4px 4px 0px #000000;
+}
+
+/* Stepper Bottom Navigation */
+.pj-stepper-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 4px;
+}
+
+.pj-btn-back {
+  font-family: 'Chivo Mono', monospace;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 10px 20px;
+  background-color: #ffffff;
+  color: #000000;
+  border: 2px solid #000000;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pj-btn-back:not(:disabled):hover {
+  background-color: #f5f5f5;
+}
+
+.pj-btn-back:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pj-btn-next {
+  font-family: 'Chivo Mono', monospace;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 10px 24px;
+  background-color: #000000;
+  color: #ffffff;
+  border: 2px solid #000000;
+  box-shadow: 3px 3px 0px #e77963;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.1s ease;
+}
+
+.pj-btn-next:hover {
+  box-shadow: 4px 4px 0px #e77963;
+}
+
+.pj-btn-next:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* Submit Button */
+.pj-btn-submit {
+  width: 100%;
+  background-color: #2CE080;
+  color: #000000;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 900;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 16px 24px;
+  border: 3.5px solid #000000;
+  box-shadow: 4px 4px 0px #000000;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.1s ease;
+  margin-top: 8px;
+}
+
+.pj-btn-submit:hover:not(:disabled) {
+  background-color: #25c872;
+}
+
+.pj-btn-submit:active:not(:disabled) {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0px #000000;
+}
+
+.pj-btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Alert Notification Boxes */
+.pj-alert-box {
+  padding: 14px 18px;
+  border: 2.5px solid #000000;
+  box-shadow: 3px 3px 0px #000000;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.pj-alert-error {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.pj-alert-success {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.pj-alert-closed {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+/* Footer Links */
+.pj-form-footer {
+  padding-top: 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+}
+
+.pj-footer-login-text {
+  margin: 0;
+  color: #262626;
+  font-weight: 500;
+}
+
+.pj-link-login {
+  font-weight: 900;
+  color: #000000;
+  text-decoration: underline;
+  padding: 2px 4px;
+  transition: background-color 0.15s ease;
+}
+
+.pj-link-login:hover {
+  background-color: #FFE344;
+}
+
+.pj-otp-banner {
+  display: inline-block;
+  margin: 0 auto;
+  background-color: #fff5ea;
+  padding: 8px 14px;
+  border: 1px solid #000000;
+  box-shadow: 2px 2px 0px #000000;
+  font-size: 12px;
+}
+
+.pj-link-otp {
+  font-weight: 900;
+  color: #000000;
+  text-decoration: underline;
+  margin-left: 4px;
+}
+
+.pj-btn-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border: 2px solid #000000;
+  background-color: #ffffff;
+  color: #000000;
+  box-shadow: 2px 2px 0px #000000;
+  text-decoration: none;
+  margin: 4px auto 0 auto;
+  transition: all 0.1s ease;
+}
+
+.pj-btn-home:hover {
+  background-color: #f5f5f5;
+}
+
+.pj-btn-home:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* Ticket Perforated Footer */
+.pj-ticket-footer {
+  border-top: 3px dashed #000000;
+  background-color: #f8f6f0;
+  padding: 16px 20px;
+  text-align: center;
+  user-select: none;
+}
+
+.pj-ticket-footer p {
+  margin: 0;
+  font-size: 11px;
+  font-family: 'Chivo Mono', monospace;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #262626;
+}
+
+/* Help Desk Link */
+.pj-helpdesk-box {
+  text-align: center;
+  margin-top: 24px;
+  font-family: 'Chivo Mono', monospace;
+  font-size: 13px;
+  color: #404040;
+}
+
+.pj-helpdesk-box a {
+  font-weight: 700;
+  color: #000000;
+  text-decoration: underline;
+  border-bottom: 2px solid #000000;
+  padding: 2px 4px;
+  transition: all 0.15s ease;
+}
+
+.pj-helpdesk-box a:hover {
+  background-color: #ffffff;
+}

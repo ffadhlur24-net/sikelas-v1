@@ -1,0 +1,64 @@
+/* Neo-Institutional class availability and booking */
+.reservation-page {
+  --reservation-paper: #fbf9f2;
+  --reservation-surface: #ffffff;
+  --reservation-ink: #1b1c18;
+  --reservation-muted: #43474e;
+  --reservation-border: #000000;
+  --reservation-blue: #0058be;
+  --reservation-green: #4ade80;
+  --reservation-red: #c51b1b;
+  color: var(--reservation-ink);
+  font-family: 'Inter', sans-serif;
+  background-image: radial-gradient(#000 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.reservation-heading { margin-bottom: 28px; padding-bottom: 24px; border-bottom: 4px solid var(--reservation-border); }
+.reservation-heading .page-title { font: clamp(28px, 4vw, 44px)/1.15 'Archivo Black', sans-serif; color:var(--reservation-ink); }
+.reservation-heading .page-subtitle { color:var(--reservation-muted); font-size:18px; font-weight:600; }
+.reservation-clock { border:4px solid var(--reservation-border) !important; border-radius:0 !important; box-shadow:4px 4px 0 var(--reservation-border) !important; background:var(--reservation-blue) !important; color:#fff; min-width:260px; }
+.reservation-clock div:first-child { color:#fff !important; font-size:11px !important; font-weight:800 !important; letter-spacing:.08em !important; }
+.reservation-clock div:last-child { color:#fff !important; font:22px 'Archivo Black', sans-serif !important; }
+
+.reservation-page .card-flat { border:4px solid var(--reservation-border) !important; border-radius:0 !important; box-shadow:4px 4px 0 var(--reservation-border); background:var(--reservation-surface); }
+.reservation-location-filter { padding:24px !important; }
+.reservation-slot-filter { padding:24px !important; background:var(--reservation-paper) !important; }
+.reservation-location-filter h3,
+.reservation-slot-filter h3 { color:var(--reservation-ink) !important; font:20px 'Archivo Black', sans-serif; }
+.reservation-page label { color:var(--reservation-muted) !important; font-weight:800 !important; }
+.reservation-page .input-field { min-height:52px; border:4px solid var(--reservation-border); border-radius:0; background:#fff !important; color:var(--reservation-ink); font-weight:700; }
+.reservation-page .input-field:focus { border-color:var(--reservation-border); outline:3px solid var(--reservation-blue); outline-offset:2px; box-shadow:none; }
+.reservation-page .btn { border:4px solid var(--reservation-border); border-radius:0; box-shadow:4px 4px 0 var(--reservation-border); font-weight:800; }
+.reservation-page .btn:hover:not(:disabled) { transform:translate(2px,2px); box-shadow:2px 2px 0 var(--reservation-border); }
+.reservation-slot-filter .btn-primary { background:var(--reservation-blue) !important; color:#fff; }
+
+.reservation-tabs { border-bottom:4px solid var(--reservation-border) !important; }
+.reservation-tabs .tab-btn { border:2px solid transparent; border-bottom:4px solid transparent; border-radius:0; color:var(--reservation-muted); font-weight:800; }
+.reservation-tabs .tab-btn.active { border:4px solid var(--reservation-border); border-bottom:4px solid var(--reservation-border); background:var(--reservation-blue); color:#fff; box-shadow:2px 2px 0 var(--reservation-border); }
+
+.reservation-room-grid { grid-template-columns:repeat(3, minmax(0, 1fr)) !important; gap:24px !important; }
+.reservation-room-card { min-height:360px; padding:24px !important; border-left-width:8px !important; }
+.reservation-room-card.room-available { border-left-color:var(--reservation-green) !important; }
+.reservation-room-card.room-occupied { border-left-color:var(--reservation-red) !important; }
+.reservation-room-card h3 { color:var(--reservation-ink); font:22px 'Archivo Black', sans-serif; }
+.reservation-room-card p { color:var(--reservation-muted) !important; font-size:15px !important; font-weight:600; }
+.reservation-room-card .badge { border:2px solid var(--reservation-border); border-radius:0; font-weight:800; }
+.reservation-room-card .btn { flex:1; background:#fff; }
+.reservation-room-card .btn-primary { background:var(--reservation-blue) !important; color:#fff; }
+.reservation-room-card [style*="background: '#fef2f2'"] { border:3px solid var(--reservation-border) !important; border-radius:0 !important; background:#fee2e2 !important; font-weight:700; }
+
+@media (max-width:900px) {
+  .reservation-room-grid { grid-template-columns:repeat(2, minmax(0, 1fr)) !important; }
+}
+
+@media (max-width:700px) {
+  .reservation-heading { align-items:flex-start !important; flex-direction:column; }
+  .reservation-clock { width:100%; min-width:0; text-align:left !important; }
+  .reservation-room-grid { grid-template-columns:1fr !important; }
+  .reservation-room-card { min-height:280px; }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .reservation-page .btn { transition:none; }
+}

@@ -2,12 +2,19 @@ import { useState, useEffect } from 'react'
 import { exportToCSV } from '../../utils/exportExcel'
 import { sendWANotifications } from '../../utils/waNotification'
 import api from '../../api/axios'
+import './PersetujuanReservasi.css'
 function PersetujuanReservasi() {
   const [reservations, setReservations] = useState([])
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [filterStatus, setFilterStatus] = useState('pending') // Default tab
+  const [currentTime, setCurrentTime] = useState(new Date())
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
   const formatTanggalIndonesia = (dateString) => {
     if (!dateString) return '-'
     const cleanDate = dateString.split('T')[0]
@@ -135,50 +142,73 @@ function PersetujuanReservasi() {
   const handlePrintPDF = () => {
     window.print()
   }
+  const pendingCount = reservations.filter(res => res.status === 'pending' && !isReservationExpired(res)).length
+  const approvedCount = reservations.filter(res => res.status === 'approved').length
+  const expiredCount = reservations.filter(res => isReservationExpired(res)).length
   return (
-    <div className="animate-fade-in">
-      <div className="page-header">
-        <h1 className="page-title">📌 Persetujuan & Log Reservasi Kelas</h1>
-        <p className="subtitle">Kelola dan pantau persetujuan peminjaman ruangan oleh PJ Kelas.</p>
+    <div className="approval-page animate-fade-in">
+      <section className="approval-clock-card">
+        <div className="approval-clock-icon" aria-hidden="true">◷</div>
+        <div>
+          <p className="approval-eyebrow">WAKTU SISTEM SERVER</p>
+          <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
+        </div>
+        <span className="approval-online"><span /> SISTEM ONLINE</span>
+      </section>
+
+      <section className="approval-stats-grid" aria-label="Ringkasan reservasi">
+        <article className="approval-stat stat-navy"><span>Total Reservasi</span><strong>{reservations.length}</strong></article>
+        <article className="approval-stat stat-blue"><span>Menunggu ACC</span><strong>{pendingCount}</strong></article>
+        <article className="approval-stat stat-green"><span>Disetujui</span><strong>{approvedCount}</strong></article>
+        <article className="approval-stat stat-orange"><span>Kadaluarsa</span><strong>{expiredCount}</strong></article>
+      </section>
+
+      <div className="approval-heading">
+        <div>
+          <p className="approval-eyebrow">ADMINISTRATOR / RESERVATION CONTROL</p>
+          <h1>Persetujuan & Log Reservasi</h1>
+          <p>Kelola pengajuan peminjaman ruangan oleh PJ Kelas.</p>
+        </div>
+        <span className="approval-count-badge">{reservations.length} TOTAL</span>
       </div>
       {message && (
-        <div style={{ background: 'var(--color-success-bg)', color: 'var(--color-success)', padding: '12px', borderRadius: '8px', marginBottom: '20px', fontWeight: '500' }}>
+        <div className="approval-feedback" role="status">
           {message}
         </div>
       )}
       {/* 📌 FILTER TAB BAR STATUS RESERVASI */}
-      <div className="card-flat no-print" style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-        <span style={{ fontWeight: 'bold', fontSize: '14px', color: '#334155' }}>📌 Status Reservasi:</span>
+      <div className="approval-filter-bar no-print">
+        <span className="approval-filter-label">STATUS RESERVASI</span>
         <button
-          className="btn btn-secondary btn-sm"
+          className={`approval-filter-btn ${filterStatus === 'pending' ? 'is-active status-pending' : ''}`}
           style={{ background: filterStatus === 'pending' ? '#f59e0b' : '#e2e8f0', color: filterStatus === 'pending' ? '#fff' : '#475569', fontWeight: filterStatus === 'pending' ? 'bold' : 'normal' }}
           onClick={() => setFilterStatus('pending')}
         >
           🟡 Menunggu ACC ({reservations.filter(r => r.status === 'pending' && !isReservationExpired(r)).length})
         </button>
         <button
-          className="btn btn-secondary btn-sm"
+          className={`approval-filter-btn ${filterStatus === 'approved' ? 'is-active status-approved' : ''}`}
           style={{ background: filterStatus === 'approved' ? '#059669' : '#e2e8f0', color: filterStatus === 'approved' ? '#fff' : '#475569', fontWeight: filterStatus === 'approved' ? 'bold' : 'normal' }}
           onClick={() => setFilterStatus('approved')}
         >
           🟢 Disetujui ({reservations.filter(r => r.status === 'approved').length})
         </button>
         <button
-          className="btn btn-secondary btn-sm"
+          className={`approval-filter-btn ${filterStatus === 'rejected' ? 'is-active status-rejected' : ''}`}
           style={{ background: filterStatus === 'rejected' ? '#dc2626' : '#e2e8f0', color: filterStatus === 'rejected' ? '#fff' : '#475569', fontWeight: filterStatus === 'rejected' ? 'bold' : 'normal' }}
           onClick={() => setFilterStatus('rejected')}
         >
           🔴 Ditolak ({reservations.filter(r => r.status === 'rejected').length})
         </button>
         <button
-          className="btn btn-secondary btn-sm"
+          className={`approval-filter-btn ${filterStatus === 'expired' ? 'is-active status-expired' : ''}`}
           style={{ background: filterStatus === 'expired' ? '#6b7280' : '#e2e8f0', color: filterStatus === 'expired' ? '#fff' : '#475569', fontWeight: filterStatus === 'expired' ? 'bold' : 'normal' }}
           onClick={() => setFilterStatus('expired')}
         >
           🚨 Kadaluarsa ({reservations.filter(r => isReservationExpired(r)).length})
         </button>
         <button
-          className="btn btn-secondary btn-sm"
+          className={`approval-filter-btn ${filterStatus === 'Semua' ? 'is-active status-all' : ''}`}
           style={{ background: filterStatus === 'Semua' ? '#0f172a' : '#e2e8f0', color: filterStatus === 'Semua' ? '#fff' : '#475569', fontWeight: filterStatus === 'Semua' ? 'bold' : 'normal' }}
           onClick={() => setFilterStatus('Semua')}
         >
@@ -186,12 +216,18 @@ function PersetujuanReservasi() {
         </button>
       </div>
       {/* TABEL RESERVASI */}
-      <div className="card-flat" style={{ overflowX: 'auto', background: '#fff', padding: '20px', borderRadius: '12px' }}>
+      <div className="approval-table-card">
 
         {/* TOMBOL EKSPOR & CETAK (DI LUAR TABEL) */}
-        <div className="no-print" style={{ display: 'flex', gap: '10px', marginBottom: '16px', justifyContent: 'flex-end' }}>
-          <button className="btn btn-secondary btn-sm" onClick={handlePrintPDF}>🖨️ Cetak PDF Resmi</button>
-          <button className="btn btn-secondary btn-sm" onClick={handleExportExcel}>📊 Ekspor Excel (.CSV)</button>
+        <div className="approval-toolbar no-print">
+          <div>
+            <p className="approval-eyebrow">RESERVATION LOG</p>
+            <h2>Daftar Pengajuan</h2>
+          </div>
+          <div className="approval-toolbar-actions">
+            <button className="approval-action-btn" onClick={handlePrintPDF}>🖨️ Cetak PDF</button>
+            <button className="approval-action-btn" onClick={handleExportExcel}>📊 Ekspor CSV</button>
+          </div>
         </div>
         {/* ELEMEN KOP SURAT KHUSUS CETAK */}
         <div className="print-only">

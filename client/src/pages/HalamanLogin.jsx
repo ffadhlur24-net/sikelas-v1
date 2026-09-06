@@ -5,23 +5,21 @@ import api from '../api/axios'
 import './HalamanLogin.css'
 
 function HalamanLogin() {
-  const [activeTab, setActiveTab] = useState('login') // 'login' or 'register'
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
-  const [successMsg, setSuccessMsg] = useState('')
 
-
-  // State untuk form input
+  // State form input
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   })
-  // Hook untuk navigasi & Context
-  const navigate = useNavigate();
-  const { login, user } = useContext(AuthContext);
 
-  // Jika user dah pernah login(ada datanya), tendang langsung ke dashbord 
+  const navigate = useNavigate()
+  const { login, user } = useContext(AuthContext)
+
+  // Jika user sudah login, arahkan ke dashboard masing-masing
   useEffect(() => {
     if (user) {
       if (user.role === 'admin') {
@@ -31,23 +29,22 @@ function HalamanLogin() {
       }
     }
   }, [user, navigate])
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  // Handle form submit (Login & Register)
+  // Handle form submit
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
     setLoading(true)
-    setErrorMsg('');
-    setSuccessMsg('');
+    setErrorMsg('')
 
     try {
-      // Proses Login
       const response = await api.post('/auth/login', {
-        email: formData.email,
+        email: formData.email.trim(),
         password: formData.password
-      });
+      })
 
       // Simpan data ke context & localStorage
       login(response.data.user, response.data.token)
@@ -58,90 +55,201 @@ function HalamanLogin() {
       } else {
         navigate('/pj/profil')
       }
-
     } catch (error) {
-      if (error.response && error.response.data.error) {
+      if (error.response && error.response.data && error.response.data.error) {
         setErrorMsg(error.response.data.error)
       } else {
-        setErrorMsg('Terjadi kesalahan koneksi server. sabar bro!!')
+        setErrorMsg('Terjadi kesalahan koneksi ke server. Silakan coba lagi.')
       }
     } finally {
       setLoading(false)
     }
   }
 
-
   return (
-    <div className="login-page animate-fade-in">
-      <div className="login-card">
-        {/* Branding */}
-        <div className="login-brand">
-          <div className="login-logo">
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="48" height="48" rx="12" fill="#059669" fillOpacity="0.1" />
-              <path d="M24 8L14 14V22C14 30.4 18.28 38.16 24 40C29.72 38.16 34 30.4 34 22V14L24 8Z" fill="#059669" stroke="#047857" strokeWidth="1.5" />
-              <path d="M20 24L23 27L28 20" stroke="white" strokeWidth="2.5" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <h1 className="login-title">SiKelas</h1>
-          <p className="login-subtitle">Masuk ke Akun Anda</p>
+    <div className="login-page-wrapper">
+      <div className="login-card-container">
+        {/* Red Angular Badge Sticker (Top Right Corner) */}
+        <div className="login-sticker-badge">
+          SIKELAS • LOGIN 2026
         </div>
-        {/* Notifikasi Error */}
-        {errorMsg && (
-          <div style={{ background: 'var(--color-error-bg)', color: 'var(--color-error)', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px', fontWeight: '500' }}>
-            {errorMsg}
-          </div>
-        )}
-        {/* Form Login */}
-        <form className="login-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Email Kampus / Username</label>
-            <input type="email" className="input-field" name="email" value={formData.email} onChange={handleChange} placeholder="nama@student.walisongo.ac.id" required />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Password</label>
-            <div style={{ position: 'relative' }}>
+
+        {/* Top Header Section */}
+        <header className="login-header">
+          <p className="login-header-kicker">
+            MEMBER • ACCESS • PORTAL
+          </p>
+          <h1 className="login-header-title">
+            MASUK AKUN SIKELAS
+          </h1>
+          <p className="login-header-subtitle">
+            Silakan masukkan kredensial akun Penanggung Jawab (PJ) atau Mahasiswa Anda untuk mengelola jadwal kelas.
+          </p>
+        </header>
+
+        {/* Tab Bar Switcher */}
+        <nav aria-label="Tab Akses Login" className="login-tab-switcher">
+          {/* Inactive Tab: SIGN UP */}
+          <Link to="/register" className="login-tab-inactive">
+            <span>SIGN UP (DAFTAR)</span>
+          </Link>
+          {/* Active Tab: SIGN IN */}
+          <span className="login-tab-active">
+            <span>SIGN IN (MASUK)</span>
+          </span>
+        </nav>
+
+        {/* Login Form Section */}
+        <main className="login-form-body">
+          {errorMsg && (
+            <div className="login-alert-error" role="alert">
+              <span>⚠️</span>
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Input 1: Email Kampus / Username */}
+            <div className="login-input-group">
+              <div className="login-label-row">
+                <label className="login-label" htmlFor="email">
+                  <span>👤</span> USERNAME / EMAIL KAMPUS
+                </label>
+                <span className="login-badge-wajib">
+                  WAJIB
+                </span>
+              </div>
               <input
-                type={showPassword ? "text" : "password"}
-                className="input-field"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Masukkan password Anda"
+                id="email"
+                name="email"
+                type="text"
+                autoComplete="username"
                 required
-                style={{ paddingRight: '44px' }}
+                className="login-input-field login-input-email"
+                placeholder="godong@student.walisongo.ac.id atau godongmailcom"
+                value={formData.email}
+                onChange={handleChange}
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
-                  background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', color: '#64748b',
-                  padding: '4px'
-                }}
-                title={showPassword ? "Sembunyikan Password" : "Tampilkan Password"}
+              <p className="login-input-hint">
+                <span className="info-icon">ℹ</span> Gunakan email resmi (@student.walisongo.ac.id) atau username terdaftar.
+              </p>
+            </div>
+
+            {/* Input 2: Password */}
+            <div className="login-input-group">
+              <div className="login-label-row">
+                <label className="login-label" htmlFor="password">
+                  <span>🔒</span> PASSWORD
+                </label>
+                <span className="login-badge-wajib">
+                  WAJIB
+                </span>
+              </div>
+              <div className="login-input-password-wrapper">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  required
+                  className="login-input-field login-input-password"
+                  placeholder="••••••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                />
+                <button
+                  type="button"
+                  className="login-toggle-password-btn"
+                  title={showPassword ? 'Sembunyikan Password' : 'Tampilkan Password'}
+                  onClick={() => setShowPassword(prev => !prev)}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#000000' }}>
+                    {showPassword ? 'visibility_off' : 'visibility'}
+                  </span>
+                </button>
+              </div>
+              <p className="login-input-hint">
+                <span className="info-icon">ℹ</span> Password minimal 8 karakter akun SiKelas.
+              </p>
+            </div>
+
+            {/* Auxiliary Row: Remember Me & Forgot Password */}
+            <div className="login-auxiliary-row">
+              <label className="login-remember-label">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="login-checkbox"
+                />
+                <span>Ingat Saya</span>
+              </label>
+              <a
+                href="https://wa.me/6281234567890?text=Halo%20Admin%20SiKelas,%20saya%20lupa%20password%20akun%20saya"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="login-link-forgot"
               >
-                {showPassword ? '🙈' : '👁️'}
-              </button>
+                Lupa Password?
+              </a>
+            </div>
+
+            {/* Submit Button CTA */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="login-submit-btn"
+            >
+              <span>{loading ? 'MEMPROSES...' : 'MASUK SEKARANG'}</span>
+              <span style={{ fontSize: '18px', lineHeight: 1 }}>➔</span>
+            </button>
+          </form>
+
+          {/* Auxiliary Links & Notification Box */}
+          <div className="login-auxiliary-links">
+            <p className="login-register-text">
+              Belum punya akun PJ?{' '}
+              <Link to="/register" className="login-link-register">
+                Daftar PJ di sini
+              </Link>
+            </p>
+
+            <div className="login-otp-box">
+              <span style={{ color: '#ef4444' }}>📌</span>
+              <span>Belum tuntas verifikasi OTP?</span>
+              <Link to="/verify-email" className="login-link-otp">
+                Lanjutkan Verifikasi Di Sini
+              </Link>
+            </div>
+
+            <div style={{ paddingTop: '4px' }}>
+              <Link to="/" className="login-btn-home">
+                <span>⬅</span> KEMBALI KE BERANDA
+              </Link>
             </div>
           </div>
-          <button type="submit" className="btn btn-primary btn-lg btn-full" disabled={loading}>
-            {loading ? 'Memproses...' : 'Masuk'}
-          </button>
-        </form>
-        {/* Link ke Halaman Register Pintar */}
-        <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', color: 'var(--text-muted)' }}>
-          Belum punya akun PJ? <Link to="/register" style={{ color: 'var(--color-primary)', fontWeight: '600' }}>Daftar PJ di sini</Link>
-        </div>
-        <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '13px' }}>
-          📩 Belum tuntas verifikasi OTP? <Link to="/verify-email" style={{ color: '#2563eb', fontWeight: '600' }}>Lanjutkan Verifikasi Di Sini</Link>
-        </div>
-        <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '14px' }}>
-          <Link to="/" style={{ color: '#64748b', textDecoration: 'none', fontWeight: '500' }}>
-            ⬅️ Kembali ke Beranda
-          </Link>
-        </div>
+        </main>
+
+        {/* Perforated Ticket Footer */}
+        <footer className="login-ticket-footer">
+          <p>
+            ★ ESTABLISHED 2026 ★ SIKELAS KAMPUS ★ ALL RIGHTS RESERVED ★
+          </p>
+        </footer>
       </div>
+
+      {/* Bottom External Helpdesk Link */}
+      <aside className="login-helpdesk-text">
+        <span>• Butuh bantuan? </span>
+        <a
+          href="https://wa.me/6281234567890?text=Halo%20Admin%20SiKelas,%20saya%20membutuhkan%20bantuan%20terkait%20login"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Hubungi Admin Helpdesk SiKelas
+        </a>
+        <span> •</span>
+      </aside>
     </div>
   )
 }

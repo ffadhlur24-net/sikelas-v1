@@ -274,3 +274,77 @@
   gap: var(--spacing-3);
   flex-shrink: 0;
 }
+
+/* Neo-Institutional PJ profile screen */
+.profil-pj-page {
+  --pj-paper: #fbf9f2;
+  --pj-surface: #ffffff;
+  --pj-ink: #1b1c18;
+  --pj-muted: #43474e;
+  --pj-border: #000000;
+  --pj-blue: #0058be;
+  --pj-green: #4ade80;
+  --pj-orange: #ff4500;
+  color: var(--pj-ink);
+  font-family: 'Inter', sans-serif;
+  background-image: radial-gradient(#000 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.pj-page-heading { margin-bottom: 28px; padding-bottom: 24px; border-bottom: 4px solid var(--pj-border); }
+.pj-eyebrow { color: var(--pj-muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; line-height: 16px; }
+.pj-page-heading h1 { margin: 5px 0 8px; font: clamp(30px, 4vw, 44px)/1.15 'Archivo Black', sans-serif; }
+.pj-page-heading > p:last-child { color: var(--pj-muted); font-size: 18px; font-weight: 600; }
+
+.pj-profile-layout { align-items: start; }
+.profil-pj-page .card-flat,
+.pj-account-card,
+.pj-reservations-card,
+.pj-feature-card { border: 4px solid var(--pj-border); border-radius: 0; box-shadow: 4px 4px 0 var(--pj-border); background: var(--pj-paper); }
+.pj-account-card { padding: 24px; }
+.pj-account-card .profile-header { display:flex; align-items:center; gap:16px; padding-bottom:24px; border-bottom:4px solid var(--pj-border); }
+.pj-account-card .profile-avatar { width:96px; height:96px; flex:0 0 96px; border:4px solid var(--pj-border); border-radius:50%; background:var(--pj-orange); color:#fff; font:36px 'Archivo Black', sans-serif; box-shadow:4px 4px 0 var(--pj-border); }
+.pj-account-card .profile-info h2 { font:28px 'Archivo Black', sans-serif; }
+.pj-account-card .profile-info p { color:var(--pj-muted); font-size:18px; font-weight:600; }
+.pj-account-card .badge { border:2px solid var(--pj-border); border-radius:0; background:var(--pj-green); color:var(--pj-ink); font-weight:800; }
+.pj-account-card .profile-details { margin-top:8px; }
+.pj-account-card .detail-item { display:flex; justify-content:space-between; gap:16px; padding:14px 0; border-bottom:2px solid var(--pj-border); }
+.pj-account-card .datail-label { color:var(--pj-muted); font-size:14px; font-weight:700; }
+.pj-account-card .detail-value { max-width:65%; color:var(--pj-ink); font-size:15px; font-weight:800; text-align:right; }
+.pj-account-card .btn { width:100%; border:4px solid var(--pj-border); border-radius:0; box-shadow:4px 4px 0 var(--pj-border); font-weight:800; }
+.pj-account-card .btn-primary { background:var(--pj-blue); color:#fff; }
+.pj-account-card .btn-secondary { background:#fff; color:var(--pj-ink) !important; }
+
+.pj-reservations-card { padding:24px; }
+.pj-section-heading { margin:0 0 24px; padding-bottom:16px; border-bottom:4px solid var(--pj-border); font:28px/1.2 'Archivo Black', sans-serif; text-transform:uppercase; }
+.pj-reservation-item { margin-bottom:16px; border:4px solid var(--pj-border) !important; border-radius:0 !important; padding:24px !important; background:var(--pj-paper); box-shadow:4px 4px 0 var(--pj-border); }
+.pj-reservation-item h3 { font-size:20px !important; font-weight:800 !important; }
+.pj-reservation-item p { color:var(--pj-muted) !important; font-size:16px !important; font-weight:600; line-height:1.5; }
+.pj-reservation-item .badge { border:2px solid var(--pj-border); border-radius:0; font-weight:800; }
+.pj-reservation-item .btn-primary { border:4px solid var(--pj-border); border-radius:0; box-shadow:4px 4px 0 var(--pj-border); background:var(--pj-blue) !important; color:#fff; font-size:18px; font-weight:800; }
+
+.pj-feature-section { margin-top:32px; }
+.pj-feature-card { display:flex; align-items:center; gap:20px; margin-bottom:16px; padding:20px 24px; }
+.pj-feature-icon { display:grid; width:64px; height:64px; flex:0 0 64px; place-items:center; border:3px solid var(--pj-border); color:#fff; font-size:34px; font-weight:900; }
+.feature-blue .pj-feature-icon { background:var(--pj-blue); }
+.feature-green .pj-feature-icon { background:var(--pj-green); color:var(--pj-ink); }
+.feature-orange .pj-feature-icon { background:var(--pj-orange); }
+.feature-warning .pj-feature-icon { background:var(--pj-blue); }
+.pj-feature-card h3 { margin-bottom:6px; font-size:20px; font-weight:800; }
+.pj-feature-card p { color:var(--pj-muted); font-size:15px; font-weight:600; line-height:1.45; }
+
+@media (max-width:900px) {
+  .pj-profile-layout { grid-template-columns:1fr !important; }
+}
+
+@media (max-width:600px) {
+  .pj-page-heading h1 { font-size:30px; }
+  .pj-page-heading > p:last-child { font-size:15px; }
+  .pj-account-card, .pj-reservations-card { padding:16px; }
+  .pj-account-card .profile-header { align-items:flex-start; flex-direction:column; }
+  .pj-account-card .detail-item { align-items:flex-start; flex-direction:column; gap:5px; }
+  .pj-account-card .detail-value { max-width:100%; text-align:left; }
+  .pj-reservation-item { padding:16px !important; }
+  .pj-feature-card { align-items:flex-start; padding:16px; }
+  .pj-feature-icon { width:48px; height:48px; flex-basis:48px; font-size:24px; }
+}

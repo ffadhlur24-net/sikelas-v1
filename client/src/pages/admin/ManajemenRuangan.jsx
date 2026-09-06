@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../../api/axios'
+import './ManajemenRuangan.css'
 
 function ManajemenRuangan() {
   const [rooms, setRooms] = useState([])
@@ -7,6 +8,7 @@ function ManajemenRuangan() {
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [message, setMessage] = useState({ text: '', type: '' })
+  const [currentTime, setCurrentTime] = useState(new Date())
 
   // NAVIGASI HIERARKI BERJENJANG:
   // selectedKampus: null (Level 1: Daftar Kampus), String (mis: "Kampus 3")
@@ -94,6 +96,11 @@ function ManajemenRuangan() {
   useEffect(() => {
     fetchRooms()
     fetchDepartments()
+  }, [])
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+    return () => clearInterval(timer)
   }, [])
 
   // Update Waktu Selesai Otomatis pada Initial Sched
@@ -290,11 +297,32 @@ function ManajemenRuangan() {
     setShowFormSched(true)
   }
 
+  const totalBuildings = new Set(rooms.map(room => `${room.kampus}-${room.gedung}`)).size
+  const availableRooms = rooms.filter(room => room.status === 'tersedia').length
+  const lockedRooms = rooms.filter(room => room.status === 'terkunci').length
+
   return (
-    <div className="animate-fade-in">
-      <div className="page-header">
-        <h1 className="page-title">Manajemen Ruangan & Jadwal</h1>
-        <p className="page-subtitle">Inventaris fisik teratur berbasis hierarki Kampus ➔ Gedung ➔ Ruangan Per Lantai.</p>
+    <div className="room-management-page animate-fade-in">
+      <section className="room-clock-card">
+        <div className="room-clock-icon" aria-hidden="true">◷</div>
+        <div>
+          <p className="room-eyebrow">WAKTU SISTEM SERVER</p>
+          <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
+        </div>
+        <span className="room-online"><span /> SISTEM ONLINE</span>
+      </section>
+
+      <section className="room-stats-grid" aria-label="Ringkasan ruangan">
+        <article className="room-stat stat-navy"><span>Total Ruangan</span><strong>{rooms.length}</strong></article>
+        <article className="room-stat stat-blue"><span>Gedung Aktif</span><strong>{totalBuildings}</strong></article>
+        <article className="room-stat stat-green"><span>Ruangan Tersedia</span><strong>{availableRooms}</strong></article>
+        <article className="room-stat stat-orange"><span>Ruangan Terkunci</span><strong>{lockedRooms}</strong></article>
+      </section>
+
+      <div className="room-page-heading">
+        <p className="room-eyebrow">ADMINISTRATOR / FACILITY CONTROL</p>
+        <h1>Manajemen Ruangan & Jadwal</h1>
+        <p>Inventaris fisik teratur berbasis hierarki Kampus ➔ Gedung ➔ Ruangan Per Lantai.</p>
       </div>
 
       {message.text && (
@@ -308,7 +336,7 @@ function ManajemenRuangan() {
       )}
 
       {/* BREADCRUMB NAVIGASI HIERARKI 3 LEVEL */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', fontSize: '14px', fontWeight: 'bold', flexWrap: 'wrap' }}>
+      <div className="room-breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', fontSize: '14px', fontWeight: 'bold', flexWrap: 'wrap' }}>
         <button
           className="btn btn-secondary btn-sm"
           style={{ background: !selectedKampus ? '#059669' : '#e2e8f0', color: !selectedKampus ? '#fff' : '#475569' }}
@@ -345,7 +373,7 @@ function ManajemenRuangan() {
       {/* ========================================================= */}
       {!selectedKampus && (
         <>
-          <div className="card-flat" style={{ marginBottom: '24px', maxWidth: '480px' }}>
+          <div className="room-add-campus-card card-flat" style={{ marginBottom: '24px', maxWidth: '480px' }}>
             <h3 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '12px' }}>➕ Tambah Lokasi Kampus Baru</h3>
             <form onSubmit={handleAddKampus} style={{ display: 'flex', gap: '12px' }}>
               <input
@@ -360,14 +388,14 @@ function ManajemenRuangan() {
             </form>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
+          <div className="room-campus-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
             {kampusList.map((kam, idx) => {
               const totalRooms = rooms.filter(r => r.kampus === kam).length
               const totalGedung = new Set(rooms.filter(r => r.kampus === kam).map(r => r.gedung)).size
               return (
                 <div
                   key={idx}
-                  className="card-flat"
+                  className="room-campus-card card-flat"
                   style={{ cursor: 'pointer', borderLeft: '4px solid #059669', background: '#fff' }}
                   onClick={() => setSelectedKampus(kam)}
                 >

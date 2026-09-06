@@ -5,15 +5,21 @@ import PelaporanKelas from './pj/PelaporanKelas'
 import PelaporanKerusakan from './pj/PelaporanKerusakan'
 import Notification from '../components/Notification'
 import './DashboardPJ.css'
+import './DashboardPJTheme.css'
 import { useContext } from 'react'
 import { AuthContext } from '../context/AuthContext'
 
 function DashboardPJ() {
-  const { user } = useContext(AuthContext)
+  const { user, logout } = useContext(AuthContext)
   const navigate = useNavigate()
 
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
   return (
-    <div className="dashboard-layout">
+    <div className="dashboard-layout pj-dashboard">
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-top">
@@ -25,8 +31,8 @@ function DashboardPJ() {
               <path d="M20 24L23 27L28 20" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <div>
-              <span className="sidebar-brand-text">SiKelas</span>
-              <span className="sidebar-brand-sub">Penanggung Jawab</span>
+              <span className="sidebar-brand-text">ADMIN</span>
+              <span className="sidebar-brand-sub">Dashboard PJ</span>
             </div>
           </div>
 
@@ -67,21 +73,27 @@ function DashboardPJ() {
             </NavLink>
           </nav>
         </div>
+        <div className="pj-sidebar-bottom">
+          <button type="button" className="pj-signout-button" onClick={handleLogout}>
+            <span aria-hidden="true">↪</span> Sign Out
+          </button>
+        </div>
       </aside>
 
       {/* Main Content */}
       <main className="dashboard-main">
         {/* Top Header Bar */}
         <header className="dashboard-header">
-          <div className="header-left">
+          <div className="pj-navbar-title">
+            <p>PENANGGUNG JAWAB KELAS</p>
+            <h1>SiKelas Profile PJ</h1>
           </div>
-          <div className="header-right">
+          <div className="pj-navbar-actions">
+            <span className="pj-navbar-badge">PJ</span>
+            <span className="pj-navbar-email">{user?.email || 'email@student.walisongo.ac.id'}</span>
             <Notification />
-            <div className="header-avatar">{user?.username.charAt(0).toUpperCase()}</div>
-            <div className="header-user-info">
-              <span className="header-user-name">{user?.username}</span>
-              <span className="header-user-detail">{user?.nim_nip} • {user?.prodi} {user?.semester}{user?.kelas}</span>
-            </div>
+            <button type="button" className="pj-navbar-icon" aria-label="Pengaturan">⚙</button>
+            <div className="pj-navbar-avatar">{user?.username?.charAt(0).toUpperCase() || 'P'}</div>
           </div>
         </header>
 

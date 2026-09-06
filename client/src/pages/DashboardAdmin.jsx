@@ -1,4 +1,4 @@
-import { Routes, Route, NavLink, useNavigate } from 'react-router-dom'
+import { Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import ProfilAdmin from './admin/ProfilAdmin'
 import PersetujuanReservasi from './admin/PersetujuanReservasi'
 import ManajemenRuangan from './admin/ManajemenRuangan'
@@ -10,10 +10,22 @@ import Notification from '../components/Notification'
 import { useContext } from 'react'
 import { AuthContext } from '../context/AuthContext'
 import './DashboardPJ.css' // Reuse the shared dashboard layout styles
+import './DashboardAdmin.css'
 
 function DashboardAdmin() {
   const { user } = useContext(AuthContext)
   const navigate = useNavigate()
+  const location = useLocation()
+
+  const getPageTitle = () => {
+    if (location.pathname.includes('/admin/log-kerusakan')) return 'SiKelas Admin Log Kerusakan'
+    if (location.pathname.includes('/admin/log')) return 'SiKelas Admin Log Pelaporan'
+    if (location.pathname.includes('/admin/persetujuan')) return 'SiKelas Admin Persetujuan'
+    if (location.pathname.includes('/admin/ruangan')) return 'SiKelas Admin Manajemen Ruangan'
+    if (location.pathname.includes('/admin/akun-pj')) return 'SiKelas Admin Manajemen PJ'
+    if (location.pathname.includes('/admin/prodi')) return 'SiKelas Admin Manajemen Prodi & Fakultas'
+    return 'SiKelas Admin Profil'
+  }
 
   const handleLogout = () => {
     // TODO: Clear token & redirect
@@ -21,7 +33,7 @@ function DashboardAdmin() {
   }
 
   return (
-    <div className="dashboard-layout">
+    <div className="dashboard-layout admin-dashboard">
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-top">
@@ -92,11 +104,9 @@ function DashboardAdmin() {
             </NavLink>
             <NavLink to="/admin/log-kerusakan" className="sidebar-link">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-                <polyline points="10 9 9 9 8 9" />
+                <path d="M12 3 2.8 20h18.4L12 3Z" fill="currentColor" stroke="currentColor" />
+                <path d="M12 9v5" stroke="#ffffff" strokeWidth="2.5" />
+                <path d="M12 17.5h.01" stroke="#ffffff" strokeWidth="2.5" />
               </svg>
               Log Kerusakan
             </NavLink>
@@ -108,14 +118,19 @@ function DashboardAdmin() {
       <main className="dashboard-main">
         {/* Top Header Bar */}
         <header className="dashboard-header">
-          <div className="header-left">
+          <div className="admin-navbar-title">
+            <p className="admin-navbar-kicker">SIKELAS / ADMINISTRATOR</p>
+            <h1>{getPageTitle()}</h1>
           </div>
-          <div className="header-right">
+          <div className="admin-navbar-actions">
+            <span className="admin-navbar-badge">ADMIN</span>
             <Notification />
-            <div className="header-avatar" style={{ background: 'var(--color-primary-500)', color: 'white' }}>{user?.username.charAt(0).toUpperCase()}</div>
-            <div className="header-user-info" style={{ borderLeft: '1px solid var(--border-color)', paddingLeft: 'var(--spacing-4)', marginLeft: 'var(--spacing-2)' }}>
-              <span className="header-user-name">{user?.username}</span>
-              <span className="header-user-detail" style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>{user?.role}</span>
+            <div className="admin-navbar-user">
+              <div className="admin-navbar-avatar">{user?.username?.charAt(0).toUpperCase() || 'A'}</div>
+              <div className="admin-navbar-user-info">
+                <span>{user?.username || 'Administrator'}</span>
+                <small>{user?.email || 'admin@walisongo.ac.id'}</small>
+              </div>
             </div>
           </div>
         </header>

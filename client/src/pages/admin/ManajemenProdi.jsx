@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import api from '../../api/axios'
+import './ManajemenProdi.css'
 
 function ManajemenProdi() {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [prodiSearch, setProdiSearch] = useState('')
+  const [currentTime, setCurrentTime] = useState(new Date())
 
   // Navigasi Level: null = Level 1 (Daftar Fakultas), String = Level 2 (Prodi dalam Fakultas Terpilih)
   const [selectedFakultas, setSelectedFakultas] = useState(null);
@@ -29,6 +32,11 @@ function ManajemenProdi() {
 
   useEffect(() => {
     fetchDepartments()
+  }, [])
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+    return () => clearInterval(timer)
   }, [])
 
   // Ekstrak Daftar Fakultas Unik dari Database
@@ -116,12 +124,39 @@ function ManajemenProdi() {
   const prodiInSelectedFakultas = selectedFakultas
     ? departments.filter(d => d.fakultas === selectedFakultas && !d.nama_prodi.includes('(Umum)'))
     : []
+  const filteredProdi = prodiInSelectedFakultas.filter(dep => {
+    const query = prodiSearch.trim().toLowerCase()
+    if (!query) return true
+    return [dep.nama_prodi, dep.kode_prodi, dep.fakultas]
+      .filter(Boolean)
+      .some(value => String(value).toLowerCase().includes(query))
+  })
+  const totalProdi = departments.filter(d => !d.nama_prodi.includes('(Umum)')).length
+  const totalFakultas = listFakultas.length
+  const fakultasWithProdi = listFakultas.filter(fakultas => departments.some(d => d.fakultas === fakultas && !d.nama_prodi.includes('(Umum)'))).length
 
   return (
-    <div className="animate-fade-in">
-      <div className="page-header">
-        <h1 className="page-title">Manajemen Fakultas & Program Studi</h1>
-        <p className="page-subtitle">Kelola struktur Fakultas dan Program Studi akademik secara teratur dan konsisten.</p>
+    <div className="faculty-management-page animate-fade-in">
+      <section className="faculty-clock-card">
+        <div className="faculty-clock-icon" aria-hidden="true">◷</div>
+        <div>
+          <p className="faculty-eyebrow">WAKTU SISTEM SERVER</p>
+          <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
+        </div>
+        <span className="faculty-online"><span /> SISTEM ONLINE</span>
+      </section>
+
+      <section className="faculty-stats-grid" aria-label="Ringkasan fakultas dan program studi">
+        <article className="faculty-stat stat-navy"><span>Total Fakultas</span><strong>{totalFakultas}</strong></article>
+        <article className="faculty-stat stat-blue"><span>Total Program Studi</span><strong>{totalProdi}</strong></article>
+        <article className="faculty-stat stat-green"><span>Fakultas Terisi</span><strong>{fakultasWithProdi}</strong></article>
+        <article className="faculty-stat stat-orange"><span>Data Akademik</span><strong>{departments.length}</strong></article>
+      </section>
+
+      <div className="faculty-page-heading">
+        <p className="faculty-eyebrow">ADMINISTRATOR / ACADEMIC STRUCTURE</p>
+        <h1>Manajemen Fakultas & Program Studi</h1>
+        <p>Kelola struktur Fakultas dan Program Studi akademik secara teratur dan konsisten.</p>
       </div>
 
       {message && (
@@ -131,7 +166,7 @@ function ManajemenProdi() {
       )}
 
       {/* NAVIGASI BREADCRUMB LEVEL */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', fontSize: '14px', fontWeight: 'bold' }}>
+      <div className="faculty-breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', fontSize: '14px', fontWeight: 'bold' }}>
         <button
           className="btn btn-secondary btn-sm"
           style={{ background: !selectedFakultas ? '#059669' : '#e2e8f0', color: !selectedFakultas ? '#fff' : '#475569' }}
@@ -198,8 +233,8 @@ function ManajemenProdi() {
       {/* LEVEL 2: KELOLA PROGRAM STUDI DALAM FAKULTAS TERPILIH */}
       {/* ========================================================= */}
       {selectedFakultas && (
-        <div className="card-flat">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div className="faculty-detail-card card-flat">
+          <div className="faculty-detail-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
               <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>📚 Program Studi di {selectedFakultas}</h2>
               <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Tambah dan edit nama program studi terikat tanpa pengetikan manual.</p>
@@ -210,7 +245,7 @@ function ManajemenProdi() {
           </div>
 
           {/* Form Tambah / Edit Prodi */}
-          <form onSubmit={handleSaveProdi} style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #e2e8f0' }}>
+          <form className="faculty-prodi-form" onSubmit={handleSaveProdi} style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #e2e8f0' }}>
             <h4 style={{ margin: '0 0 12px', fontSize: '14px' }}>{editingId ? '✏️ Edit Program Studi' : '➕ Tambah Program Studi Baru'}</h4>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               <div style={{ flex: 2, minWidth: '200px' }}>
@@ -247,8 +282,19 @@ function ManajemenProdi() {
             </div>
           </form>
 
+          <section className="faculty-prodi-search">
+            <div className="faculty-search-title">
+              <span aria-hidden="true">⌕</span>
+              <h3>PENELUSURAN PROGRAM STUDI</h3>
+            </div>
+            <div className="faculty-search-row">
+              <input type="search" className="faculty-search-input" value={prodiSearch} onChange={(e) => setProdiSearch(e.target.value)} placeholder="Masukkan Nama Program Studi untuk mencari..." aria-label="Cari program studi" />
+              <button type="button" className="faculty-search-button" onClick={() => setProdiSearch(prodiSearch.trim())}>⌕ CARI</button>
+            </div>
+          </section>
+
           {/* Tabel Daftar Prodi */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <table className="faculty-prodi-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #e2e8f0', background: '#f8fafc' }}>
                 <th style={{ padding: '12px 16px' }}>Kode</th>
@@ -258,7 +304,7 @@ function ManajemenProdi() {
               </tr>
             </thead>
             <tbody>
-              {prodiInSelectedFakultas.length > 0 ? prodiInSelectedFakultas.map((dep) => (
+              {filteredProdi.length > 0 ? filteredProdi.map((dep) => (
                 <tr key={dep.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{ padding: '12px 16px', fontWeight: 'bold', color: '#059669' }}>{dep.kode_prodi || '-'}</td>
                   <td style={{ padding: '12px 16px', fontWeight: 'bold' }}>{dep.nama_prodi}</td>
@@ -271,7 +317,7 @@ function ManajemenProdi() {
               )) : (
                 <tr>
                   <td colSpan="4" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
-                    Belum ada Program Studi yang terdaftar di {selectedFakultas}. Silakan tambah prodi di atas.
+                    {prodiSearch ? 'Program studi tidak ditemukan.' : `Belum ada Program Studi yang terdaftar di ${selectedFakultas}. Silakan tambah prodi di atas.`}
                   </td>
                 </tr>
               )}
