@@ -140,6 +140,53 @@ export async function sendReservationNotificationEmail(toEmail, username, status
 /**
  * Fungsi untuk memeriksa status pengiriman email langsung dari Resend API (Support EmailID & Alamat Email)
  */
+
+/**
+ * Fungsi Pengiriman Email Notifikasi Status Laporan Pengosongan Kelas (ACC / Ditolak)
+ */
+export async function sendReportNotificationEmail(toEmail, username, status, roomName, matkul, date, note = '') {
+    try {
+        const isVerified = status === 'verified' || status === 'approved'
+        const statusText = isVerified ? 'DISETUJUI & DIVERIFIKASI' : 'DITOLAK'
+        const statusBadgeBg = isVerified ? '#166534' : '#991b1b'
+
+        const { data, error } = await resend.emails.send({
+            from: 'SiKelas <noreply@sikelas.online>',
+            to: [toEmail],
+            subject: `📢 Status Laporan Kelas Kosong SiKelas: ${statusText} (${roomName})`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <div style="background: ${statusBadgeBg}; color: #ffffff; padding: 16px; border-radius: 8px; text-align: center;">
+                        <h2 style="margin: 0; font-size: 18px;">Laporan Pengosongan Kelas ${statusText}</h2>
+                    </div>
+                    
+                    <p style="color: #334155; font-size: 14px; margin-top: 20px;">
+                        Halo <b>${username}</b>, laporan pengosongan sesi perkuliahan Anda telah ditinjau dan diproses oleh Admin SiKelas:
+                    </p>
+                    
+                    <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; color: #1e293b;">
+                        <p style="margin: 6px 0;">📚 <b>Mata Kuliah:</b> ${matkul}</p>
+                        <p style="margin: 6px 0;">🏛️ <b>Ruangan:</b> ${roomName}</p>
+                        <p style="margin: 6px 0;">📅 <b>Tanggal Pengosongan:</b> ${date}</p>
+                        ${isVerified ? '<p style="margin: 6px 0; color: #166534; font-weight: bold;">✅ Slot ruangan resmi dibebaskan untuk reservasi kelas insidental.</p>' : ''}
+                        ${note ? `<p style="margin: 6px 0; color: #dc2626; background: #fef2f2; padding: 8px; border-radius: 6px;">📝 <b>Alasan Penolakan:</b> ${note}</p>` : ''}
+                    </div>
+
+                    <p style="text-align: center; color: #94a3b8; font-size: 11px; margin-top: 24px;">
+                        SiKelas — Platform Smart Classroom UIN Walisongo Semarang
+                    </p>
+                </div>
+            `
+        })
+
+        if (error) console.error('❌ Gagal kirim email notifikasi laporan:', error)
+        return !error
+    } catch (err) {
+        console.error('❌ Error email laporan:', err.message)
+        return false
+    }
+}
+
 export async function checkEmailDeliveryStatus(emailId, recipientEmail) {
     try {
         let targetId = emailId;

@@ -1,6 +1,16 @@
 import { useState, useEffect } from "react";
 import api from '../../api/axios'
 import './ManajemenProdi.css'
+import {
+  Building,
+  GeoAltFill,
+  ArrowRight,
+  ArrowLeft,
+  PlusLg,
+  MortarboardFill,
+  PencilSquare,
+  TrashFill
+} from 'react-bootstrap-icons'
 
 function ManajemenProdi() {
   const [departments, setDepartments] = useState([]);
@@ -140,7 +150,6 @@ function ManajemenProdi() {
       <section className="faculty-clock-card">
         <div className="faculty-clock-icon" aria-hidden="true">◷</div>
         <div>
-          <p className="faculty-eyebrow">WAKTU SISTEM SERVER</p>
           <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
         </div>
         <span className="faculty-online"><span /> SISTEM ONLINE</span>
@@ -172,13 +181,13 @@ function ManajemenProdi() {
           style={{ background: !selectedFakultas ? '#059669' : '#e2e8f0', color: !selectedFakultas ? '#fff' : '#475569' }}
           onClick={() => { setSelectedFakultas(null); setEditingId(null); }}
         >
-          🏛️ Daftar Fakultas (Level 1)
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Building size={15} /> Daftar Fakultas (Level 1)</span>
         </button>
         {selectedFakultas && (
           <>
-            <span>➔</span>
+            <span style={{ display: "inline-flex", alignItems: "center" }}><ArrowRight size={13} /></span>
             <span style={{ color: '#059669', background: '#d1fae5', padding: '4px 12px', borderRadius: '6px' }}>
-              📍 {selectedFakultas} (Level 2: Sub-Prodi)
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><GeoAltFill size={15} /> {selectedFakultas} (Level 2: Sub-Prodi)</span>
             </span>
           </>
         )}
@@ -191,7 +200,7 @@ function ManajemenProdi() {
         <>
           {/* Form Tambah Fakultas Baru */}
           <div className="card-flat" style={{ marginBottom: '24px', maxWidth: '500px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '12px' }}>➕ Tambah Master Fakultas Baru</h3>
+            <h3 style={{ fontSize: "15px", fontWeight: "bold", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}><PlusLg size={16} /> Tambah Master Fakultas Baru</h3>
             <form onSubmit={handleSaveFakultas} style={{ display: 'flex', gap: '12px' }}>
               <input
                 type="text"
@@ -217,11 +226,11 @@ function ManajemenProdi() {
                   onClick={() => setSelectedFakultas(fakName)}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <div style={{ fontSize: '28px' }}>🏛️</div>
+                    <div style={{ color: "#059669" }}><Building size={32} /></div>
                     <span className="badge badge-success">{count} Program Studi</span>
                   </div>
                   <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 6px', color: '#0f172a' }}>{fakName}</h3>
-                  <p style={{ margin: 0, fontSize: '13px', color: '#059669', fontWeight: '500' }}>Klik untuk kelola daftar prodi ➔</p>
+                  <p style={{ margin: 0, fontSize: "13px", color: "#059669", fontWeight: "500", display: "inline-flex", alignItems: "center", gap: "5px" }}>Klik untuk kelola daftar prodi <ArrowRight size={13} /></p>
                 </div>
               )
             })}
@@ -236,17 +245,17 @@ function ManajemenProdi() {
         <div className="faculty-detail-card card-flat">
           <div className="faculty-detail-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
-              <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>📚 Program Studi di {selectedFakultas}</h2>
+              <h2 style={{ fontSize: "18px", fontWeight: "bold", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}><MortarboardFill size={20} /> Program Studi di {selectedFakultas}</h2>
               <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Tambah dan edit nama program studi terikat tanpa pengetikan manual.</p>
             </div>
             <button className="btn btn-secondary btn-sm" onClick={() => { setSelectedFakultas(null); setEditingId(null); }}>
-              ⬅️ Kembali ke Daftar Fakultas
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><ArrowLeft size={14} /> Kembali ke Daftar Fakultas</span>
             </button>
           </div>
 
           {/* Form Tambah / Edit Prodi */}
           <form className="faculty-prodi-form" onSubmit={handleSaveProdi} style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #e2e8f0' }}>
-            <h4 style={{ margin: '0 0 12px', fontSize: '14px' }}>{editingId ? '✏️ Edit Program Studi' : '➕ Tambah Program Studi Baru'}</h4>
+            <h4 style={{ margin: '0 0 12px', fontSize: '14px' }}>{editingId ? (<span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><PencilSquare size={14} /> Edit Program Studi</span>) : (<span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><PlusLg size={14} /> Tambah Program Studi Baru</span>)}</h4>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               <div style={{ flex: 2, minWidth: '200px' }}>
                 <label className="form-label">Nama Program Studi</label>
@@ -310,8 +319,8 @@ function ManajemenProdi() {
                   <td style={{ padding: '12px 16px', fontWeight: 'bold' }}>{dep.nama_prodi}</td>
                   <td style={{ padding: '12px 16px', color: '#64748b' }}>{dep.fakultas}</td>
                   <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                    <button className="btn btn-secondary btn-sm" style={{ marginRight: '6px' }} onClick={() => handleEditProdi(dep)}>✏️ Edit</button>
-                    <button className="btn btn-secondary btn-sm" style={{ color: '#dc2626' }} onClick={() => handleDeleteProdi(dep.id)}>🗑️ Hapus</button>
+                    <button className="btn btn-secondary btn-sm" style={{ marginRight: '6px', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleEditProdi(dep)}><PencilSquare size={13} /> Edit</button>
+                    <button className="btn btn-secondary btn-sm" style={{ color: '#dc2626', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleDeleteProdi(dep.id)}><TrashFill size={13} /> Hapus</button>
                   </td>
                 </tr>
               )) : (

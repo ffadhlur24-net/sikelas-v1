@@ -2,6 +2,16 @@ import { useState, useEffect, useContext } from 'react'
 import { AuthContext } from '../../context/AuthContext'
 import api from '../../api/axios'
 import './PelaporanKelas.css'
+import {
+  HourglassSplit,
+  ExclamationTriangleFill,
+  PinAngleFill,
+  CalendarEvent,
+  GeoAltFill,
+  CalendarCheckFill,
+  InfoCircleFill,
+  SendFill
+} from 'react-bootstrap-icons'
 function PelaporanKelas() {
   const { user } = useContext(AuthContext)
   const [userSchedules, setUserSchedules] = useState([])
@@ -179,14 +189,14 @@ function PelaporanKelas() {
         )}
         {loadingSchedules ? (
           <div className="report-empty-state report-loading-state">
-            <span className="report-state-icon" aria-hidden="true">◷</span>
+            <span className="report-state-icon" aria-hidden="true" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><HourglassSplit size={32} /></span>
             <strong>Memuat jadwal pertemuan Anda...</strong>
             <p>Data sesi SIAKAD sedang disinkronkan.</p>
           </div>
         ) : userSchedules.length === 0 ? (
           <div className="report-empty-state report-no-schedule" style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#991b1b', padding: '16px', borderRadius: '8px', textAlign: 'center' }}>
             <span className="report-state-icon" aria-hidden="true">!</span>
-            ⚠️ <b>Jadwal Pertemuan Tidak Ditemukan!</b><br />
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><ExclamationTriangleFill size={18} /> <b>Jadwal Pertemuan Tidak Ditemukan!</b></span><br />
             <p>Mata Kuliah ({user?.mata_kuliah || '-'}) belum terdaftar dalam jadwal perkuliahan SIAKAD.</p>
             <small>Silakan hubungi Admin agar jadwal Anda didaftarkan sebelum mengirim laporan.</small>
           </div>
@@ -202,7 +212,7 @@ function PelaporanKelas() {
               <label className="form-label">Pilih Sesi Perkuliahan SIAKAD</label>
               {userSchedules.length === 1 ? (
                 <div className="single-session-info" style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '12px 16px', borderRadius: '8px', color: '#1e40af', fontSize: '14px', fontWeight: '500' }}>
-                  📌 <b>Sesi Tunggal ({userSchedules[0].hari}):</b> Jam {userSchedules[0].waktu_mulai.substring(0, 5)} - {userSchedules[0].waktu_selesai.substring(0, 5)} WIB @ Ruang {userSchedules[0].rooms?.nama || userSchedules[0].room_id}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><PinAngleFill size={16} /> <b>Sesi Tunggal ({userSchedules[0].hari}):</b></span> Jam {userSchedules[0].waktu_mulai.substring(0, 5)} - {userSchedules[0].waktu_selesai.substring(0, 5)} WIB @ Ruang {userSchedules[0].rooms?.nama || userSchedules[0].room_id}
                 </div>
               ) : (
                 <select className="input-field" value={selectedSessionIndex} onChange={handleSessionChange} required>
@@ -219,7 +229,7 @@ function PelaporanKelas() {
             {/* Pilihan Tanggal Pertemuan (Hari Ini / 1 Minggu / 2 Minggu) */}
             {activeSession && (
               <div className="report-field form-group" style={{ marginBottom: '16px' }}>
-                <label className="form-label">📅 Pilih Tanggal Pertemuan Yang Dilaporkan Kosong</label>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><CalendarEvent size={16} /> Pilih Tanggal Pertemuan Yang Dilaporkan Kosong</label>
                 <select
                   className="input-field"
                   style={{ fontWeight: '500' }}
@@ -228,13 +238,13 @@ function PelaporanKelas() {
                   required
                 >
                   <option value={getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 0)}>
-                    📌 Pertemuan Terdekat: {formatTanggalIndonesia(getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 0))}
+                    Pertemuan Terdekat: {formatTanggalIndonesia(getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 0))}
                   </option>
                   <option value={getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 1)}>
-                    🗓️ Pertemuan 1 Minggu Ke Depan: {formatTanggalIndonesia(getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 1))}
+                    Pertemuan 1 Minggu Ke Depan: {formatTanggalIndonesia(getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 1))}
                   </option>
                   <option value={getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 2)}>
-                    🗓️ Pertemuan 2 Minggu Ke Depan: {formatTanggalIndonesia(getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 2))}
+                    Pertemuan 2 Minggu Ke Depan: {formatTanggalIndonesia(getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 2))}
                   </option>
                 </select>
               </div>
@@ -243,14 +253,14 @@ function PelaporanKelas() {
             {/* Ruangan & Tanggal Mendatang (Auto-Filled Readonly Info) */}
             {activeSession && (
               <div className="report-location-info" style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '14px', borderRadius: '8px', marginBottom: '20px', fontSize: '13px' }}>
-                <p style={{ margin: '0 0 6px', color: '#475569' }}>📍 Ruangan Jadwal Asli: <b>Ruang {activeSession.rooms?.nama || activeSession.room_id} ({activeSession.rooms?.gedung || '-'})</b></p>
-                <p style={{ margin: 0, color: '#059669' }}>📅 Tanggal Laporan Terpilih: <b>{formatTanggalIndonesia(formData.tanggal)}</b></p>
+                <p style={{ margin: '0 0 6px', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}><GeoAltFill size={14} /> Ruangan Jadwal Asli: <b>Ruang {activeSession.rooms?.nama || activeSession.room_id} ({activeSession.rooms?.gedung || '-'})</b></p>
+                <p style={{ margin: 0, color: '#059669', display: 'flex', alignItems: 'center', gap: '6px' }}><CalendarCheckFill size={14} /> Tanggal Laporan Terpilih: <b>{formatTanggalIndonesia(formData.tanggal)}</b></p>
               </div>
             )}
             {/* NOTIFIKASI JIKA SUDAH PERNAH DILAPORKAN */}
             {isAlreadyReported && (
               <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', color: '#92400e', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', fontSize: '13px', fontWeight: '500' }}>
-                ℹ️ Laporan pengosongan untuk sesi pertemuan pada tanggal <b>{formatTanggalIndonesia(formData.tanggal)}</b> ini sudah berhasil dikirim sebelumnya (Menunggu Verifikasi Admin).
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><InfoCircleFill size={16} style={{ flexShrink: 0 }} /> Laporan pengosongan untuk sesi pertemuan</span> pada tanggal <b>{formatTanggalIndonesia(formData.tanggal)}</b> ini sudah berhasil dikirim sebelumnya (Menunggu Verifikasi Admin).
               </div>
             )}
             {/* OPSI JENIS PELAPORAN */}
@@ -279,7 +289,7 @@ function PelaporanKelas() {
               </div>
             )}
             <button type="submit" className="report-submit-button btn btn-primary" style={{ width: '100%', background: 'var(--color-error)' }} disabled={loading || selectedSessionIndex === ''}>
-              {loading ? 'Mengirim Laporan...' : '🚨 Kirim Laporan Kelas Kosong'}
+              {loading ? 'Mengirim Laporan...' : <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><SendFill size={16} /> Kirim Laporan Kelas Kosong</span>}
             </button>
           </form>
         )}

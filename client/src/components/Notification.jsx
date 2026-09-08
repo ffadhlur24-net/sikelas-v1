@@ -1,6 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import api from "../api/axios"
+import {
+    BellFill,
+    CheckAll,
+    XCircleFill,
+    CheckSquareFill,
+    TrashFill
+} from 'react-bootstrap-icons'
+import './Notification.css'
 
 function Notification() {
     const location = useLocation()
@@ -9,13 +17,31 @@ function Notification() {
     const [isOpen, setIsOpen] = useState(false)
     const [selectedIds, setSelectedIds] = useState([])
     const [isSelectMode, setIsSelectMode] = useState(false)
+    const dropdownRef = useRef(null)
 
-    // ⚡ Tutup Pop-up Notifikasi secara Otomatis saat Berpindah Halaman/Rute
+    // Tutup Pop-up Notifikasi secara Otomatis saat Berpindah Halaman/Rute
     useEffect(() => {
         setIsOpen(false)
         setIsSelectMode(false)
         setSelectedIds([])
     }, [location.pathname])
+
+    // Tutup Pop-up Notifikasi saat mengklik di luar area pop-up
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false)
+                setIsSelectMode(false)
+                setSelectedIds([])
+            }
+        }
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside)
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [isOpen])
 
     const fetcNotification = async () => {
         try {
@@ -44,10 +70,10 @@ function Notification() {
 
     const handleDelete = async (deleteAll = false) => {
         if (!deleteAll && selectedIds.length === 0) {
-            alert('Pilih mininal satu pesan untuk dihapus!')
+            alert('Pilih minimal satu pesan untuk dihapus!')
             return
         }
-        if (!window.confirm(deleteAll ? 'Hapus SEMUA pesan notifikasi' : `Hapus ${selectedIds.length} pesan terpilih`))
+        if (!window.confirm(deleteAll ? 'Hapus SEMUA pesan notifikasi?' : `Hapus ${selectedIds.length} pesan terpilih?`))
             return
 
         try {
@@ -65,103 +91,134 @@ function Notification() {
     }
 
     return (
-        <div style={{ position: 'relative', zIndex: '1000' }}>
-            {/* Tombol Lonceng */}
+        <div className="neo-noti-container" ref={dropdownRef}>
+            {/* Tombol Lonceng Pemicu */}
             <button
+                type="button"
+                className={`neo-noti-trigger ${isOpen ? 'active' : ''}`}
                 onClick={() => setIsOpen(!isOpen)}
-                style={{
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    position: 'relative',
-                    padding: '8px'
-                }}
+                aria-label="Notifikasi"
             >
-                <span style={{ fontSize: '20px' }}>🔔</span>
+                <BellFill size={19} />
                 {unreadCount > 0 && (
-                    <span style={{
-                        position: 'absolute',
-                        top: '2px',
-                        right: '2px',
-                        background: '#ef4444',
-                        color: '#fff',
-                        fontSize: '10px',
-                        fontWeight: 'bold',
-                        borderRadius: '10px',
-                        padding: '2px 6px'
-                    }}>
-                        {unreadCount}
+                    <span className="neo-noti-badge">
+                        {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                 )}
             </button>
 
-            {/* DROPDOWN KOTAK MASUK */}
+            {/* DROPDOWN KOTAK MASUK NEO-BRUTALIST */}
             {isOpen && (
-                <div style={{
-                    position: 'absolute', right: 0, top: '45px', width: '360px', maxWidth: '90vw', background: '#fff',
-                    borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', zIndex: 9999,
-                    border: '1px solid #e2e8f0', padding: '16px'
-                }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <h4 style={{ margin: 0, fontSize: '14px', color: '#0f172a' }}>🔔 Kotak Masuk Notifikasi</h4>
-                        <button className="btn btn-secondary btn-sm" style={{ fontSize: '11px' }} onClick={handleMarkReadAll}>
-                            ✓ Dibaca Semua
-                        </button>
-                    </div>
-                    {/* OPSI AKSES HAPUS MASSAL */}
-                    <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', fontSize: '11px' }}>
+                <div className="neo-noti-window">
+                    {/* Header Pop-up */}
+                    <div className="neo-noti-header">
+                        <h4 className="neo-noti-title">
+                            <BellFill size={15} color="#0058be" />
+                            Notifikasi
+                        </h4>
                         <button
-                            className="btn btn-secondary btn-sm"
-                            style={{ fontSize: '11px', background: isSelectMode ? '#dbeafe' : '#f1f5f9' }}
-                            onClick={() => { setIsSelectMode(!isSelectMode); setSelectedIds([]) }}
+                            type="button"
+                            className="neo-noti-btn neo-noti-btn-readall"
+                            onClick={handleMarkReadAll}
+                            title="Tandai semua notifikasi sudah dibaca"
                         >
-                            {isSelectMode ? '✖️ Batal Pilih' : '☑️ Pilih Banyak'}
+                            <CheckAll size={16} />
+                            <span>Dibaca Semua</span>
                         </button>
+                    </div>
+
+                    {/* Toolbar Aksi & Bulk Actions */}
+                    <div className="neo-noti-toolbar">
+                        <button
+                            type="button"
+                            className={`neo-noti-btn ${isSelectMode ? 'is-active' : ''}`}
+                            onClick={() => {
+                                setIsSelectMode(!isSelectMode)
+                                setSelectedIds([])
+                            }}
+                        >
+                            {isSelectMode ? (
+                                <>
+                                    <XCircleFill size={13} />
+                                    <span>Batal</span>
+                                </>
+                            ) : (
+                                <>
+                                    <CheckSquareFill size={13} />
+                                    <span>Pilih Banyak</span>
+                                </>
+                            )}
+                        </button>
+
                         {isSelectMode && selectedIds.length > 0 && (
-                            <button className="btn btn-danger btn-sm" style={{ fontSize: '11px' }} onClick={() => handleDelete(false)}>
-                                🗑️ Hapus ({selectedIds.length})
+                            <button
+                                type="button"
+                                className="neo-noti-btn neo-noti-btn-danger"
+                                onClick={() => handleDelete(false)}
+                            >
+                                <TrashFill size={13} />
+                                <span>Hapus ({selectedIds.length})</span>
                             </button>
                         )}
+
                         {notifications.length > 0 && (
-                            <button className="btn btn-secondary btn-sm" style={{ fontSize: '11px', color: '#dc2626' }} onClick={() => handleDelete(true)}>
-                                🗑️ Hapus Semua
+                            <button
+                                type="button"
+                                className="neo-noti-btn"
+                                style={{ marginLeft: 'auto', color: '#dc2626' }}
+                                onClick={() => handleDelete(true)}
+                                title="Hapus semua riwayat notifikasi"
+                            >
+                                <TrashFill size={13} />
+                                <span>Bersihkan</span>
                             </button>
                         )}
                     </div>
-                    {/* DAFTAR PESAN NOTIFIKASI */}
-                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+
+                    {/* Info Mode Seleksi Aktif */}
+                    {isSelectMode && (
+                        <div className="neo-noti-select-bar">
+                            <span>MODE PILIH: {selectedIds.length} DIPILIH</span>
+                            <span style={{ fontSize: '10px', color: '#4b5563' }}>Klik kartu untuk memilih</span>
+                        </div>
+                    )}
+
+                    {/* Daftar Pesan Notifikasi */}
+                    <div className="neo-noti-list">
                         {notifications.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8', fontSize: '12px' }}>
+                            <div className="neo-noti-empty">
                                 Kotak masuk Anda bersih, belum ada notifikasi baru.
                             </div>
                         ) : (
-                            notifications.map(n => (
-                                <div
-                                    key={n.id}
-                                    style={{
-                                        padding: '10px', borderRadius: '8px', marginBottom: '8px',
-                                        background: n.is_read ? '#f8fafc' : '#eff6ff',
-                                        borderLeft: `4px solid ${n.type === 'success' ? '#10b981' : n.type === 'danger' ? '#ef4444' : '#3b82f6'}`,
-                                        display: 'flex', gap: '8px', alignItems: 'flex-start'
-                                    }}
-                                >
-                                    {isSelectMode && (
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedIds.includes(n.id)}
-                                            onChange={() => toggleSelectId(n.id)}
-                                            style={{ marginTop: '3px' }}
-                                        />
-                                    )}
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#0f172a' }}>{n.title}</div>
-                                        <div style={{ fontSize: '11px', color: '#334155', marginTop: '2px', lineHeight: '1.4' }}>{n.message}</div>
-                                        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px' }}>
-                                            {new Date(n.created_at).toLocaleString('id-ID')}
+                            notifications.map(n => {
+                                const isSelected = selectedIds.includes(n.id)
+                                const typeClass = n.type === 'success' ? 'type-success' : n.type === 'danger' ? 'type-danger' : n.type === 'warning' ? 'type-warning' : 'type-info'
+                                return (
+                                    <div
+                                        key={n.id}
+                                        className={`neo-noti-card ${n.is_read ? 'is-read' : 'is-unread'} ${typeClass} ${isSelected ? 'is-selected' : ''}`}
+                                        onClick={isSelectMode ? () => toggleSelectId(n.id) : undefined}
+                                        style={{ cursor: isSelectMode ? 'pointer' : 'default' }}
+                                    >
+                                        {isSelectMode && (
+                                            <input
+                                                type="checkbox"
+                                                className="neo-noti-checkbox"
+                                                checked={isSelected}
+                                                onChange={() => toggleSelectId(n.id)}
+                                                onClick={(e) => e.stopPropagation()}
+                                            />
+                                        )}
+                                        <div className="neo-noti-content">
+                                            <div className="neo-noti-item-title">{n.title}</div>
+                                            <div className="neo-noti-item-msg">{n.message}</div>
+                                            <div className="neo-noti-item-time">
+                                                {new Date(n.created_at).toLocaleString('id-ID')}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))
+                                )
+                            })
                         )}
                     </div>
                 </div>

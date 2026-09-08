@@ -1,4 +1,4 @@
-import { Routes, Route, NavLink, useNavigate } from 'react-router-dom'
+import { Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import ProfilPJ from './pj/ProfilPJ'
 import DaftarKelas from './pj/DaftarKelas'
 import PelaporanKelas from './pj/PelaporanKelas'
@@ -7,11 +7,42 @@ import Notification from '../components/Notification'
 import './DashboardPJ.css'
 import './DashboardPJTheme.css'
 import { useContext } from 'react'
+import { BoxArrowRight, GearFill } from 'react-bootstrap-icons'
 import { AuthContext } from '../context/AuthContext'
 
 function DashboardPJ() {
   const { user, logout } = useContext(AuthContext)
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // Dynamic Header Title & Eyebrow based on active route
+  const getHeaderInfo = () => {
+    const path = location.pathname;
+    if (path.includes('daftar-kelas')) {
+      return {
+        eyebrow: 'PENANGGUNG JAWAB KELAS / RUANGAN',
+        title: 'Daftar Kelas & Peminjaman'
+      };
+    }
+    if (path.includes('pelaporan-kerusakan')) {
+      return {
+        eyebrow: 'PENANGGUNG JAWAB KELAS / SARPRAS',
+        title: 'Pelaporan Kerusakan Fasilitas'
+      };
+    }
+    if (path.includes('pelaporan')) {
+      return {
+        eyebrow: 'PENANGGUNG JAWAB KELAS / OPERASIONAL',
+        title: 'Pelaporan Kelas Kosong'
+      };
+    }
+    return {
+      eyebrow: 'PENANGGUNG JAWAB KELAS / AKUN',
+      title: 'Profil & Reservasi Saya'
+    };
+  };
+
+  const headerInfo = getHeaderInfo();
 
   const handleLogout = () => {
     logout()
@@ -25,13 +56,9 @@ function DashboardPJ() {
         <div className="sidebar-top">
           {/* Logo */}
           <div className="sidebar-brand">
-            <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="48" height="48" rx="12" fill="#059669" fillOpacity="0.1" />
-              <path d="M24 8L14 14V22C14 30.4 18.28 38.16 24 40C29.72 38.16 34 30.4 34 22V14L24 8Z" fill="#059669" stroke="#047857" strokeWidth="1.5" />
-              <path d="M20 24L23 27L28 20" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <img src="/assets/logo_sikelas.png" alt="Logo SiKelas" className="sidebar-brand-icon" />
             <div>
-              <span className="sidebar-brand-text">ADMIN</span>
+              <span className="sidebar-brand-text">Sikelas</span>
               <span className="sidebar-brand-sub">Dashboard PJ</span>
             </div>
           </div>
@@ -75,7 +102,7 @@ function DashboardPJ() {
         </div>
         <div className="pj-sidebar-bottom">
           <button type="button" className="pj-signout-button" onClick={handleLogout}>
-            <span aria-hidden="true">↪</span> Sign Out
+            <BoxArrowRight size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} /> Logout
           </button>
         </div>
       </aside>
@@ -85,15 +112,16 @@ function DashboardPJ() {
         {/* Top Header Bar */}
         <header className="dashboard-header">
           <div className="pj-navbar-title">
-            <p>PENANGGUNG JAWAB KELAS</p>
-            <h1>SiKelas Profile PJ</h1>
+            <p>{headerInfo.eyebrow}</p>
+            <h1>{headerInfo.title}</h1>
           </div>
           <div className="pj-navbar-actions">
-            <span className="pj-navbar-badge">PJ</span>
-            <span className="pj-navbar-email">{user?.email || 'email@student.walisongo.ac.id'}</span>
             <Notification />
-            <button type="button" className="pj-navbar-icon" aria-label="Pengaturan">⚙</button>
-            <div className="pj-navbar-avatar">{user?.username?.charAt(0).toUpperCase() || 'P'}</div>
+            <div className="pj-navbar-divider" />
+            <div className="pj-navbar-user">
+              <div className="pj-navbar-avatar">{user?.username?.charAt(0).toUpperCase() || 'P'}</div>
+              <span className="pj-navbar-name">{user?.username || 'Nama PJ'}</span>
+            </div>
           </div>
         </header>
 

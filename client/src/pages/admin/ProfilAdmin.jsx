@@ -2,6 +2,15 @@ import { useContext, useEffect, useState } from 'react'
 import { AuthContext } from '../../context/AuthContext'
 import api from '../../api/axios'
 import './ProfilAdmin.css'
+import {
+  PencilSquare,
+  EnvelopeFill,
+  EyeFill,
+  EyeSlashFill,
+  KeyFill,
+  FloppyFill,
+  BoxArrowRight
+} from 'react-bootstrap-icons'
 
 function ProfilAdmin() {
   const { user, logout, updateUser } = useContext(AuthContext)
@@ -27,6 +36,38 @@ function ProfilAdmin() {
     otp_code: ''
   })
   const [editLoading, setEditLoading] = useState(false)
+
+  // State Statistik Dinamis
+  const [stats, setStats] = useState({
+    activePj: 0,
+    totalRooms: 0,
+    damageReports: 0,
+    reservations: 0
+  })
+  const [statsLoading, setStatsLoading] = useState(true)
+
+  const fetchAdminStats = async () => {
+    try {
+      setStatsLoading(true)
+      const res = await api.get('/users/admin-stats')
+      if (res.data) {
+        setStats({
+          activePj: res.data.activePj || 0,
+          totalRooms: res.data.totalRooms || 0,
+          damageReports: res.data.damageReports || 0,
+          reservations: res.data.reservations || 0
+        })
+      }
+    } catch (err) {
+      console.error('Gagal mengambil data statistik admin:', err)
+    } finally {
+      setStatsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchAdminStats()
+  }, [])
   const [otpLoading, setOtpLoading] = useState(false)
   const [otpCountdown, setOtpCountdown] = useState(0)
 
@@ -112,6 +153,7 @@ function ProfilAdmin() {
       setShowResetModal(false)
       setConfirmInput('')
       setMessage(res.data.message)
+      fetchAdminStats()
     } catch (error) {
       alert(error.response?.data?.error || 'Gagal melakukan reset semester')
     } finally {
@@ -150,7 +192,6 @@ function ProfilAdmin() {
       <section className="admin-clock-card neo-card">
         <div className="clock-icon" aria-hidden="true">◷</div>
         <div>
-          <p className="eyebrow">WAKTU SISTEM SERVER</p>
           <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
         </div>
         <span className="online-badge"><span /> SISTEM ONLINE</span>
@@ -159,55 +200,67 @@ function ProfilAdmin() {
       <section className="admin-profile-layout">
         <article className="admin-main-card neo-card">
           <div className="admin-account-card">
-          <div className="admin-account-identity">
-            <div className="admin-avatar">{getInitials(user?.username || user?.nama)}</div>
-            <span className="role-badge">ADMIN PUSAT</span>
-          </div>
-          <div className="admin-account-details">
-            <h2>Informasi Akun</h2>
-            <div className="account-detail-grid">
-              <div className="account-detail"><span>Email Institusi</span><strong>{user?.email || 'admin@walisongo.ac.id'}</strong></div>
-              <div className="account-detail"><span>Hak Akses</span><strong>{user?.role === 'admin' ? 'Super Admin (Level 1)' : user?.role || 'Admin'}</strong></div>
-              <div className="account-detail"><span>No. HP / WhatsApp</span><strong>{user?.no_hp || 'Belum diatur'}</strong></div>
-              <div className="account-detail"><span>Status Akun</span><strong className="success-text">● Aktif & Terverifikasi</strong></div>
+            <div className="admin-account-identity">
+              <div className="admin-avatar">{getInitials(user?.username || user?.nama)}</div>
+              <span className="role-badge">ADMIN PUSAT</span>
             </div>
-            <div className="account-actions">
-              <button type="button" className="neo-btn neo-btn-primary" onClick={openEditModal}>✎ Edit Profil Admin</button>
-              <button type="button" className="neo-btn neo-btn-secondary" onClick={logout}>↪ Keluar dari Akun</button>
+            <div className="admin-account-details">
+              <h2>Informasi Akun</h2>
+              <div className="account-detail-grid">
+                <div className="account-detail"><span>Email Institusi</span><strong>{user?.email || 'admin@walisongo.ac.id'}</strong></div>
+                <div className="account-detail"><span>Hak Akses</span><strong>{user?.role === 'admin' ? 'Admin' : user?.role || 'Admin'}</strong></div>
+                <div className="account-detail"><span>No. HP / WhatsApp</span><strong>{user?.no_hp || 'Belum diatur'}</strong></div>
+                <div className="account-detail"><span>Status Akun</span><strong className="success-text">● Aktif & Terverifikasi</strong></div>
+              </div>
+              <div className="account-actions">
+                <button type="button" className="neo-btn neo-btn-primary" onClick={openEditModal} style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}><PencilSquare size={16} /> Edit Profil Admin</button>
+                <button type="button" className="admin-signout-button" onClick={logout}><BoxArrowRight size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} /> Logout</button>
+              </div>
             </div>
-          </div>
           </div>
 
           <article className="feature-card">
-          <h2>Ringkasan Fitur</h2>
-          <ul>
-            <li><b>Profil Admin:</b> Kelola identitas, akses, dan data antar-semester.</li>
-            <li><b>Persetujuan:</b> Verifikasi pengajuan peminjaman ruangan.</li>
-            <li><b>Manajemen Ruangan:</b> Kelola data gedung dan ketersediaan.</li>
-            <li><b>Manajemen PJ:</b> Kelola akses dan kontak PJ kelas.</li>
-            <li><b>Log Pelaporan:</b> Pantau kendala perkuliahan.</li>
-          </ul>
+            <h2>Ringkasan Fitur</h2>
+            <ul>
+              <li><b>Profil Admin:</b> Kelola identitas, akses, dan data antar-semester.</li>
+              <li><b>Persetujuan:</b> Verifikasi pengajuan peminjaman ruangan.</li>
+              <li><b>Manajemen Ruangan:</b> Kelola data gedung dan ketersediaan.</li>
+              <li><b>Manajemen PJ:</b> Kelola akses dan kontak PJ kelas.</li>
+              <li><b>Log Pelaporan:</b> Pantau kendala perkuliahan.</li>
+            </ul>
           </article>
         </article>
 
         <article className="maintenance-card neo-card">
-        <div className="maintenance-heading">
-          <div>
-            <p className="eyebrow">SYSTEM MAINTENANCE</p>
-            <h2>Pemeliharaan & Pergantian Semester</h2>
+          <div className="maintenance-heading">
+            <div>
+              <p className="eyebrow">SYSTEM MAINTENANCE</p>
+              <h2>Pemeliharaan & Pergantian Semester</h2>
+            </div>
+            <span className="warning-icon" aria-hidden="true">!</span>
           </div>
-          <span className="warning-icon" aria-hidden="true">!</span>
-        </div>
-        <p className="maintenance-copy">Reset akhir semester akan mengarsipkan data reservasi, laporan, jadwal, dan akun PJ lama. Pastikan backup telah dilakukan sebelum melanjutkan.</p>
-        <button type="button" className="neo-btn neo-btn-danger" onClick={() => setShowResetModal(true)}>↻ Jalankan Reset Akhir Semester</button>
+          <p className="maintenance-copy">Reset akhir semester akan mengarsipkan data reservasi, laporan, jadwal, dan akun PJ lama. Pastikan backup telah dilakukan sebelum melanjutkan.</p>
+          <button type="button" className="neo-btn neo-btn-danger" onClick={() => setShowResetModal(true)}>↻ Jalankan Reset Akhir Semester</button>
         </article>
       </section>
 
       <section className="admin-stats-grid" aria-label="Ringkasan statistik sistem">
-        <article className="admin-stat-card stat-navy"><span>Total Ruangan</span><strong>142</strong></article>
-        <article className="admin-stat-card stat-blue"><span>Reservasi Aktif</span><strong>38</strong></article>
-        <article className="admin-stat-card stat-green"><span>User Aktif</span><strong>1.2K</strong></article>
-        <article className="admin-stat-card stat-orange"><span>Laporan Pending</span><strong>5</strong></article>
+        <article className="admin-stat-card stat-navy">
+          <span>Pj Aktif</span>
+          <strong>{statsLoading ? '...' : stats.activePj}</strong>
+        </article>
+        <article className="admin-stat-card stat-blue">
+          <span>Total Ruangan</span>
+          <strong>{statsLoading ? '...' : stats.totalRooms}</strong>
+        </article>
+        <article className="admin-stat-card stat-green">
+          <span>Laporan Kerusakan</span>
+          <strong>{statsLoading ? '...' : stats.damageReports}</strong>
+        </article>
+        <article className="admin-stat-card stat-orange">
+          <span>Laporan Reservasi</span>
+          <strong>{statsLoading ? '...' : stats.reservations}</strong>
+        </article>
       </section>
 
       {message && <div className="admin-feedback" role="status">{message}</div>}
@@ -269,7 +322,7 @@ function ProfilAdmin() {
                       disabled={otpLoading || otpCountdown > 0}
                       className="otp-button"
                     >
-                      {otpLoading ? 'Sending...' : otpCountdown > 0 ? `📩 Minta Ulang (${otpCountdown}s)` : '📩 Kirim OTP ke Email'}
+                      {otpLoading ? 'Sending...' : otpCountdown > 0 ? (<span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><EnvelopeFill size={14} /> Minta Ulang ({otpCountdown}s)</span>) : (<span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><EnvelopeFill size={14} /> Kirim OTP ke Email</span>)}
                     </button>
                   )}
                 </div>
@@ -282,7 +335,7 @@ function ProfilAdmin() {
                     placeholder="Minimal 8 karakter (Kosongkan jika tidak diubah)"
                   />
                   <button type="button" className="password-icon" onClick={() => setShowNewPassword(!showNewPassword)} aria-label="Tampilkan password baru">
-                    {showNewPassword ? '🙈' : '👁️'}
+                    {showNewPassword ? <EyeSlashFill size={16} /> : <EyeFill size={16} />}
                   </button>
                 </div>
               </div>
@@ -305,7 +358,7 @@ function ProfilAdmin() {
                         required
                       />
                       <button type="button" className="password-icon" onClick={() => setShowConfirmPassword(!showConfirmPassword)} aria-label="Tampilkan konfirmasi password">
-                        {showConfirmPassword ? '🙈' : '👁️'}
+                        {showConfirmPassword ? <EyeSlashFill size={16} /> : <EyeFill size={16} />}
                       </button>
                     </div>
                   </div>
@@ -313,7 +366,7 @@ function ProfilAdmin() {
                   {/* INPUT KODE OTP EMAIL 6-DIGIT */}
                   <div className="modal-field">
                     <label className="modal-label otp-label">
-                      🔑 Kode OTP Email (6-Digit)
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><KeyFill size={15} /> Kode OTP Email (6-Digit)</span>
                     </label>
                     <input
                       type="text"
@@ -341,7 +394,7 @@ function ProfilAdmin() {
                         required
                       />
                       <button type="button" className="password-icon" onClick={() => setShowOldPassword(!showOldPassword)} aria-label="Tampilkan password lama">
-                        {showOldPassword ? '🙈' : '👁️'}
+                        {showOldPassword ? <EyeSlashFill size={16} /> : <EyeFill size={16} />}
                       </button>
                     </div>
                   </div>
@@ -350,7 +403,7 @@ function ProfilAdmin() {
 
               <div className="modal-actions">
                 <button type="submit" className="neo-btn neo-btn-primary" disabled={editLoading}>
-                  {editLoading ? 'Menyimpan...' : '💾 Simpan Perubahan'}
+                  {editLoading ? 'Menyimpan...' : (<span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><FloppyFill size={16} /> Simpan Perubahan</span>)}
                 </button>
                 <button type="button" className="neo-btn neo-btn-secondary" onClick={() => setShowEditModal(false)}>
                   Batal

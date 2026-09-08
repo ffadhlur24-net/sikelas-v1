@@ -10,16 +10,25 @@
   --reservation-red: #c51b1b;
   color: var(--reservation-ink);
   font-family: 'Inter', sans-serif;
-  background-image: radial-gradient(#000 1px, transparent 1px);
-  background-size: 20px 20px;
 }
 
 .reservation-heading { margin-bottom: 28px; padding-bottom: 24px; border-bottom: 4px solid var(--reservation-border); }
 .reservation-heading .page-title { font: clamp(28px, 4vw, 44px)/1.15 'Archivo Black', sans-serif; color:var(--reservation-ink); }
 .reservation-heading .page-subtitle { color:var(--reservation-muted); font-size:18px; font-weight:600; }
-.reservation-clock { border:4px solid var(--reservation-border) !important; border-radius:0 !important; box-shadow:4px 4px 0 var(--reservation-border) !important; background:var(--reservation-blue) !important; color:#fff; min-width:260px; }
-.reservation-clock div:first-child { color:#fff !important; font-size:11px !important; font-weight:800 !important; letter-spacing:.08em !important; }
-.reservation-clock div:last-child { color:#fff !important; font:22px 'Archivo Black', sans-serif !important; }
+.reservation-clock {
+  border: 4px solid var(--reservation-border) !important;
+  border-radius: 0 !important;
+  box-shadow: 4px 4px 0 var(--reservation-border) !important;
+  background: var(--reservation-blue) !important;
+  color: #ffffff !important;
+  padding: 8px 18px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font: 22px/1.2 'Archivo Black', sans-serif !important;
+  letter-spacing: .03em;
+  white-space: nowrap;
+}
 
 .reservation-page .card-flat { border:4px solid var(--reservation-border) !important; border-radius:0 !important; box-shadow:4px 4px 0 var(--reservation-border); background:var(--reservation-surface); }
 .reservation-location-filter { padding:24px !important; }
@@ -54,7 +63,7 @@
 
 @media (max-width:700px) {
   .reservation-heading { align-items:flex-start !important; flex-direction:column; }
-  .reservation-clock { width:100%; min-width:0; text-align:left !important; }
+  .reservation-clock { width:fit-content; min-width:0; text-align:center !important; }
   .reservation-room-grid { grid-template-columns:1fr !important; }
   .reservation-room-card { min-height:280px; }
 }

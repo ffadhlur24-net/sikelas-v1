@@ -2,6 +2,16 @@ import { useState, useEffect } from 'react'
 import { exportToCSV } from '../../utils/exportExcel'
 import api from '../../api/axios'
 import './LogKerusakanFasilitas.css'
+import {
+  WrenchAdjustable,
+  HourglassSplit,
+  Tools,
+  CheckCircleFill,
+  CardList,
+  PrinterFill,
+  FileEarmarkSpreadsheetFill,
+  LockFill
+} from 'react-bootstrap-icons'
 function LogKerusakanFasilitas() {
     const [reports, setReports] = useState([])
     const [loading, setLoading] = useState(true)
@@ -67,7 +77,7 @@ function LogKerusakanFasilitas() {
         <div className="damage-log-page animate-fade-in">
             <div className="damage-log-heading">
                 <p className="damage-eyebrow">ADMINISTRATOR / FACILITY INCIDENTS</p>
-                <h1><span aria-hidden="true">🔧</span> Log Kerusakan Fasilitas Kampus</h1>
+                <h1><span aria-hidden="true" style={{ display: "inline-flex", alignItems: "center", marginRight: "10px" }}><WrenchAdjustable size={30} /></span>Log Kerusakan Fasilitas Kampus</h1>
                 <p>Kelola perbaikan sarana kelas dan kunci ruangan jika terjadi kerusakan parah.</p>
             </div>
             {/* Filter Status Penanganan (Terarah & Profesional) */}
@@ -84,7 +94,7 @@ function LogKerusakanFasilitas() {
                     }}
                     onClick={() => setFilterStatus('pending')}
                 >
-                    🟡 Menunggu Perbaikan
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><HourglassSplit size={14} /> Menunggu Perbaikan</span>
                 </button>
 
                 {/* 2. Sedang Dikerjakan */}
@@ -97,7 +107,7 @@ function LogKerusakanFasilitas() {
                     }}
                     onClick={() => setFilterStatus('in_progress')}
                 >
-                    🔧 Sedang Dikerjakan
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Tools size={14} /> Sedang Dikerjakan</span>
                 </button>
 
                 {/* 3. Selesai Diperbaiki */}
@@ -110,7 +120,7 @@ function LogKerusakanFasilitas() {
                     }}
                     onClick={() => setFilterStatus('resolved')}
                 >
-                    🟢 Selesai Diperbaiki
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><CheckCircleFill size={14} /> Selesai Diperbaiki</span>
                 </button>
 
                 {/* 4. Semua Laporan (Dipindah ke Paling Akhir) */}
@@ -123,14 +133,14 @@ function LogKerusakanFasilitas() {
                     }}
                     onClick={() => setFilterStatus('Semua')}
                 >
-                    📋 Semua Laporan
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><CardList size={14} /> Semua Laporan</span>
                 </button>
             </div>
             {/* Tabel Log Tiket */}
             <div className="damage-table-card">
                 <div className="damage-toolbar no-print">
-                    <button className="damage-action-btn" onClick={handlePrintPDF}>▣ Cetak PDF Resmi</button>
-                    <button className="damage-action-btn" onClick={handleExportExcel}>▧ Ekspor Excel (.CSV)</button>
+                    <button className="damage-action-btn" onClick={handlePrintPDF} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><PrinterFill size={14} /> Cetak PDF Resmi</button>
+                    <button className="damage-action-btn" onClick={handleExportExcel} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><FileEarmarkSpreadsheetFill size={14} /> Ekspor Excel (.CSV)</button>
                 </div>
                 {/* ELEMEN KOP SURAT KHUSUS CETAK */}
                 <div className="print-only">
@@ -168,7 +178,7 @@ function LogKerusakanFasilitas() {
                                             {item.rooms?.gedung} ({item.rooms?.kampus})
                                         </span>
                                         <br />
-                                        {item.rooms?.status === 'terkunci' && <span className="badge badge-error" style={{ marginTop: '4px' }}>🔒 Terkunci</span>}
+                                        {item.rooms?.status === 'terkunci' && <span className="badge badge-error" style={{ marginTop: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><LockFill size={12} /> Terkunci</span>}
                                     </td>
                                     <td style={{ padding: '12px' }}>
                                         <span className="badge badge-warning" style={{ marginBottom: '4px', display: 'inline-block' }}>{item.kategori}</span>
@@ -183,7 +193,7 @@ function LogKerusakanFasilitas() {
                                     <td style={{ padding: '12px' }}>
                                         {item.status === 'resolved' ? (
                                             <span className="badge badge-success" style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 'bold' }}>
-                                                🟢 Selesai Diperbaiki (Closed)
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CheckCircleFill size={13} /> Selesai Diperbaiki (Closed)</span>
                                             </span>
                                         ) : (
                                             <select
@@ -192,25 +202,25 @@ function LogKerusakanFasilitas() {
                                                 value={item.status}
                                                 onChange={(e) => handleUpdateStatus(item.id, e.target.value)}
                                             >
-                                                <option value="pending">🟡 Menunggu Perbaikan</option>
-                                                <option value="in_progress">🔧 Sedang Dikerjakan Teknisi</option>
-                                                <option value="resolved">🟢 Selesai Diperbaiki</option>
+                                                <option value="pending">Menunggu Perbaikan</option>
+                                                <option value="in_progress">Sedang Dikerjakan Teknisi</option>
+                                                <option value="resolved">Selesai Diperbaiki</option>
                                             </select>
                                         )}
                                     </td>
                                     <td style={{ padding: '12px', textAlign: 'right' }}>
                                         {item.status === 'resolved' ? (
-                                            <span style={{ fontSize: '13px', color: '#059669', fontWeight: 'bold' }}>✓ Selesai</span>
+                                            <span style={{ fontSize: '13px', color: '#059669', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><CheckCircleFill size={14} /> Selesai</span>
                                         ) : item.rooms?.status !== 'terkunci' ? (
                                             <button
                                                 className="btn btn-secondary btn-sm"
                                                 style={{ color: '#dc2626', borderColor: '#fca5a5' }}
                                                 onClick={() => handleLockRoom(item.room_id, item.rooms?.nama)}
                                             >
-                                                🔒 Kunci Ruangan
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><LockFill size={13} /> Kunci Ruangan</span>
                                             </button>
                                         ) : (
-                                            <span style={{ fontSize: '12px', color: '#dc2626', fontWeight: 'bold' }}>Terkunci 🔒</span>
+                                            <span style={{ fontSize: '12px', color: '#dc2626', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><LockFill size={13} /> Terkunci</span>
                                         )}
                                     </td>
                                 </tr>

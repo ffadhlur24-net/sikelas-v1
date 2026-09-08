@@ -2,6 +2,27 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import api from '../../api/axios'
 import './Register.css'
+import {
+  ExclamationTriangleFill,
+  LockFill,
+  ArrowClockwise,
+  ArrowLeftShort,
+  ArrowRightShort,
+  CheckCircleFill,
+  PersonFill,
+  MortarboardFill,
+  EnvelopeFill,
+  TelephoneFill,
+  InfoCircleFill,
+  Bank,
+  JournalBookmarkFill,
+  CalendarWeekFill,
+  BookHalf,
+  TagFill,
+  CheckLg,
+  PinAngleFill,
+  HouseDoorFill
+} from 'react-bootstrap-icons'
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -185,12 +206,42 @@ function Register() {
     }
   }
 
-  // Stepper navigation
+  // Stepper navigation & step validation
+  const isStepValid = (step) => {
+    switch (step) {
+      case 1:
+        return Boolean(formData.fakultas && formData.fakultas.trim() !== '')
+      case 2:
+        return Boolean(formData.prodi && formData.prodi.trim() !== '')
+      case 3:
+        return Boolean(formData.semester !== undefined && formData.semester !== null && formData.semester !== '' && String(formData.semester).trim() !== '')
+      case 4:
+        return Boolean(formData.mata_kuliah && formData.mata_kuliah.trim() !== '')
+      case 5:
+        return Boolean(formData.kelas && formData.kelas.trim() !== '')
+      default:
+        return true
+    }
+  }
+
+  // Cek apakah step tujuan dapat diakses
+  const isStepAccessible = (targetStep) => {
+    if (targetStep <= 1) return true
+    for (let s = 1; s < targetStep; s++) {
+      if (!isStepValid(s)) return false
+    }
+    return true
+  }
+
+  const canProceedCurrentStep = isStepValid(currentStep)
+
   const handleStepClick = (step) => {
+    if (!isStepAccessible(step)) return
     setCurrentStep(step)
   }
 
   const handleNextStep = () => {
+    if (!canProceedCurrentStep) return
     if (currentStep < 5) {
       setCurrentStep(prev => prev + 1)
     } else {
@@ -303,11 +354,11 @@ function Register() {
           {/* State: Loading Initial Options */}
           {loadingOptions ? (
             <div style={{ padding: '60px 24px', textAlign: 'center', fontFamily: 'Chivo Mono, monospace' }}>
-              <p style={{ fontWeight: 'bold', fontSize: '14px' }}>⏳ Memeriksa ketersediaan kuota pendaftaran...</p>
+              <p style={{ fontWeight: 'bold', fontSize: '14px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}><ArrowClockwise size={18} /> Memeriksa ketersediaan kuota pendaftaran...</p>
             </div>
           ) : fetchError ? (
             <div style={{ padding: '40px 24px', textAlign: 'center', fontFamily: 'Chivo Mono, monospace' }}>
-              <div style={{ fontSize: '36px', marginBottom: '12px' }}>⚠️</div>
+              <div style={{ marginBottom: '12px' }}><ExclamationTriangleFill size={36} color="#b91c1c" /></div>
               <h3 style={{ fontSize: '16px', fontWeight: '900', textTransform: 'uppercase' }}>Gagal Memuat Data</h3>
               <p style={{ fontSize: '13px', color: '#525252', margin: '8px 0 20px 0' }}>
                 Server sedang menyiapkan koneksi database. Silakan muat ulang.
@@ -318,13 +369,13 @@ function Register() {
                 className="pj-btn-submit"
                 style={{ width: 'auto', display: 'inline-flex', padding: '10px 24px', fontSize: '13px' }}
               >
-                🔄 Muat Ulang Opsi
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><ArrowClockwise size={16} /> Muat Ulang Opsi</span>
               </button>
             </div>
           ) : isRegistrationClosed ? (
             /* Special State: Registration Closed */
             <div style={{ padding: '40px 24px', textAlign: 'center', fontFamily: 'Chivo Mono, monospace' }}>
-              <div style={{ fontSize: '42px', marginBottom: '12px' }}>🔒</div>
+              <div style={{ marginBottom: '12px' }}><LockFill size={42} color="#b91c1c" /></div>
               <h2 style={{ fontSize: '20px', fontWeight: '900', textTransform: 'uppercase', color: '#b91c1c' }}>
                 Pendaftaran PJ Ditutup
               </h2>
@@ -332,7 +383,7 @@ function Register() {
                 {closedMessage || 'Seluruh Mata Kuliah pada semester ini telah memiliki Penanggung Jawab (PJ) terdaftar.'}
               </p>
               <Link to="/login" className="pj-btn-submit" style={{ textDecoration: 'none', display: 'inline-flex', width: 'auto' }}>
-                👈 Kembali ke Halaman Login
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><ArrowLeftShort size={20} /> Kembali ke Halaman Login</span>
               </Link>
             </div>
           ) : (
@@ -341,7 +392,7 @@ function Register() {
               {/* Alert Error / Success */}
               {error && (
                 <div className="pj-alert-box pj-alert-error">
-                  <span>⚠️</span>
+                  <ExclamationTriangleFill size={18} style={{ flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
                     <span>{error}</span>
                     {error.includes('Email ini telah memiliki akun') && (
@@ -358,7 +409,7 @@ function Register() {
                             textDecoration: 'none'
                           }}
                         >
-                          👉 Login ke Akun Anda
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><ArrowRightShort size={18} /> Login ke Akun Anda</span>
                         </Link>
                       </div>
                     )}
@@ -368,7 +419,7 @@ function Register() {
 
               {success && (
                 <div className="pj-alert-box pj-alert-success">
-                  <span>✅</span>
+                  <CheckCircleFill size={18} color="#16a34a" style={{ flexShrink: 0 }} />
                   <span>{success}</span>
                 </div>
               )}
@@ -377,7 +428,7 @@ function Register() {
               <div className="pj-input-group">
                 <div className="pj-label-row">
                   <label className="pj-label" htmlFor="username">
-                    <span>👤</span> Username / Nama Lengkap
+                    <PersonFill size={15} /> Username / Nama Lengkap
                   </label>
                   <span className="pj-badge-tag">WAJIB</span>
                 </div>
@@ -392,7 +443,7 @@ function Register() {
                   onChange={handleChange}
                 />
                 <p className="pj-input-hint">
-                  <span>ℹ️</span> Hanya boleh huruf dan spasi (tanpa angka / karakter khusus).
+                  <InfoCircleFill size={13} style={{ flexShrink: 0, color: '#2563eb' }} /> Hanya boleh huruf dan spasi (tanpa angka / karakter khusus).
                 </p>
               </div>
 
@@ -400,9 +451,9 @@ function Register() {
               <div className="pj-input-group">
                 <div className="pj-label-row">
                   <label className="pj-label" htmlFor="nim_nip">
-                    <span>🎓</span> NIM Mahasiswa (Email Kampus Otomatis)
+                    <MortarboardFill size={16} /> Email Kampus
                   </label>
-                  <span className="pj-badge-tag">SSO KAMPUS</span>
+                  <span className="pj-badge-tag">Wajib</span>
                 </div>
                 <div className="pj-nim-combo">
                   <input
@@ -422,13 +473,13 @@ function Register() {
                   </div>
                 </div>
                 <p className="pj-input-hint">
-                  <span>✉️</span> Surat OTP akan dikirim ke:{' '}
+                  <EnvelopeFill size={13} style={{ flexShrink: 0 }} /> Surat OTP akan dikirim ke:{' '}
                   <strong>{formData.email || 'NIM@student.walisongo.ac.id'}</strong>
                   {emailChecking && <span style={{ color: '#0284c7', marginLeft: '6px' }}>(memeriksa...)</span>}
                 </p>
                 {emailError && (
                   <p className="pj-input-hint" style={{ color: '#b91c1c', fontWeight: 'bold' }}>
-                    <span>⚠️</span> {emailError}
+                    <ExclamationTriangleFill size={13} style={{ flexShrink: 0, color: '#b91c1c' }} /> {emailError}
                   </p>
                 )}
               </div>
@@ -436,7 +487,7 @@ function Register() {
               {/* Field 3: Password */}
               <div className="pj-input-group">
                 <label className="pj-label" htmlFor="password">
-                  <span>🔒</span> Password
+                  <LockFill size={15} /> Password
                 </label>
                 <div className="pj-password-wrapper">
                   <input
@@ -462,14 +513,14 @@ function Register() {
                   </button>
                 </div>
                 <p className="pj-input-hint">
-                  <span>ℹ️</span> Password minimal 8 karakter.
+                  <InfoCircleFill size={13} style={{ flexShrink: 0, color: '#2563eb' }} /> Password minimal 8 karakter.
                 </p>
               </div>
 
               {/* Field 4: No. HP (WhatsApp) */}
               <div className="pj-input-group">
                 <label className="pj-label" htmlFor="no_hp">
-                  <span>📱</span> No. HP (WhatsApp)
+                  <TelephoneFill size={15} /> No. HP (WhatsApp)
                 </label>
                 <input
                   id="no_hp"
@@ -483,7 +534,7 @@ function Register() {
                   onChange={handleChange}
                 />
                 <p className="pj-input-hint">
-                  <span>ℹ️</span> Harus berawalan 08 (10-15 digit angka).
+                  <InfoCircleFill size={13} style={{ flexShrink: 0, color: '#2563eb' }} /> Harus berawalan 08 (10-15 digit angka).
                 </p>
               </div>
 
@@ -498,7 +549,8 @@ function Register() {
                 {/* Stepper Track Nodes */}
                 <div className="pj-stepper-track">
                   {[1, 2, 3, 4, 5].map((step, idx) => {
-                    const isCompleted = step < currentStep
+                    const isCompleted = step < currentStep && isStepValid(step)
+                    const isAccessible = isStepAccessible(step)
                     const isActive = step === currentStep
 
                     return (
@@ -506,24 +558,23 @@ function Register() {
                         <button
                           type="button"
                           className="pj-step-node"
+                          disabled={!isAccessible}
                           onClick={() => handleStepClick(step)}
                           title={`Langkah ${step}: ${stepTitles[idx]}`}
                         >
                           <div
-                            className={`pj-step-box ${
-                              isCompleted
-                                ? 'pj-step-box-completed'
-                                : isActive
+                            className={`pj-step-box ${isCompleted
+                              ? 'pj-step-box-completed'
+                              : isActive
                                 ? 'pj-step-box-active'
                                 : 'pj-step-box-inactive'
-                            }`}
+                              }`}
                           >
-                            {isCompleted ? '✓' : step}
+                            {isCompleted ? <CheckLg size={16} /> : step}
                           </div>
                           <span
-                            className={`pj-step-label ${
-                              isActive ? 'pj-step-label-active' : 'pj-step-label-inactive'
-                            }`}
+                            className={`pj-step-label ${isActive ? 'pj-step-label-active' : 'pj-step-label-inactive'
+                              }`}
                           >
                             {stepTitles[idx]}
                           </span>
@@ -540,7 +591,7 @@ function Register() {
                   {currentStep === 1 && (
                     <>
                       <div className="pj-pane-header">
-                        <h3><span>🏛️</span> 1. PILIH FAKULTAS</h3>
+                        <h3><Bank size={18} /> 1. PILIH FAKULTAS</h3>
                         <p>
                           Pilih unit fakultas tempat mata kuliah Anda diselenggarakan. Data prodi akan disesuaikan otomatis.
                         </p>
@@ -565,7 +616,7 @@ function Register() {
                   {currentStep === 2 && (
                     <>
                       <div className="pj-pane-header">
-                        <h3><span>📚</span> 2. PROGRAM STUDI (PRODI)</h3>
+                        <h3><JournalBookmarkFill size={18} /> 2. PROGRAM STUDI (PRODI)</h3>
                         <p>Tentukan program studi resmi di bawah naungan fakultas terpilih.</p>
                       </div>
                       <select
@@ -582,7 +633,7 @@ function Register() {
                         ))}
                       </select>
                       <p className="pj-input-hint">
-                        <span>ℹ️</span> Terverifikasi berdasarkan fakultas terpilih.
+                        <InfoCircleFill size={13} style={{ flexShrink: 0, color: '#2563eb' }} /> Terverifikasi berdasarkan fakultas terpilih.
                       </p>
                     </>
                   )}
@@ -591,7 +642,7 @@ function Register() {
                   {currentStep === 3 && (
                     <>
                       <div className="pj-pane-header">
-                        <h3><span>🗓️</span> 3. SEMESTER (AKTIF)</h3>
+                        <h3><CalendarWeekFill size={18} /> 3. SEMESTER (AKTIF)</h3>
                         <p>Pilih semester perkuliahan berjalan sesuai kalender akademik kampus.</p>
                       </div>
                       <select
@@ -608,7 +659,7 @@ function Register() {
                         ))}
                       </select>
                       <p className="pj-input-hint">
-                        <span>ℹ️</span> Database kurikulum aktif otomatis terhubung.
+                        <InfoCircleFill size={13} style={{ flexShrink: 0, color: '#2563eb' }} /> Database kurikulum aktif otomatis terhubung.
                       </p>
                     </>
                   )}
@@ -617,7 +668,7 @@ function Register() {
                   {currentStep === 4 && (
                     <>
                       <div className="pj-pane-header">
-                        <h3><span>📖</span> 4. MATA KULIAH (BEBAS PJ)</h3>
+                        <h3><BookHalf size={18} /> 4. MATA KULIAH (BEBAS PJ)</h3>
                         <p>Pilih mata kuliah yang belum memiliki penanggung jawab (PJ).</p>
                       </div>
                       <select
@@ -634,7 +685,7 @@ function Register() {
                         ))}
                       </select>
                       <p className="pj-input-hint">
-                        <span>ℹ️</span> Kuota PJ tersedia untuk semester yang dipilih.
+                        <InfoCircleFill size={13} style={{ flexShrink: 0, color: '#2563eb' }} /> Kuota PJ tersedia untuk semester yang dipilih.
                       </p>
                     </>
                   )}
@@ -643,7 +694,7 @@ function Register() {
                   {currentStep === 5 && (
                     <>
                       <div className="pj-pane-header">
-                        <h3><span>🏷️</span> 5. KELAS (BEBAS PJ)</h3>
+                        <h3><TagFill size={18} /> 5. KELAS (BEBAS PJ)</h3>
                         <p>Tentukan rombongan belajar kelas yang Anda ampu sebagai perwakilan.</p>
                       </div>
                       <select
@@ -660,7 +711,7 @@ function Register() {
                         ))}
                       </select>
                       <p className="pj-input-hint">
-                        <span>ℹ️</span> Alokasi kelas ini akan langsung tersinkron ke daftar jadwal kuliah.
+                        <InfoCircleFill size={13} style={{ flexShrink: 0, color: '#2563eb' }} /> Alokasi kelas ini akan langsung tersinkron ke daftar jadwal kuliah.
                       </p>
                     </>
                   )}
@@ -674,20 +725,23 @@ function Register() {
                     disabled={currentStep === 1}
                     onClick={handleBackStep}
                   >
-                    ← BACK
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ArrowLeftShort size={18} /> BACK</span>
                   </button>
                   <button
                     type="button"
                     className="pj-btn-next"
+                    disabled={!canProceedCurrentStep}
+                    title={!canProceedCurrentStep ? "Silakan lakukan pemilihan terlebih dahulu untuk melanjutkan" : ""}
+
                     onClick={handleNextStep}
                   >
                     {currentStep === 5 ? (
                       <>
-                        <span>SELESAI</span> <span>✓</span>
+                        <span>SELESAI</span> <CheckLg size={16} />
                       </>
                     ) : (
                       <>
-                        <span>NEXT</span> <span>→</span>
+                        <span>NEXT</span> <ArrowRightShort size={20} />
                       </>
                     )}
                   </button>
@@ -702,7 +756,7 @@ function Register() {
                 className="pj-btn-submit"
               >
                 <span>{loading ? 'MEMPROSES PENDAFTARAN...' : 'DAFTAR SEKARANG'}</span>
-                <span>➜</span>
+                <ArrowRightShort size={24} style={{ display: 'inline-block', verticalAlign: 'middle' }} />
               </button>
 
               {/* Form Footer Navigation & Links */}
@@ -715,7 +769,7 @@ function Register() {
                 </p>
 
                 <div className="pj-otp-banner">
-                  <span>📌 Belum tuntas verifikasi OTP?</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><PinAngleFill size={15} color="#ef4444" /> Belum tuntas verifikasi OTP?</span>
                   <Link to="/verify-email" className="pj-link-otp">
                     Lanjutkan Verifikasi Di Sini
                   </Link>
@@ -723,7 +777,7 @@ function Register() {
 
                 <div>
                   <Link to="/" className="pj-btn-home">
-                    <span>⬅</span> Kembali ke Beranda
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><HouseDoorFill size={15} /> Kembali ke Beranda</span>
                   </Link>
                 </div>
               </footer>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import api from '../../api/axios'
 import './ManajemenAkunPJ.css'
+import { PencilSquare, TrashFill } from 'react-bootstrap-icons'
 
 function ManajemenAkunPJ() {
   const [users, setUsers] = useState([])
@@ -156,7 +157,6 @@ function ManajemenAkunPJ() {
       <section className="pj-clock-card">
         <div className="pj-clock-icon" aria-hidden="true">◷</div>
         <div>
-          <p className="pj-eyebrow">WAKTU SISTEM SERVER</p>
           <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
         </div>
         <span className="pj-online"><span /> SISTEM ONLINE</span>
@@ -239,11 +239,11 @@ function ManajemenAkunPJ() {
                         </button>
                       ) : (
                         <button className="btn btn-secondary btn-sm pj-action-edit" disabled={actionLoading} onClick={() => handleOpenEdit(u)}>
-                          ✏️ Edit
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><PencilSquare size={13} /> Edit</span>
                         </button>
                       )}
                       <button className="btn btn-secondary btn-sm pj-action-delete" disabled={actionLoading} onClick={() => handleDeleteUser(u.id, u.username)}>
-                        🗑️ Hapus
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><TrashFill size={13} /> Hapus</span>
                       </button>
                     </div>
                   </td>
@@ -266,7 +266,7 @@ function ManajemenAkunPJ() {
           background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
           <div className="card-flat" style={{ width: '100%', maxWidth: '520px', background: '#fff', padding: '24px', borderRadius: '12px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>✏️ Edit Data PJ ({editingUser.username})</h2>
+            <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}><PencilSquare size={18} /> Edit Data PJ ({editingUser.username})</h2>
 
             <form onSubmit={handleSaveEdit}>
               <div className="form-group" style={{ marginBottom: '12px' }}>

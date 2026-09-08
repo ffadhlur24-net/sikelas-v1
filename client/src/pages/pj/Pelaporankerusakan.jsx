@@ -1,6 +1,16 @@
 import { useState, useEffect } from "react";
 import api from '../../api/axios.js'
 import './PelaporanKerusakan.css'
+import {
+    Snow,
+    Display,
+    LightningChargeFill,
+    LayersFill,
+    QuestionCircleFill,
+    LockFill,
+    InfoCircleFill,
+    SendFill
+} from 'react-bootstrap-icons'
 
 function PelaporanKerusakan() {
     const [rooms, setRooms] = useState([])
@@ -17,11 +27,11 @@ function PelaporanKerusakan() {
     const [currentTime, setCurrentTime] = useState(new Date())
 
     const daftarKategori = [
-        { id: 'AC', label: 'AC / pendingin' },
-        { id: 'Proyektor', label: 'Proyektor & Audio Visual' },
-        { id: 'Kelistrikan', label: 'Kelistrikan dan Saklar' },
-        { id: 'Mebel', label: '🪑 Mebel & Sarana Fisik' },
-        { id: 'Lainnya', label: '❓ Lainnya / Kendala Khusus' }
+        { id: 'AC', label: 'AC / Pendingin', icon: <Snow size={18} /> },
+        { id: 'Proyektor', label: 'Proyektor & Audio Visual', icon: <Display size={18} /> },
+        { id: 'Kelistrikan', label: 'Kelistrikan dan Saklar', icon: <LightningChargeFill size={18} /> },
+        { id: 'Mebel', label: 'Mebel & Sarana Fisik', icon: <LayersFill size={18} /> },
+        { id: 'Lainnya', label: 'Lainnya / Kendala Khusus', icon: <QuestionCircleFill size={18} /> }
     ]
 
     const fetchRooms = async () => {
@@ -82,7 +92,7 @@ function PelaporanKerusakan() {
                 kategori,
                 rincian: rincian.trim()
             })
-            setMessage({ text: '🎉 Laporan kerusakan fasilitas berhasil dikirim ke Tim Sarpras!', type: 'success' })
+            setMessage({ text: 'Laporan kerusakan fasilitas berhasil dikirim ke Tim Sarpras!', type: 'success' })
             setKategori('')
             setRincian('')
 
@@ -101,13 +111,9 @@ function PelaporanKerusakan() {
     const activeCategoryIds = activeCategories.map(c => c.kategori)
     return (
         <div className="damage-report-page animate-fade-in" style={{ maxWidth: '1120px', margin: '0 auto' }}>
-            <section className="damage-report-clock">
-                <div><span className="damage-clock-icon" aria-hidden="true">◷</span><span>Waktu Sistem Server: <strong>{currentTime.toLocaleTimeString('id-ID')}</strong></span></div>
-                <span className="damage-online"><i /> Sistem Online</span>
-            </section>
-            <div className="damage-report-heading page-header">
+            <div className="damage-report-heading page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px" }}>
                 <div><p className="damage-eyebrow">PENANGGUNG JAWAB KELAS / FACILITY REPORT</p><h1 className="page-title">Pelaporan Kerusakan Fasilitas</h1><p className="page-subtitle">Laporkan kerusakan sarana prasarana kelas untuk penanganan cepat oleh tim teknis.</p></div>
-                <span className="priority-badge">PRIORITY ACTION</span>
+                <div className="damage-report-clock">{currentTime.toLocaleTimeString('id-ID')}</div>
             </div>
             {message.text && (
                 <div className={`damage-report-message ${message.type}`} style={{
@@ -193,7 +199,7 @@ function PelaporanKerusakan() {
                     {/* INFORMASI TIKET AKTIF */}
                     {activeCategories.length > 0 && (
                         <div className="active-damage-tickets" style={{ background: '#fef3c7', border: '1px solid #f59e0b', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', fontSize: '13px' }}>
-                            <strong style={{ color: '#b45309' }}>ℹ️ Kendala yang sedang dalam penanganan di ruangan ini:</strong>
+                            <strong style={{ color: '#b45309', display: 'flex', alignItems: 'center', gap: '6px' }}><InfoCircleFill size={15} color="#b45309" /> Kendala yang sedang dalam penanganan di ruangan ini:</strong>
                             <ul style={{ margin: '6px 0 0 18px', padding: 0 }}>
                                 {activeCategories.map((ac, idx) => (
                                     <li key={idx} style={{ color: '#78350f' }}>
@@ -226,10 +232,22 @@ function PelaporanKerusakan() {
                                             fontWeight: isSelected ? 'bold' : 'normal',
                                             cursor: isLocked || !selectedRoomId ? 'not-allowed' : 'pointer',
                                             textAlign: 'left',
-                                            fontSize: '13px'
+                                            fontSize: '13px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            gap: '8px'
                                         }}
                                     >
-                                        {kat.label} {isLocked && '🔒 (Sedang Diperbaiki)'}
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                            {kat.icon}
+                                            {kat.label}
+                                        </span>
+                                        {isLocked && (
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#dc2626' }}>
+                                                <LockFill size={12} /> (Sedang Diperbaiki)
+                                            </span>
+                                        )}
                                     </button>
                                 )
                             })}
@@ -255,7 +273,7 @@ function PelaporanKerusakan() {
                         style={{ width: '100%', padding: '12px' }}
                         disabled={submitting || !selectedRoomId || !kategori || !rincian.trim()}
                     >
-                        {submitting ? 'Kirim Laporan...' : '🚀 Kirim Laporan Kerusakan ke Staf'}
+                        {submitting ? 'Kirim Laporan...' : <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><SendFill size={16} /> Kirim Laporan Kerusakan ke Staf</span>}
                     </button>
                 </form>
             </div>

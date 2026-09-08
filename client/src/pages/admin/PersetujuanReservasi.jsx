@@ -1,8 +1,16 @@
 import { useState, useEffect } from 'react'
 import { exportToCSV } from '../../utils/exportExcel'
-import { sendWANotifications } from '../../utils/waNotification'
 import api from '../../api/axios'
 import './PersetujuanReservasi.css'
+import {
+  HourglassSplit,
+  CheckCircleFill,
+  XCircleFill,
+  ExclamationTriangleFill,
+  CardList,
+  PrinterFill,
+  FileEarmarkSpreadsheetFill
+} from 'react-bootstrap-icons'
 function PersetujuanReservasi() {
   const [reservations, setReservations] = useState([])
   const [loading, setLoading] = useState(false)
@@ -65,49 +73,14 @@ function PersetujuanReservasi() {
       }
     }
 
-    const targetRes = reservations.find(r => r.id === id)
-    let isWASent = false
-
-    // 1. Cobakan Kirim Notifikasi WhatsApp Direct Link
-    if (targetRes) {
-      const pjPhone = targetRes.users?.no_hp || targetRes.users?.phone || ''
-      const pjName = targetRes.users?.username || 'PJ Kelas'
-      const matkul = targetRes.mata_kuliah || 'Mata Kuliah'
-      const ruang = targetRes.rooms?.nama || '-'
-      const gedung = targetRes.rooms?.gedung || '-'
-      const msg = status === 'approved'
-        ? `🎓 *[SiKelas - Konfirmasi Reservasi Ruangan]*\n\nHalo *${pjName}*,\nPengajuan peminjaman ruangan kelas Anda telah *DISETUJUI* oleh Admin.\n\n📖 *Detail Peminjaman:*\n• Mata Kuliah: *${matkul}*\n• Lokasi: Ruang *${ruang}* (${gedung})\n• Waktu: ${targetRes.tanggal}, ${targetRes.waktu_mulai.substring(0, 5)} - ${targetRes.waktu_selesai.substring(0, 5)} WIB\n\nSilakan gunakan ruangan dengan tertib dan jaga kebersihan fasilitas. Terima kasih!`
-        : `🚨 *[SiKelas - Pemberitahuan Reservasi Ruangan]*\n\nHalo *${pjName}*,\nMohon maaf, pengajuan reservasi kelas untuk mata kuliah *${matkul}* pada ${targetRes.tanggal} *DITOLAK* oleh Admin.\n\n📌 *Alasan Penolakan:*\n"${alasan_penolakan}"\n\nSilakan mengajukan ulang pada slot waktu atau ruangan lain. Terima kasih!`
-
-      isWASent = sendWANotifications({ phone: pjPhone, message: msg })
-    }
-
-    // 2. STATUS TETAP BERUBAH DI DATABASE (TIDAK DIBATALKAN)
     try {
       setActionLoading(true)
       await api.patch(`/reservations/${id}/status`, { status, alasan_penolakan });
-      
-      // ⚡ 3. BUAT NOTIFIKASI IN-APP KE KOTAK MASUK PJ (DENGAN WA FALLBACK WARNING JIKA WA GAGAL)
-      if (targetRes?.user_id) {
-        try {
-          const waNote = !isWASent ? ' (⚠️ WhatsApp gagal terkirim karena nomor HP tidak valid/terdaftar. Silakan perbarui nomor di Profil)' : ''
-          await api.post('/notifications', {
-            user_id: targetRes.user_id,
-            title: status === 'approved' ? '🎓 Reservasi Disetujui!' : '🚨 Reservasi Ditolak',
-            message: (status === 'approved'
-              ? `Pengajuan reservasi Anda untuk ${targetRes.mata_kuliah} di Ruang ${targetRes.rooms?.nama || ''} (${targetRes.rooms?.gedung || ''}) telah disetujui Admin.`
-              : `Pengajuan reservasi Anda untuk ${targetRes.mata_kuliah} ditolak dengan alasan: "${alasan_penolakan}"`) + waNote,
-            type: status === 'approved' ? 'success' : 'danger'
-          })
-        } catch (notifErr) {
-          console.error('Gagal membuat notifikasi in-app:', notifErr)
-        }
-      }
-
+      setMessage(status === 'approved' ? 'Reservasi berhasil disetujui! Notifikasi in-app dan email telah dikirim ke PJ.' : 'Reservasi telah ditolak.');
       fetchReservations();
     } catch (error) {
       console.error(error);
-      alert('Gagal mengubah status reservasi.');
+      alert(error.response?.data?.error || 'Gagal mengubah status reservasi.');
     } finally {
       setActionLoading(false);
       setTimeout(() => setMessage(''), 3000)
@@ -150,7 +123,6 @@ function PersetujuanReservasi() {
       <section className="approval-clock-card">
         <div className="approval-clock-icon" aria-hidden="true">◷</div>
         <div>
-          <p className="approval-eyebrow">WAKTU SISTEM SERVER</p>
           <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
         </div>
         <span className="approval-online"><span /> SISTEM ONLINE</span>
@@ -176,7 +148,7 @@ function PersetujuanReservasi() {
           {message}
         </div>
       )}
-      {/* 📌 FILTER TAB BAR STATUS RESERVASI */}
+      {/* FILTER TAB BAR STATUS RESERVASI */}
       <div className="approval-filter-bar no-print">
         <span className="approval-filter-label">STATUS RESERVASI</span>
         <button
@@ -184,35 +156,35 @@ function PersetujuanReservasi() {
           style={{ background: filterStatus === 'pending' ? '#f59e0b' : '#e2e8f0', color: filterStatus === 'pending' ? '#fff' : '#475569', fontWeight: filterStatus === 'pending' ? 'bold' : 'normal' }}
           onClick={() => setFilterStatus('pending')}
         >
-          🟡 Menunggu ACC ({reservations.filter(r => r.status === 'pending' && !isReservationExpired(r)).length})
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><HourglassSplit size={14} /> Menunggu ACC ({reservations.filter(r => r.status === 'pending' && !isReservationExpired(r)).length})</span>
         </button>
         <button
           className={`approval-filter-btn ${filterStatus === 'approved' ? 'is-active status-approved' : ''}`}
           style={{ background: filterStatus === 'approved' ? '#059669' : '#e2e8f0', color: filterStatus === 'approved' ? '#fff' : '#475569', fontWeight: filterStatus === 'approved' ? 'bold' : 'normal' }}
           onClick={() => setFilterStatus('approved')}
         >
-          🟢 Disetujui ({reservations.filter(r => r.status === 'approved').length})
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CheckCircleFill size={14} /> Disetujui ({reservations.filter(r => r.status === 'approved').length})</span>
         </button>
         <button
           className={`approval-filter-btn ${filterStatus === 'rejected' ? 'is-active status-rejected' : ''}`}
           style={{ background: filterStatus === 'rejected' ? '#dc2626' : '#e2e8f0', color: filterStatus === 'rejected' ? '#fff' : '#475569', fontWeight: filterStatus === 'rejected' ? 'bold' : 'normal' }}
           onClick={() => setFilterStatus('rejected')}
         >
-          🔴 Ditolak ({reservations.filter(r => r.status === 'rejected').length})
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><XCircleFill size={14} /> Ditolak ({reservations.filter(r => r.status === 'rejected').length})</span>
         </button>
         <button
           className={`approval-filter-btn ${filterStatus === 'expired' ? 'is-active status-expired' : ''}`}
           style={{ background: filterStatus === 'expired' ? '#6b7280' : '#e2e8f0', color: filterStatus === 'expired' ? '#fff' : '#475569', fontWeight: filterStatus === 'expired' ? 'bold' : 'normal' }}
           onClick={() => setFilterStatus('expired')}
         >
-          🚨 Kadaluarsa ({reservations.filter(r => isReservationExpired(r)).length})
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><ExclamationTriangleFill size={14} /> Kadaluarsa ({reservations.filter(r => isReservationExpired(r)).length})</span>
         </button>
         <button
           className={`approval-filter-btn ${filterStatus === 'Semua' ? 'is-active status-all' : ''}`}
           style={{ background: filterStatus === 'Semua' ? '#0f172a' : '#e2e8f0', color: filterStatus === 'Semua' ? '#fff' : '#475569', fontWeight: filterStatus === 'Semua' ? 'bold' : 'normal' }}
           onClick={() => setFilterStatus('Semua')}
         >
-          📋 Semua Reservasi ({reservations.length})
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CardList size={14} /> Semua Reservasi ({reservations.length})</span>
         </button>
       </div>
       {/* TABEL RESERVASI */}
@@ -225,8 +197,8 @@ function PersetujuanReservasi() {
             <h2>Daftar Pengajuan</h2>
           </div>
           <div className="approval-toolbar-actions">
-            <button className="approval-action-btn" onClick={handlePrintPDF}>🖨️ Cetak PDF</button>
-            <button className="approval-action-btn" onClick={handleExportExcel}>📊 Ekspor CSV</button>
+            <button className="approval-action-btn" onClick={handlePrintPDF} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><PrinterFill size={14} /> Cetak PDF</button>
+            <button className="approval-action-btn" onClick={handleExportExcel} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><FileEarmarkSpreadsheetFill size={14} /> Ekspor CSV</button>
           </div>
         </div>
         {/* ELEMEN KOP SURAT KHUSUS CETAK */}
@@ -273,16 +245,16 @@ function PersetujuanReservasi() {
                     </td>
                     <td style={{ padding: '16px' }}>
                       {expired ? (
-                        <span className="badge badge-error" style={{ fontSize: '12px' }}>🚨 Kadaluarsa</span>
+                        <span className="badge badge-error" style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><ExclamationTriangleFill size={12} /> Kadaluarsa</span>
                       ) : res.status === 'approved' ? (
-                        <span className="badge badge-success" style={{ fontSize: '12px' }}>🟢 Disetujui</span>
+                        <span className="badge badge-success" style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><CheckCircleFill size={12} /> Disetujui</span>
                       ) : res.status === 'rejected' ? (
                         <div>
-                          <span className="badge badge-danger" style={{ fontSize: '12px' }}>🔴 Ditolak</span>
+                          <span className="badge badge-danger" style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><XCircleFill size={12} /> Ditolak</span>
                           {res.alasan_penolakan && <div style={{ fontSize: '11px', color: '#dc2626', marginTop: '2px' }}>"{res.alasan_penolakan}"</div>}
                         </div>
                       ) : (
-                        <span className="badge badge-warning" style={{ fontSize: '12px' }}>🟡 Menunggu ACC</span>
+                        <span className="badge badge-warning" style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><HourglassSplit size={12} /> Menunggu ACC</span>
                       )}
                     </td>
                     <td style={{ padding: '16px', textAlign: 'right' }} className="no-print">

@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react'
 import { exportToCSV } from '../../utils/exportExcel'
-import { sendWANotifications } from '../../utils/waNotification'
 import api from '../../api/axios'
 import './LogPelaporan.css'
+import {
+  HourglassSplit,
+  CheckCircleFill,
+  XCircleFill,
+  ExclamationTriangleFill,
+  CardList,
+  X
+} from 'react-bootstrap-icons'
 
 function LogPelaporan() {
   const [reports, setReports] = useState([])
@@ -78,51 +85,15 @@ function LogPelaporan() {
       return
     }
 
-    const targetReport = reports.find(r => r.id === id)
-    let isWASent = false
-
-    // 1. Kirim Notifikasi WhatsApp Direct Link
-    if (targetReport) {
-      const pjPhone = targetReport.users?.no_hp || targetReport.users?.phone || ''
-      const pjName = targetReport.users?.username || 'PJ Kelas'
-      const matkul = targetReport.mata_kuliah || 'Mata Kuliah'
-      const ruang = targetReport.rooms?.nama || targetReport.room_id || '-'
-
-      const msg = status === 'verified'
-        ? `🟢 *[SiKelas - Konfirmasi Pelaporan Kelas Kosong]*\n\nHalo *${pjName}*,\nLaporan pengosongan sesi perkuliahan untuk *${matkul}* di Ruang *${ruang}* telah *DISETUJUI & DIVERIFIKASI* oleh Admin.\n\nSlot ruangan telah dibebaskan untuk peminjaman insidental. Terima kasih!`
-        : `🔴 *[SiKelas - Penolakan Laporan Kelas Kosong]*\n\nHalo *${pjName}*,\nLaporan pengosongan kelas untuk *${matkul}* *DITOLAK* oleh Admin.\n\n📌 *Alasan Penolakan:*\n"${alasan_penolakan}"\n\nTerima kasih!`
-
-      isWASent = sendWANotifications({ phone: pjPhone, message: msg })
-    }
-
-    // 2. STATUS BERUBAH DI DATABASE
     setActionLoading(true)
     setMessage('')
     try {
       const res = await api.patch(`reports/${id}/resolve`, { status, alasan_penolakan })
-
-      // 3. BUAT NOTIFIKASI IN-APP KE KOTAK MASUK PJ
-      if (targetReport?.user_id) {
-        try {
-          const waNote = !isWASent ? ' (⚠️ WhatsApp gagal terkirim karena nomor HP tidak valid/terdaftar. Silakan perbarui nomor di Profil)' : ''
-          await api.post('/notifications', {
-            user_id: targetReport.user_id,
-            title: status === 'verified' ? '🟢 Laporan Kelas Kosong Disetujui' : '🔴 Laporan Kelas Kosong Ditolak',
-            message: (status === 'verified'
-              ? `Laporan pengosongan sesi perkuliahan untuk ${targetReport.mata_kuliah} di Ruang ${targetReport.rooms?.nama || targetReport.room_id} telah disetujui Admin.`
-              : `Laporan pengosongan sesi kelas untuk ${targetReport.mata_kuliah} ditolak dengan alasan: "${alasan_penolakan}"`) + waNote,
-            type: status === 'verified' ? 'success' : 'danger'
-          })
-        } catch (notifErr) {
-          console.error('Gagal membuat notifikasi in-app:', notifErr)
-        }
-      }
-
-      setMessage(res.data.message || 'Status laporan berhasil diperbarui!')
+      setMessage(res.data.message || 'Status laporan berhasil diperbarui! Notifikasi in-app dan email telah dikirim ke PJ.')
       fetchReports()
     } catch (error) {
       console.error(error)
-      alert('Terjadi kesalahan saat mengirim perubahan laporan')
+      alert(error.response?.data?.error || 'Terjadi kesalahan saat mengirim perubahan laporan')
     } finally {
       setActionLoading(false)
       setRejectModal({ open: false, id: null, subject: '', reason: '' })
@@ -193,7 +164,6 @@ function LogPelaporan() {
             <span className="material-symbols-outlined">schedule</span>
           </div>
           <div className="neo-clock-meta">
-            <p className="neo-clock-label">Waktu Sistem Server</p>
             <h3 className="neo-clock-time">{formatClockIndonesia(currentTime)}</h3>
           </div>
         </div>
@@ -219,7 +189,7 @@ function LogPelaporan() {
             onClick={() => setMessage('')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
       )}
@@ -233,35 +203,35 @@ function LogPelaporan() {
             className={`neo-filter-btn ${filterStatus === 'pending' ? 'active-pending' : ''}`}
             onClick={() => setFilterStatus('pending')}
           >
-            🟡 Menunggu ACC ({pendingCount})
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><HourglassSplit size={14} /> Menunggu ACC ({pendingCount})</span>
           </button>
           <button
             type="button"
             className={`neo-filter-btn ${filterStatus === 'verified' ? 'active-verified' : ''}`}
             onClick={() => setFilterStatus('verified')}
           >
-            🟢 Disetujui / Kosong ({verifiedCount})
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CheckCircleFill size={14} /> Disetujui / Kosong ({verifiedCount})</span>
           </button>
           <button
             type="button"
             className={`neo-filter-btn ${filterStatus === 'rejected' ? 'active-rejected' : ''}`}
             onClick={() => setFilterStatus('rejected')}
           >
-            🔴 Ditolak ({rejectedCount})
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><XCircleFill size={14} /> Ditolak ({rejectedCount})</span>
           </button>
           <button
             type="button"
             className={`neo-filter-btn ${filterStatus === 'expired' ? 'active-expired' : ''}`}
             onClick={() => setFilterStatus('expired')}
           >
-            🚨 Kadaluarsa ({expiredCount})
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><ExclamationTriangleFill size={14} /> Kadaluarsa ({expiredCount})</span>
           </button>
           <button
             type="button"
             className={`neo-filter-btn ${filterStatus === 'Semua' ? 'active-all' : ''}`}
             onClick={() => setFilterStatus('Semua')}
           >
-            📋 Semua ({reports.length})
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CardList size={14} /> Semua ({reports.length})</span>
           </button>
         </div>
 
@@ -314,13 +284,13 @@ function LogPelaporan() {
                   const reasonTitle = report.alasan?.replace(/_/g, ' ') || 'DOSEN BERHALANGAN'
                   const sentDate = report.created_at
                     ? new Date(report.created_at).toLocaleString('id-ID', {
-                        day: 'numeric',
-                        month: 'numeric',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit'
-                      })
+                      day: 'numeric',
+                      month: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit'
+                    })
                     : '-'
 
                   return (

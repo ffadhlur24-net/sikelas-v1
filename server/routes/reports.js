@@ -5,6 +5,7 @@
 import { Router } from 'express'
 import supabase from '../config/supabase.js'
 import { verifyToken, adminOnly } from '../middleware/auth.js'
+import { sendReportNotificationEmail } from '../utils/sendEmail.js'
 
 const router = Router()
 
@@ -162,14 +163,50 @@ router.patch('/:id/resolve', verifyToken, adminOnly, async (req, res) => {
             .from('reports')
             .update(updateData)
             .eq('id', id)
-            .select()
+            .select('*, users(id, username, email), rooms(nama, gedung)')
+            .single()
 
         if (error) throw error
 
+        const isVerified = targetStatus === 'verified'
+        const roomName = data.rooms?.nama || 'Ruangan'
+        const gedungName = data.rooms?.gedung ? ` (${data.rooms.gedung})` : ''
+        const fullRoom = `${roomName}${gedungName}`
+
+        // 1. NOTIFIKASI DALAM APLIKASI (IN-APP)
+        if (data?.user_id) {
+            try {
+                await supabase.from('notifications').insert({
+                    user_id: data.user_id,
+                    title: isVerified ? 'Laporan Kelas Kosong Disetujui' : 'Laporan Kelas Kosong Ditolak',
+                    message: isVerified
+                        ? `Laporan pengosongan sesi perkuliahan untuk ${data.mata_kuliah} di Ruang ${fullRoom} telah disetujui Admin.`
+                        : `Laporan pengosongan sesi kelas untuk ${data.mata_kuliah} ditolak dengan alasan: "${alasan_penolakan || 'Tidak memenuhi kriteria'}"`,
+                    type: isVerified ? 'success' : 'danger'
+                })
+            } catch (notifErr) {
+                console.error('Gagal membuat notifikasi in-app laporan:', notifErr)
+            }
+        }
+
+        // 2. NOTIFIKASI LUAR APLIKASI (EMAIL RESEND)
+        if (data?.users?.email) {
+            sendReportNotificationEmail(
+                data.users.email,
+                data.users.username || 'PJ Kelas',
+                targetStatus,
+                fullRoom,
+                data.mata_kuliah || 'Perkuliahan',
+                data.tanggal,
+                alasan_penolakan || ''
+            ).catch(err => console.error('Async email laporan error:', err))
+        }
+
         res.json({
-            message: targetStatus === 'verified'
+            message: isVerified
                 ? 'Laporan disetujui! Jadwal perkuliahan pada tanggal tersebut resmi DICORET dan ruangan berubah menjadi TERSEDIA.'
-                : 'Laporan ditolak', report: data
+                : 'Laporan ditolak',
+            report: data
         })
     } catch (error) {
         console.error('Resolve report error:', error)

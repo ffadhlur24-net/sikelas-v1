@@ -2,11 +2,28 @@ import { useContext, useState, useEffect } from 'react'
 import { AuthContext } from '../../context/AuthContext'
 import api from '../../api/axios'
 import './ProfilPJ.css'
+import {
+  PencilSquare,
+  XCircleFill,
+  GeoAltFill,
+  PersonBadge,
+  Grid3x3GapFill,
+  CalendarXFill,
+  Tools,
+  EnvelopeFill,
+  EyeSlashFill,
+  EyeFill,
+  KeyFill,
+  FloppyFill,
+  BoxArrowRight
+} from 'react-bootstrap-icons'
 
 function ProfilPJ() {
   // Ambil data user yang usdah login dari Context
   const { user, logout, updateUser } = useContext(AuthContext)
   const [reservations, setReservations] = useState([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 3
   const [loading, setLoading] = useState(false)
   const [showOldPassword, setShowOldPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
@@ -40,16 +57,16 @@ function ProfilPJ() {
 
     if (editForm.new_password.trim() !== '') {
       if (editForm.new_password.length < 8) {
-        return alert('⚠️ Password baru minimal harus 8 karakter!')
+        return alert('Password baru minimal harus 8 karakter!')
       }
       if (editForm.new_password !== editForm.confirm_password) {
-        return alert('⚠️ Konfirmasi password baru tidak cocok!')
+        return alert('Konfirmasi password baru tidak cocok!')
       }
       if (!editForm.otp_code || editForm.otp_code.length !== 6) {
-        return alert('⚠️ Masukkan 6-digit Kode OTP yang dikirim ke email Anda!')
+        return alert('Masukkan 6-digit Kode OTP yang dikirim ke email Anda!')
       }
       if (!editForm.old_password) {
-        return alert('⚠️ Silakan masukkan password lama Anda untuk konfirmasi keamanan.')
+        return alert('Silakan masukkan password lama Anda untuk konfirmasi keamanan.')
       }
     }
     try {
@@ -142,6 +159,11 @@ function ProfilPJ() {
     }
   }
 
+  // Paginasi sederhana riwayat reservasi
+  const totalPages = Math.ceil(reservations.length / ITEMS_PER_PAGE) || 1;
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const displayedReservations = reservations.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
   return (
     <div className='profil-pj-page animate-fade-in'>
       <div className='pj-page-heading'>
@@ -172,7 +194,7 @@ function ProfilPJ() {
 
             <div className="detail-item">
               <span className="datail-label">Semester</span>
-              <span className="detail-value">{user?.semester || '-'}</span>
+              <span className="detail-value">{user?.semester || ((user?.kelas && user?.kelas.endsWith('-U')) || (user?.mata_kuliah && user?.mata_kuliah.includes('Mengulang')) ? 'SPB' : '-')}</span>
             </div>
 
             <div className="detail-item">
@@ -206,14 +228,17 @@ function ProfilPJ() {
             style={{ width: '100%', marginTop: 'var(--spacing-4)' }}
             onClick={() => setShowEditModal(true)}
           >
-            ✏️ Edit Profil Saya
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><PencilSquare size={16} /> Edit Profil Saya</span>
           </button>
 
-          <button className="btn btn-secondary"
-            style={{ width: '100%', marginTop: 'var(--spacing-3)', color: 'var(--color-error)' }}
+          <button
+            type="button"
+            className="btn btn-secondary pj-btn-logout"
             onClick={logout}
           >
-            Logout
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <BoxArrowRight size={16} /> Logout
+            </span>
           </button>
         </div>
 
@@ -227,14 +252,14 @@ function ProfilPJ() {
 
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {reservations.map(res => (
+              {displayedReservations.map(res => (
                 <div key={res.id} className='pj-reservation-item' style={{ border: '1px solid #e2e8f0', padding: '16px', borderRadius: '8px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <h3 style={{ fontSize: '16px', fontWeight: 'bold' }}>{res.mata_kuliah}</h3>
                     {res.status === 'pending' && <span className="badge badge-warning">Menunggu</span>}
                     {res.status === 'rejected' && (
                       <div style={{ background: '#fee2e2', color: '#dc2626', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', marginTop: '8px' }}>
-                        ❌ <b>Ditolak Admin:</b> {res.alasan_penolakan || 'Tidak ada alasan yang dicantumkan.'}
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><XCircleFill size={15} color="#dc2626" /> <b>Ditolak Admin:</b></span> {res.alasan_penolakan || 'Tidak ada alasan yang dicantumkan.'}
                       </div>
                     )}
                     {res.status === 'expired' && <span className="badge badge-error">Hangus (Ghosting)</span>}
@@ -259,7 +284,7 @@ function ProfilPJ() {
                       className="btn btn-primary"
                       style={{ marginTop: '12px', width: '100%', background: '#3b82f6' }}
                     >
-                      📍 Check-In Sekarang
+                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><GeoAltFill size={16} /> Check-In Sekarang</span>
                     </button>
                   )}
                 </div>
@@ -272,19 +297,19 @@ function ProfilPJ() {
       <section className='pj-feature-section'>
         <h2 className='pj-section-heading'>Ringkasan Fitur</h2>
         <article className='pj-feature-card feature-blue'>
-          <span className='pj-feature-icon' aria-hidden='true'>♙</span>
+          <span className='pj-feature-icon' aria-hidden='true' style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><PersonBadge size={22} /></span>
           <div><h3>Profil Saya & Reservasi Saya</h3><p>Menampilkan data akun akademik PJ, status keaktifan, riwayat reservasi, serta tombol Check-In kehadiran ruangan.</p></div>
         </article>
         <article className='pj-feature-card feature-green'>
-          <span className='pj-feature-icon' aria-hidden='true'>▣</span>
+          <span className='pj-feature-icon' aria-hidden='true' style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Grid3x3GapFill size={22} /></span>
           <div><h3>Daftar Kelas & Ketersediaan Ruangan</h3><p>Memantau status fisik ruangan secara real-time, melihat jadwal perkuliahan, dan mengajukan reservasi dengan kalkulasi durasi SKS.</p></div>
         </article>
         <article className='pj-feature-card feature-orange'>
-          <span className='pj-feature-icon' aria-hidden='true'>◴</span>
+          <span className='pj-feature-icon' aria-hidden='true' style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CalendarXFill size={22} /></span>
           <div><h3>Pelaporan Kelas Kosong</h3><p>Melaporkan kendala operasional perkuliahan agar sistem dapat melepaskan hak guna ruangan untuk kelas lain.</p></div>
         </article>
         <article className='pj-feature-card feature-warning'>
-          <span className='pj-feature-icon' aria-hidden='true'>△</span>
+          <span className='pj-feature-icon' aria-hidden='true' style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Tools size={22} /></span>
           <div><h3>Pelaporan Kerusakan</h3><p>Melaporkan kerusakan aset dan fasilitas kelas dengan detail lokasi, kategori fasilitas, dan rincian masalah.</p></div>
         </article>
       </section>
@@ -297,7 +322,7 @@ function ProfilPJ() {
           alignItems: 'center', justifyContent: 'center', padding: '16px'
         }}>
           <div className="card-flat" style={{ width: '100%', maxWidth: '420px', background: '#fff', borderRadius: '12px', padding: '24px' }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#0f172a' }}>✏️ Edit Profil Saya</h3>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#0f172a' }}><span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><PencilSquare size={16} /> Edit Profil Saya</span></h3>
             <form onSubmit={handleEditSubmit}>
               <div style={{ marginBottom: '14px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', marginBottom: '4px' }}>Nama Pengguna (Username)</label>
@@ -339,7 +364,7 @@ function ProfilPJ() {
                         fontSize: '12px', fontWeight: 'bold', cursor: 'pointer'
                       }}
                     >
-                      {otpLoading ? 'Sending...' : otpCountdown > 0 ? `📩 Minta Ulang (${otpCountdown}s)` : '📩 Kirim OTP ke Email'}
+                      {otpLoading ? 'Sending...' : otpCountdown > 0 ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><EnvelopeFill size={13} /> Minta Ulang ({otpCountdown}s)</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><EnvelopeFill size={13} /> Kirim OTP ke Email</span>}
                     </button>
                   )}
                 </div>
@@ -360,7 +385,7 @@ function ProfilPJ() {
                       background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px'
                     }}
                   >
-                    {showNewPassword ? '🙈' : '👁️'}
+                    {showNewPassword ? <EyeSlashFill size={16} /> : <EyeFill size={16} />}
                   </button>
                 </div>
               </div>
@@ -390,14 +415,14 @@ function ProfilPJ() {
                           background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px'
                         }}
                       >
-                        {showConfirmPassword ? '🙈' : '👁️'}
+                        {showConfirmPassword ? <EyeSlashFill size={16} /> : <EyeFill size={16} />}
                       </button>
                     </div>
                   </div>
                   {/* INPUT KODE OTP EMAIL 6-DIGIT */}
                   <div style={{ marginBottom: '14px' }}>
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', marginBottom: '4px', color: '#2563eb' }}>
-                      🔑 Kode OTP Email (6-Digit)
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><KeyFill size={16} /> Kode OTP Email (6-Digit)</span>
                     </label>
                     <input
                       type="text"
@@ -433,7 +458,7 @@ function ProfilPJ() {
                           background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px'
                         }}
                       >
-                        {showOldPassword ? '🙈' : '👁️'}
+                        {showOldPassword ? <EyeSlashFill size={16} /> : <EyeFill size={16} />}
                       </button>
                     </div>
                   </div>
@@ -441,7 +466,7 @@ function ProfilPJ() {
               )}
               <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={editLoading}>
-                  {editLoading ? 'Menyimpan...' : '💾 Simpan Perubahan'}
+                  {editLoading ? 'Menyimpan...' : <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><FloppyFill size={15} /> Simpan Perubahan</span>}
                 </button>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
                   Batal

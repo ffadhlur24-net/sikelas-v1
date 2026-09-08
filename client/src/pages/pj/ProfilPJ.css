@@ -287,8 +287,6 @@
   --pj-orange: #ff4500;
   color: var(--pj-ink);
   font-family: 'Inter', sans-serif;
-  background-image: radial-gradient(#000 1px, transparent 1px);
-  background-size: 20px 20px;
 }
 
 .pj-page-heading { margin-bottom: 28px; padding-bottom: 24px; border-bottom: 4px solid var(--pj-border); }
@@ -303,7 +301,21 @@
 .pj-feature-card { border: 4px solid var(--pj-border); border-radius: 0; box-shadow: 4px 4px 0 var(--pj-border); background: var(--pj-paper); }
 .pj-account-card { padding: 24px; }
 .pj-account-card .profile-header { display:flex; align-items:center; gap:16px; padding-bottom:24px; border-bottom:4px solid var(--pj-border); }
-.pj-account-card .profile-avatar { width:96px; height:96px; flex:0 0 96px; border:4px solid var(--pj-border); border-radius:50%; background:var(--pj-orange); color:#fff; font:36px 'Archivo Black', sans-serif; box-shadow:4px 4px 0 var(--pj-border); }
+.pj-account-card .profile-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  flex: 0 0 96px;
+  border: 4px solid var(--pj-border);
+  border-radius: 50%;
+  background: var(--pj-orange);
+  color: #fff;
+  font: 36px/1 'Archivo Black', sans-serif;
+  box-shadow: 4px 4px 0 var(--pj-border);
+  text-align: center;
+}
 .pj-account-card .profile-info h2 { font:28px 'Archivo Black', sans-serif; }
 .pj-account-card .profile-info p { color:var(--pj-muted); font-size:18px; font-weight:600; }
 .pj-account-card .badge { border:2px solid var(--pj-border); border-radius:0; background:var(--pj-green); color:var(--pj-ink); font-weight:800; }
@@ -347,4 +359,29 @@
   .pj-reservation-item { padding:16px !important; }
   .pj-feature-card { align-items:flex-start; padding:16px; }
   .pj-feature-icon { width:48px; height:48px; flex-basis:48px; font-size:24px; }
+}
+
+/* Logout button Neo-Brutalist styling with red hover */
+.pj-account-card .pj-btn-logout {
+  margin-top: var(--spacing-3);
+  background: #ffffff !important;
+  color: #dc2626 !important;
+  border: 4px solid var(--pj-border) !important;
+  border-radius: 0 !important;
+  box-shadow: 4px 4px 0 var(--pj-border) !important;
+  font-weight: 800 !important;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.pj-account-card .pj-btn-logout:hover {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  box-shadow: 2px 2px 0 var(--pj-border) !important;
+  transform: translate(2px, 2px);
+}
+
+.pj-account-card .pj-btn-logout:active {
+  box-shadow: none !important;
+  transform: translate(4px, 4px);
 }

@@ -7,28 +7,29 @@ import LogPelaporan from './admin/LogPelaporan'
 import ManajemenProdi from './admin/ManajemenProdi'
 import LogKerusakanFasilitas from './admin/LogKerusakanFasilitas'
 import Notification from '../components/Notification'
+import { BoxArrowRight } from 'react-bootstrap-icons'
 import { useContext } from 'react'
 import { AuthContext } from '../context/AuthContext'
 import './DashboardPJ.css' // Reuse the shared dashboard layout styles
 import './DashboardAdmin.css'
 
 function DashboardAdmin() {
-  const { user } = useContext(AuthContext)
+  const { user, logout } = useContext(AuthContext)
   const navigate = useNavigate()
   const location = useLocation()
 
   const getPageTitle = () => {
-    if (location.pathname.includes('/admin/log-kerusakan')) return 'SiKelas Admin Log Kerusakan'
-    if (location.pathname.includes('/admin/log')) return 'SiKelas Admin Log Pelaporan'
-    if (location.pathname.includes('/admin/persetujuan')) return 'SiKelas Admin Persetujuan'
-    if (location.pathname.includes('/admin/ruangan')) return 'SiKelas Admin Manajemen Ruangan'
-    if (location.pathname.includes('/admin/akun-pj')) return 'SiKelas Admin Manajemen PJ'
-    if (location.pathname.includes('/admin/prodi')) return 'SiKelas Admin Manajemen Prodi & Fakultas'
-    return 'SiKelas Admin Profil'
+    if (location.pathname.includes('/admin/log-kerusakan')) return 'Log Kerusakan'
+    if (location.pathname.includes('/admin/log')) return 'Log Pelaporan'
+    if (location.pathname.includes('/admin/persetujuan')) return 'Persetujuan'
+    if (location.pathname.includes('/admin/ruangan')) return 'Manajemen Ruangan'
+    if (location.pathname.includes('/admin/akun-pj')) return 'Manajemen PJ'
+    if (location.pathname.includes('/admin/prodi')) return 'Manajemen Prodi & Fakultas'
+    return 'Profil Admin'
   }
 
   const handleLogout = () => {
-    // TODO: Clear token & redirect
+    logout()
     navigate('/login')
   }
 
@@ -39,11 +40,7 @@ function DashboardAdmin() {
         <div className="sidebar-top">
           {/* Logo */}
           <div className="sidebar-brand">
-            <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="48" height="48" rx="12" fill="#059669" fillOpacity="0.1" />
-              <path d="M24 8L14 14V22C14 30.4 18.28 38.16 24 40C29.72 38.16 34 30.4 34 22V14L24 8Z" fill="#059669" stroke="#047857" strokeWidth="1.5" />
-              <path d="M20 24L23 27L28 20" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <img src="/assets/logo_sikelas.png" alt="Logo SiKelas" className="sidebar-brand-icon" />
             <div>
               <span className="sidebar-brand-text">SiKelas</span>
               <span className="sidebar-brand-sub">Admin Dashboard</span>
@@ -112,6 +109,12 @@ function DashboardAdmin() {
             </NavLink>
           </nav>
         </div>
+
+        <div className="admin-sidebar-bottom">
+          <button type="button" className="admin-signout-button" onClick={handleLogout}>
+            <BoxArrowRight size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} /> Logout
+          </button>
+        </div>
       </aside>
 
       {/* Main Content */}
@@ -123,13 +126,12 @@ function DashboardAdmin() {
             <h1>{getPageTitle()}</h1>
           </div>
           <div className="admin-navbar-actions">
-            <span className="admin-navbar-badge">ADMIN</span>
             <Notification />
             <div className="admin-navbar-user">
               <div className="admin-navbar-avatar">{user?.username?.charAt(0).toUpperCase() || 'A'}</div>
               <div className="admin-navbar-user-info">
                 <span>{user?.username || 'Administrator'}</span>
-                <small>{user?.email || 'admin@walisongo.ac.id'}</small>
+                <small>{user?.nim_nip || 'admin@walisongo.ac.id'}</small>
               </div>
             </div>
           </div>
@@ -150,7 +152,7 @@ function DashboardAdmin() {
 
         {/* Footer */}
         <footer className="dashboard-footer">
-          <span>UIN Walisongo Semarang - SiKelas © 2026. Semua Hak Dilindungi.</span>
+          <span>SiKelas © 2026. Semua Hak Dilindungi.</span>
           <div className="dashboard-footer-links">
             <a href="#">Tentang Kami</a>
             <a href="#">Kontak</a>

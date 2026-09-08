@@ -70,7 +70,7 @@ router.put('/profile', verifyToken, async (req, res) => {
             .from('users')
             .update(updatePayload)
             .eq('id', userId)
-            .select('id, username, nim_nip, email, prodi, semester, kelas, mata_kuliah, no_hp, role, status')
+            .select('id, username, nim_nip, email, prodi, semester: semVal, kelas, mata_kuliah, no_hp, role, status')
             .single()
 
         if (updateErr) throw updateErr
@@ -85,6 +85,33 @@ router.put('/profile', verifyToken, async (req, res) => {
     }
 })
 
+// GET /api/users/admin-stats - Ringkasan Statistik Sistem untuk Dashboard Admin
+router.get('/admin-stats', verifyToken, adminOnly, async (req, res) => {
+    try {
+        const [pjRes, roomsRes, damageRes, reservRes] = await Promise.all([
+            supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'pj').eq('status', 'aktif'),
+            supabase.from('rooms').select('*', { count: 'exact', head: true }),
+            supabase.from('facility_reports').select('*', { count: 'exact', head: true }),
+            supabase.from('reservations').select('*', { count: 'exact', head: true })
+        ]);
+
+        if (pjRes.error) throw pjRes.error;
+        if (roomsRes.error) throw roomsRes.error;
+        if (damageRes.error) throw damageRes.error;
+        if (reservRes.error) throw reservRes.error;
+
+        res.json({
+            activePj: pjRes.count || 0,
+            totalRooms: roomsRes.count || 0,
+            damageReports: damageRes.count || 0,
+            reservations: reservRes.count || 0
+        });
+    } catch (error) {
+        console.error('Get admin stats error:', error);
+        res.status(500).json({ error: 'Gagal memuat statistik admin.' });
+    }
+});
+
 // GET /api/users - Ambil daftar semua user (Kecuali Admin)
 router.get('/', verifyToken, adminOnly, async (req, res) => {
     try {
@@ -96,7 +123,11 @@ router.get('/', verifyToken, adminOnly, async (req, res) => {
 
         if (error) throw error
 
-        res.json({ users: data })
+        const formattedUsers = (data || []).map(u => ({
+            ...u,
+            semester: u.semester ?? ((u.kelas && u.kelas.endsWith('-U')) || (u.mata_kuliah && u.mata_kuliah.includes('Mengulang')) ? 'SPB' : '-')
+        }))
+        res.json({ users: formattedUsers })
     } catch (error) {
         console.error("Get users error:", error)
         res.status(500).json({ error: 'Gagal mengambil data pengguna.' })
@@ -145,6 +176,10 @@ router.put('/:id', verifyToken, adminOnly, async (req, res) => {
     try {
         const { id } = req.params
         const { username, nim_nip, prodi, semester, kelas, mata_kuliah, no_hp, status } = req.body
+        let semVal = semester
+        if (String(semester).toUpperCase().trim() === 'SPB') {
+            semVal = null
+        }
         const { data, error } = await supabase
             .from('users')
             .update({ username, nim_nip, prodi, semester, kelas, mata_kuliah, no_hp, status })

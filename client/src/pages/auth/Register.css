@@ -1,4 +1,4 @@
-/* ===================================================
+﻿/* ===================================================
    Neobrutalist Campus Core - Register PJ Kelas
    SiKelas Institutional Management
    =================================================== */
@@ -6,8 +6,13 @@
 .pj-register-wrapper {
   min-height: 100vh;
   background-color: #f5f0e6;
-  background-image: radial-gradient(#1c1917 1.1px, transparent 1.1px);
-  background-size: 20px 20px;
+  background-image: url('/assets/background.png');
+  width: 100%;
+  background-size: 100% 100%;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  
   padding: 40px 16px;
   display: flex;
   flex-direction: column;
@@ -477,7 +482,8 @@
   cursor: pointer;
   transition: all 0.15s ease;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23000'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
-  background-position: right 0.75rem center;
+  background-position: center;
+  background-attachment: fixed;
   background-repeat: no-repeat;
   background-size: 1.5em 1.5em;
   padding-right: 2.5rem;

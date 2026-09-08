@@ -1,0 +1,312 @@
+/* Neo-Brutalism Notification Styling */
+.neo-noti-container {
+  position: relative;
+  z-index: 1000;
+  display: inline-flex;
+}
+
+/* Bell Trigger Button */
+.neo-noti-trigger {
+  width: 48px;
+  height: 48px;
+  border: 3px solid #000000;
+  background: #ffffff;
+  color: #0058be;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 #000000;
+  transition: all 0.15s ease;
+  font-size: 18px;
+  padding: 0;
+  border-radius: 0;
+}
+
+.neo-noti-trigger:hover {
+  background: #0058be;
+  color: #ffffff;
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #000000;
+}
+
+.neo-noti-trigger.active {
+  background: #000000;
+  color: #ffffff;
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* Badge Counter */
+.neo-noti-badge {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  background: #ff4500;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0 #000000;
+  padding: 1px 5px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.2;
+  border-radius: 0;
+  pointer-events: none;
+}
+
+/* Pop-up Window */
+.neo-noti-window {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 12px);
+  width: 390px;
+  max-width: 92vw;
+  background: #ffffff;
+  border: 4px solid #000000;
+  box-shadow: 6px 6px 0px #000000;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 0;
+  animation: neoNotiSlide 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes neoNotiSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Header */
+.neo-noti-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 3px solid #000000;
+  background: #ffffff;
+  gap: 8px;
+}
+
+.neo-noti-title {
+  margin: 0;
+  font-family: 'Space Grotesk', 'Archivo Black', sans-serif;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #000000;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Toolbar Buttons */
+.neo-noti-toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 3px solid #000000;
+  background: #f8fafc;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.neo-noti-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 2px solid #000000;
+  background: #ffffff;
+  color: #000000;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 #000000;
+  transition: all 0.1s ease;
+  border-radius: 0;
+  line-height: 1.2;
+}
+
+.neo-noti-btn:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #000000;
+  background: #e5e7eb;
+}
+
+.neo-noti-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 #000000;
+}
+
+.neo-noti-btn.is-active {
+  background: #fde047;
+}
+
+.neo-noti-btn-danger {
+  background: #ff4500;
+  color: #ffffff;
+}
+
+.neo-noti-btn-danger:hover {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.neo-noti-btn-readall {
+  background: #ffffff;
+  color: #0058be;
+}
+
+.neo-noti-btn-readall:hover {
+  background: #dbeafe;
+  color: #0058be;
+}
+
+/* Selection Mode Info Bar */
+.neo-noti-select-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fef08a;
+  border-bottom: 2px solid #000000;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #000000;
+}
+
+/* Notifications List Container */
+.neo-noti-list {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fafafa;
+}
+
+/* Custom Scrollbar for Neo-Brutalist Feel */
+.neo-noti-list::-webkit-scrollbar {
+  width: 7px;
+}
+.neo-noti-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-left: 2px solid #000000;
+}
+.neo-noti-list::-webkit-scrollbar-thumb {
+  background: #000000;
+}
+
+/* Notification Item Card */
+.neo-noti-card {
+  border: 2px solid #000000;
+  background: #ffffff;
+  padding: 10px 12px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  box-shadow: 3px 3px 0 #000000;
+  transition: all 0.15s ease;
+  border-radius: 0;
+  position: relative;
+  text-align: left;
+}
+
+.neo-noti-card:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #000000;
+}
+
+.neo-noti-card.is-read {
+  background: #f3f4f6;
+  opacity: 0.85;
+  box-shadow: 2px 2px 0 #000000;
+}
+
+.neo-noti-card.is-selected {
+  background: #fef9c3 !important;
+}
+
+/* Status Strip on Left Edge */
+.neo-noti-card.type-success {
+  border-left: 6px solid #16a34a;
+}
+.neo-noti-card.type-danger {
+  border-left: 6px solid #dc2626;
+}
+.neo-noti-card.type-warning {
+  border-left: 6px solid #f59e0b;
+}
+.neo-noti-card.type-info {
+  border-left: 6px solid #0058be;
+}
+
+/* THE CRITICAL CHECKBOX FIX: override index.css input { width: 100% } */
+.neo-noti-checkbox {
+  width: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
+  height: 18px !important;
+  flex: 0 0 18px !important;
+  margin: 2px 0 0 0 !important;
+  border: 2px solid #000000 !important;
+  border-radius: 0 !important;
+  accent-color: #0058be !important;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Card Content */
+.neo-noti-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.neo-noti-item-title {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #000000;
+  line-height: 1.3;
+  margin-bottom: 2px;
+}
+
+.neo-noti-item-msg {
+  font-size: 11.5px;
+  color: #374151;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.neo-noti-item-time {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* Empty State */
+.neo-noti-empty {
+  padding: 30px 16px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 700;
+  border: 2px dashed #9ca3af;
+  background: #ffffff;
+  margin: 6px 0;
+}

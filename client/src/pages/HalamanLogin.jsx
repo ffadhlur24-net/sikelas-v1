@@ -3,6 +3,15 @@ import { useNavigate, Link } from 'react-router-dom'
 import { AuthContext } from '../context/AuthContext'
 import api from '../api/axios'
 import './HalamanLogin.css'
+import {
+  ExclamationTriangleFill,
+  PersonFill,
+  LockFill,
+  InfoCircleFill,
+  ArrowRightShort,
+  PinAngleFill,
+  HouseDoorFill
+} from 'react-bootstrap-icons'
 
 function HalamanLogin() {
   const [loading, setLoading] = useState(false)
@@ -103,7 +112,7 @@ function HalamanLogin() {
         <main className="login-form-body">
           {errorMsg && (
             <div className="login-alert-error" role="alert">
-              <span>⚠️</span>
+              <ExclamationTriangleFill size={18} style={{ flexShrink: 0 }} />
               <span>{errorMsg}</span>
             </div>
           )}
@@ -113,7 +122,7 @@ function HalamanLogin() {
             <div className="login-input-group">
               <div className="login-label-row">
                 <label className="login-label" htmlFor="email">
-                  <span>👤</span> USERNAME / EMAIL KAMPUS
+                  <PersonFill size={15} /> USERNAME / EMAIL KAMPUS
                 </label>
                 <span className="login-badge-wajib">
                   WAJIB
@@ -131,7 +140,7 @@ function HalamanLogin() {
                 onChange={handleChange}
               />
               <p className="login-input-hint">
-                <span className="info-icon">ℹ</span> Gunakan email resmi (@student.walisongo.ac.id) atau username terdaftar.
+                <InfoCircleFill size={13} className="info-icon" style={{ flexShrink: 0 }} /> Gunakan email resmi (@student.walisongo.ac.id) atau username terdaftar.
               </p>
             </div>
 
@@ -139,7 +148,7 @@ function HalamanLogin() {
             <div className="login-input-group">
               <div className="login-label-row">
                 <label className="login-label" htmlFor="password">
-                  <span>🔒</span> PASSWORD
+                  <LockFill size={15} /> PASSWORD
                 </label>
                 <span className="login-badge-wajib">
                   WAJIB
@@ -169,7 +178,7 @@ function HalamanLogin() {
                 </button>
               </div>
               <p className="login-input-hint">
-                <span className="info-icon">ℹ</span> Password minimal 8 karakter akun SiKelas.
+                <InfoCircleFill size={13} className="info-icon" style={{ flexShrink: 0 }} /> Password minimal 8 karakter akun SiKelas.
               </p>
             </div>
 
@@ -201,7 +210,7 @@ function HalamanLogin() {
               className="login-submit-btn"
             >
               <span>{loading ? 'MEMPROSES...' : 'MASUK SEKARANG'}</span>
-              <span style={{ fontSize: '18px', lineHeight: 1 }}>➔</span>
+              <ArrowRightShort size={24} style={{ display: 'inline-block', verticalAlign: 'middle' }} />
             </button>
           </form>
 
@@ -215,7 +224,7 @@ function HalamanLogin() {
             </p>
 
             <div className="login-otp-box">
-              <span style={{ color: '#ef4444' }}>📌</span>
+              <PinAngleFill size={15} color="#ef4444" style={{ flexShrink: 0 }} />
               <span>Belum tuntas verifikasi OTP?</span>
               <Link to="/verify-email" className="login-link-otp">
                 Lanjutkan Verifikasi Di Sini
@@ -224,7 +233,7 @@ function HalamanLogin() {
 
             <div style={{ paddingTop: '4px' }}>
               <Link to="/" className="login-btn-home">
-                <span>⬅</span> KEMBALI KE BERANDA
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><HouseDoorFill size={15} /> KEMBALI KE BERANDA</span>
               </Link>
             </div>
           </div>

@@ -522,3 +522,30 @@
   .admin-main-card .feature-card { margin: 16px; padding: 16px; }
   .admin-main-card .feature-card { margin-top: 0; }
 }
+
+.admin-signout-button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 4px solid var(--admin-border, #000000);
+  box-shadow: 4px 4px 0 var(--admin-border, #000000);
+  padding: 14px 16px;
+  background: #ff4500;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 100ms ease, box-shadow 100ms ease;
+}
+
+.admin-signout-button:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--admin-border, #000000);
+}
+
+.admin-signout-button:active {
+  transform: translate(4px, 4px);
+  box-shadow: none;
+}

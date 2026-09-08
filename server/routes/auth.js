@@ -125,7 +125,8 @@ router.post('/register', async (req, res) => {
         const otpCode = Math.floor(100000 + Math.random() * 900000).toString()
         const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000)
 
-        const cleanSemester = String(semester || '1').trim()
+                const cleanSemester = String(semester || '1').trim()
+        const isSpb = cleanSemester.toUpperCase() === 'SPB'
 
         const insertPayload = {
             username,
@@ -149,10 +150,10 @@ router.post('/register', async (req, res) => {
             .select()
             .single()
 
-        if (error && error.message && (error.message.includes('otp_code') || error.message.includes('otp_expires_at') || error.message.includes('column'))) {
-            delete insertPayload.otp_code
-            delete insertPayload.otp_expires_at
-            insertPayload.status = 'pending'
+        // Fallback jika database users.semester bertipe smallint (Postgres 22P02: invalid input syntax for type smallint)
+        if (error && (error.code === '22P02' || error.message?.includes('smallint')) && isSpb) {
+            console.log('⚠️ [SPB Fallback] Kolom semester bertipe smallint, menyimpan nilai sebagai null...')
+            insertPayload.semester = null
             const retry = await supabase
                 .from('users')
                 .insert(insertPayload)
@@ -161,6 +162,29 @@ router.post('/register', async (req, res) => {
 
             newUser = retry.data
             error = retry.error
+            if (newUser) {
+                newUser.semester = 'SPB'
+            }
+        }
+
+        if (error && error.message && (error.message.includes('otp_code') || error.message.includes('otp_expires_at') || error.message.includes('column'))) {
+            delete insertPayload.otp_code
+            delete insertPayload.otp_expires_at
+            insertPayload.status = 'pending'
+            if (isSpb && (error.code === '22P02' || error.message?.includes('smallint'))) {
+                insertPayload.semester = null
+            }
+            const retry = await supabase
+                .from('users')
+                .insert(insertPayload)
+                .select()
+                .single()
+
+            newUser = retry.data
+            error = retry.error
+            if (newUser && isSpb) {
+                newUser.semester = 'SPB'
+            }
         }
 
         if (error) {
@@ -433,7 +457,7 @@ router.post('/login', loginLimiter, async (req, res) => {
                 email: user.email,
                 role: user.role,
                 prodi: user.prodi,
-                semester: user.semester,
+                semester: user.semester ?? ((user.kelas && user.kelas.endsWith('-U')) || (user.mata_kuliah && user.mata_kuliah.includes('Mengulang')) ? 'SPB' : '-'),
                 kelas: user.kelas,
                 mata_kuliah: user.mata_kuliah,
                 no_hp: user.no_hp

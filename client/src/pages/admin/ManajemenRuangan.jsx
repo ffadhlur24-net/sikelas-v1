@@ -1,6 +1,18 @@
 import { useState, useEffect } from 'react'
 import api from '../../api/axios'
 import './ManajemenRuangan.css'
+import {
+  Building,
+  Buildings,
+  GeoAltFill,
+  ArrowRight,
+  ArrowLeft,
+  PlusLg,
+  LayersFill,
+  CalendarEventFill,
+  PencilSquare,
+  TrashFill
+} from 'react-bootstrap-icons'
 
 function ManajemenRuangan() {
   const [rooms, setRooms] = useState([])
@@ -306,7 +318,6 @@ function ManajemenRuangan() {
       <section className="room-clock-card">
         <div className="room-clock-icon" aria-hidden="true">◷</div>
         <div>
-          <p className="room-eyebrow">WAKTU SISTEM SERVER</p>
           <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
         </div>
         <span className="room-online"><span /> SISTEM ONLINE</span>
@@ -342,27 +353,27 @@ function ManajemenRuangan() {
           style={{ background: !selectedKampus ? '#059669' : '#e2e8f0', color: !selectedKampus ? '#fff' : '#475569' }}
           onClick={() => { setSelectedKampus(null); setSelectedGedung(null); }}
         >
-          🏫 Level 1: Daftar Kampus
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Building size={15} /> Level 1: Daftar Kampus</span>
         </button>
 
         {selectedKampus && (
           <>
-            <span>➔</span>
+            <span style={{ display: "inline-flex", alignItems: "center" }}><ArrowRight size={13} /></span>
             <button
               className="btn btn-secondary btn-sm"
               style={{ background: selectedKampus && !selectedGedung ? '#059669' : '#e2e8f0', color: selectedKampus && !selectedGedung ? '#fff' : '#475569' }}
               onClick={() => setSelectedGedung(null)}
             >
-              🏢 Level 2: Gedung ({selectedKampus})
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Buildings size={15} /> Level 2: Gedung ({selectedKampus})</span>
             </button>
           </>
         )}
 
         {selectedKampus && selectedGedung && (
           <>
-            <span>➔</span>
+            <span style={{ display: "inline-flex", alignItems: "center" }}><ArrowRight size={13} /></span>
             <span style={{ color: '#059669', background: '#d1fae5', padding: '4px 12px', borderRadius: '6px' }}>
-              📍 Level 3: {selectedGedung} ({selectedKampus}) - Ruangan Per Lantai
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><GeoAltFill size={15} /> Level 3: {selectedGedung} ({selectedKampus}) - Ruangan Per Lantai</span>
             </span>
           </>
         )}
@@ -374,7 +385,7 @@ function ManajemenRuangan() {
       {!selectedKampus && (
         <>
           <div className="room-add-campus-card card-flat" style={{ marginBottom: '24px', maxWidth: '480px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '12px' }}>➕ Tambah Lokasi Kampus Baru</h3>
+            <h3 style={{ fontSize: "15px", fontWeight: "bold", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}><PlusLg size={16} /> Tambah Lokasi Kampus Baru</h3>
             <form onSubmit={handleAddKampus} style={{ display: 'flex', gap: '12px' }}>
               <input
                 type="text"
@@ -399,10 +410,10 @@ function ManajemenRuangan() {
                   style={{ cursor: 'pointer', borderLeft: '4px solid #059669', background: '#fff' }}
                   onClick={() => setSelectedKampus(kam)}
                 >
-                  <div style={{ fontSize: '32px', marginBottom: '12px' }}>🏫</div>
+                  <div style={{ marginBottom: "12px", color: "#059669" }}><Building size={34} /></div>
                   <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px' }}>{kam}</h3>
                   <p style={{ margin: '0 0 12px', fontSize: '13px', color: '#64748b' }}>{totalGedung} Gedung • {totalRooms} Ruangan</p>
-                  <span style={{ color: '#059669', fontSize: '13px', fontWeight: 'bold' }}>Kelola Gedung ➔</span>
+                  <span style={{ color: "#059669", fontSize: "13px", fontWeight: "bold", display: "inline-flex", alignItems: "center", gap: "5px" }}>Kelola Gedung <ArrowRight size={13} /></span>
                 </div>
               )
             })}
@@ -416,12 +427,12 @@ function ManajemenRuangan() {
       {selectedKampus && !selectedGedung && (
         <>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>🏢 Gedung di {selectedKampus}</h2>
-            <button className="btn btn-secondary btn-sm" onClick={() => setSelectedKampus(null)}>⬅️ Kembali ke Kampus</button>
+            <h2 style={{ fontSize: "18px", fontWeight: "bold", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}><Buildings size={20} /> Gedung di {selectedKampus}</h2>
+            <button className="btn btn-secondary btn-sm" onClick={() => setSelectedKampus(null)} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><ArrowLeft size={14} /> Kembali ke Kampus</button>
           </div>
 
           <div className="card-flat" style={{ marginBottom: '24px', maxWidth: '480px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '12px' }}>➕ Tambah Gedung Baru di {selectedKampus}</h3>
+            <h3 style={{ fontSize: "15px", fontWeight: "bold", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}><PlusLg size={16} /> Tambah Gedung Baru di {selectedKampus}</h3>
             <form onSubmit={handleAddGedung} style={{ display: 'flex', gap: '12px' }}>
               <input
                 type="text"
@@ -445,10 +456,10 @@ function ManajemenRuangan() {
                   style={{ cursor: 'pointer', borderLeft: '4px solid #2563eb', background: '#fff' }}
                   onClick={() => setSelectedGedung(ged)}
                 >
-                  <div style={{ fontSize: '32px', marginBottom: '12px' }}>🏢</div>
+                  <div style={{ marginBottom: "12px", color: "#2563eb" }}><Buildings size={34} /></div>
                   <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px' }}>{ged}</h3>
                   <p style={{ margin: '0 0 12px', fontSize: '13px', color: '#64748b' }}>{countRooms} Ruangan Perkuliahan</p>
-                  <span style={{ color: '#2563eb', fontSize: '13px', fontWeight: 'bold' }}>Lihat Ruangan Per Lantai ➔</span>
+                  <span style={{ color: "#2563eb", fontSize: "13px", fontWeight: "bold", display: "inline-flex", alignItems: "center", gap: "5px" }}>Lihat Ruangan Per Lantai <ArrowRight size={13} /></span>
                 </div>
               )
             })}
@@ -463,7 +474,7 @@ function ManajemenRuangan() {
         <>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
-              <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>📍 Ruangan {selectedGedung} ({selectedKampus})</h2>
+              <h2 style={{ fontSize: "18px", fontWeight: "bold", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}><GeoAltFill size={20} /> Ruangan {selectedGedung} ({selectedKampus})</h2>
               <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Daftar inventaris ruang terbagi otomatis per lantai gedung.</p>
             </div>
             <button className="btn btn-secondary btn-sm" onClick={() => setSelectedGedung(null)}>⬅️ Kembali ke Daftar Gedung</button>
@@ -471,7 +482,7 @@ function ManajemenRuangan() {
 
           {/* Form Tambah Ruangan Baru di Gedung Terpilih */}
           <div className="card-flat" style={{ marginBottom: '32px' }}>
-            <h3 style={{ marginBottom: '16px', fontSize: '16px' }}>➕ Tambah Ruangan Baru di {selectedGedung}</h3>
+            <h3 style={{ marginBottom: "16px", fontSize: "16px", display: "flex", alignItems: "center", gap: "8px" }}><PlusLg size={16} /> Tambah Ruangan Baru di {selectedGedung}</h3>
             <form onSubmit={handleAddRooms}>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '16px' }}>
                 <div style={{ flex: '2', minWidth: '160px' }}>
@@ -496,7 +507,7 @@ function ManajemenRuangan() {
                     checked={addWithSchedule}
                     onChange={(e) => setAddWithSchedule(e.target.checked)}
                   />
-                  ➕ Tambah Jadwal Perkuliahan Pertama Sekaligus (Opsional)
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><PlusLg size={14} /> Tambah Jadwal Perkuliahan Pertama Sekaligus (Opsional)</span>
                 </label>
 
                 {addWithSchedule && (
@@ -625,7 +636,7 @@ function ManajemenRuangan() {
             Object.keys(roomsByLantai).sort((a, b) => Number(a) - Number(b)).map(lantaiNum => (
               <div key={lantaiNum} className="card-flat" style={{ marginBottom: '24px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '16px', color: '#0f172a' }}>
-                  🏢 Ruangan Lantai {lantaiNum}
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}><LayersFill size={16} /> Ruangan Lantai {lantaiNum}</span>
                 </h3>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
@@ -662,7 +673,7 @@ function ManajemenRuangan() {
                         </td>
                         <td style={{ padding: '12px', textAlign: 'right' }}>
                           <button className="btn btn-secondary btn-sm" onClick={() => handleOpenRoomSchedules(room)}>
-                            📅 Kelola Jadwal
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><CalendarEventFill size={13} /> Kelola Jadwal</span>
                           </button>
                         </td>
                       </tr>
@@ -685,7 +696,7 @@ function ManajemenRuangan() {
         }}>
           <div className="card-flat" style={{ width: '100%', maxWidth: '720px', background: '#fff', padding: '24px', borderRadius: '12px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 'bold' }}>📅 Jadwal SIAKAD Ruang {selectedRoomModal.nama}</h2>
+              <h2 style={{ fontSize: '18px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}><CalendarEventFill size={18} /> Jadwal SIAKAD Ruang {selectedRoomModal.nama}</h2>
               <button className="btn btn-secondary btn-sm" onClick={() => setSelectedRoomModal(null)}>Tutup</button>
             </div>
 
@@ -712,7 +723,7 @@ function ManajemenRuangan() {
                   setShowFormSched(true)
                 }}
               >
-                ➕ Tambah Jadwal Perkuliahan
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><PlusLg size={14} /> Tambah Jadwal Perkuliahan</span>
               </button>
             )}
 
@@ -720,7 +731,7 @@ function ManajemenRuangan() {
             {showFormSched && (
               <form onSubmit={handleSaveSchedule} style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
                 <h3 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px' }}>
-                  {editingSchedId ? '✏️ Edit Jadwal' : '➕ Tambah Jadwal Baru'}
+                  {editingSchedId ? (<span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><PencilSquare size={14} /> Edit Jadwal</span>) : (<span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><PlusLg size={14} /> Tambah Jadwal Baru</span>)}
                 </h3>
 
                 <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
@@ -868,8 +879,8 @@ function ManajemenRuangan() {
                         {s.prodi} (Smstr {s.semester} - {s.kelas})
                       </td>
                       <td style={{ padding: '10px 10px', textAlign: 'right' }}>
-                        <button className="btn btn-secondary btn-sm" style={{ marginRight: '4px' }} onClick={() => handleEditScheduleClick(s)}>✏️ Edit</button>
-                        <button className="btn btn-secondary btn-sm" style={{ color: 'red' }} onClick={() => handleDeleteSchedule(s.id)}>🗑️ Hapus</button>
+                        <button className="btn btn-secondary btn-sm" style={{ marginRight: '4px', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleEditScheduleClick(s)}><PencilSquare size={13} /> Edit</button>
+                        <button className="btn btn-secondary btn-sm" style={{ color: 'red', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleDeleteSchedule(s.id)}><TrashFill size={13} /> Hapus</button>
                       </td>
                     </tr>
                   ))}

@@ -3,6 +3,24 @@ import { AuthContext } from '../../context/AuthContext'
 import api from '../../api/axios'
 import { supabaseClient } from '../../config/supabase'
 import './DaftarKelas.css'
+import {
+  Buildings,
+  ArrowClockwise,
+  Search,
+  ClockFill,
+  CalendarEvent,
+  Clock,
+  HourglassSplit,
+  CircleFill,
+  GeoAltFill,
+  PeopleFill,
+  ExclamationTriangleFill,
+  CalendarWeekFill,
+  BookmarkCheckFill,
+  CheckCircleFill,
+  BookmarkPlusFill,
+  CardList
+} from 'react-bootstrap-icons'
 
 function DaftarKelas() {
   const { user } = useContext(AuthContext)
@@ -98,15 +116,15 @@ function DaftarKelas() {
       setCurrentTime(new Date())
     }, 1000)
 
-    // ⚡ Menghubungkan WebSocket Listener Supabase Realtime
+    // Menghubungkan WebSocket Listener Supabase Realtime
     const channel = supabaseClient
       .channel('realtime-sikelas-rooms')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, () => {
-        console.log('⚡ [Realtime] Terdeteksi perubahan reservasi di Supabase. Memperbarui status ruangan...')
+        console.log('[Realtime] Terdeteksi perubahan reservasi di Supabase. Memperbarui status ruangan...')
         fetchRooms(filterTanggal, filterWaktuMulai, filterSks, false)
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, () => {
-        console.log('⚡ [Realtime] Terdeteksi perubahan laporan di Supabase. Memperbarui status ruangan...')
+        console.log('[Realtime] Terdeteksi perubahan laporan di Supabase. Memperbarui status ruangan...')
         fetchRooms(filterTanggal, filterWaktuMulai, filterSks, false)
       })
       .subscribe()
@@ -179,7 +197,7 @@ function DaftarKelas() {
     const [sHours, sMins] = start.split(':').map(Number)
     const inputMinutes = sHours * 60 + sMins
     if (dateVal === todayStr && inputMinutes <= currentMinutes) {
-      setConflictError(`🚨 Jam [${start}] sudah berlalu hari ini! Silakan pilih jam di masa mendatang.`)
+      setConflictError(`Jam [${start}] sudah berlalu hari ini! Silakan pilih jam di masa mendatang.`)
       return
     }
     // 2. Cek Overlap Bentrok dengan Jadwal Lain
@@ -190,7 +208,7 @@ function DaftarKelas() {
         return sStart < end && sEnd > start
       })
       if (conflictItem) {
-        setConflictError(`🚨 Waktu [${start} - ${end}] BENTROK dengan ${conflictItem.type} (${conflictItem.mata_kuliah}: ${conflictItem.waktu_mulai.substring(0, 5)} - ${conflictItem.waktu_selesai.substring(0, 5)} WIB)!`)
+        setConflictError(`Waktu [${start} - ${end}] BENTROK dengan ${conflictItem.type} (${conflictItem.mata_kuliah}: ${conflictItem.waktu_mulai.substring(0, 5)} - ${conflictItem.waktu_selesai.substring(0, 5)} WIB)!`)
         return
       }
     }
@@ -300,18 +318,13 @@ function DaftarKelas() {
   return (
     <div className="reservation-page animate-fade-in">
       {/* HEADER + JAM DIGITAL */}
-      <div className="reservation-heading page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="reservation-heading page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
         <div>
           <h1 className="page-title">Daftar Kelas & Ketersediaan Ruangan</h1>
           <p className="page-subtitle">Cari slot waktu peminjaman spesifik dan pantau ketersediaan ruangan secara real-time.</p>
         </div>
-        <div className="reservation-clock" style={{ textAlign: 'right', background: '#f8fafc', padding: '10px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '2px' }}>
-            WAKTU SERVER REAL-TIME
-          </div>
-          <div style={{ fontSize: '24px', fontWeight: '800', fontFamily: 'monospace', color: '#0f172a' }}>
-            {currentTime.toLocaleTimeString('id-ID')}
-          </div>
+        <div className="reservation-clock">
+          {currentTime.toLocaleTimeString('id-ID')}
         </div>
       </div>
 
@@ -319,7 +332,7 @@ function DaftarKelas() {
       <div className="reservation-location-filter card-flat" style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '16px 20px', borderRadius: '12px', marginBottom: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
           <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            🏢 Filter Lokasi Ruangan (Kampus ➔ Gedung ➔ Lantai)
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Buildings size={18} /> Filter Lokasi Ruangan (Kampus → Gedung → Lantai)</span>
           </h3>
           {(filterKampus || filterGedung || filterLantai || searchKeyword) && (
             <button
@@ -327,7 +340,7 @@ function DaftarKelas() {
               onClick={resetLocationFilter}
               style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', fontSize: '12px', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}
             >
-              🔄 Reset Filter Lokasi
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ArrowClockwise size={14} /> Reset Filter Lokasi</span>
             </button>
           )}
         </div>
@@ -367,7 +380,7 @@ function DaftarKelas() {
 
           {/* Input 4: Live Search Nama Ruangan */}
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>🔍 Cari Nama Ruangan</label>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Search size={13} /> Cari Nama Ruangan</span></label>
             <input
               type="text"
               className="input-field"
@@ -383,11 +396,11 @@ function DaftarKelas() {
       {/* PANEL FILTER SLOT WAKTU (TIME-SLOT DRIVEN AVAILABILITY) */}
       <div className="reservation-slot-filter card-flat" style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '16px 20px', borderRadius: '12px', marginBottom: '24px' }}>
         <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: '0 0 12px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          ⏰ Slot Waktu Peminjaman Target
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><ClockFill size={16} /> Slot Waktu Peminjaman Target</span>
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', alignItems: 'end' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>📅 Tanggal Peminjaman</label>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><CalendarEvent size={13} /> Tanggal Peminjaman</span></label>
             <input
               type="date"
               className="input-field"
@@ -397,7 +410,7 @@ function DaftarKelas() {
             />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>⏰ Jam Mulai Peminjaman</label>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Clock size={13} /> Jam Mulai Peminjaman</span></label>
             <input
               type="time"
               className="input-field"
@@ -407,7 +420,7 @@ function DaftarKelas() {
             />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>⏱️ Jumlah SKS (1 SKS = 50 Mnt)</label>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><HourglassSplit size={13} /> Jumlah SKS (1 SKS = 50 Mnt)</span></label>
             <select
               className="input-field"
               value={filterSks}
@@ -425,7 +438,7 @@ function DaftarKelas() {
             onClick={() => fetchRooms(filterTanggal, filterWaktuMulai, filterSks)}
             style={{ height: '42px', width: '100%', background: '#2563eb' }}
           >
-            🔎 Cari Slot Ketersediaan
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><Search size={15} /> Cari Slot Ketersediaan</span>
           </button>
         </div>
       </div>
@@ -457,31 +470,31 @@ function DaftarKelas() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                   <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Ruang {room.nama}</h3>
                   {room.slot_available ? (
-                    <span className="badge badge-success" style={{ background: '#059669', color: 'white' }}>🟢 Tersedia Slot Ini</span>
+                    <span className="badge badge-success" style={{ background: '#059669', color: 'white' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CircleFill size={8} /> Tersedia Slot Ini</span></span>
                   ) : (
-                    <span className="badge badge-error" style={{ background: '#dc2626', color: 'white' }}>🔴 Terpakai / Bentrok</span>
+                    <span className="badge badge-error" style={{ background: '#dc2626', color: 'white' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CircleFill size={8} /> Terpakai / Bentrok</span></span>
                   )}
                 </div>
                 <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '4px' }}>
-                  📍 {room.kampus} - {room.gedung} (Lantai {room.lantai})
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><GeoAltFill size={14} /> {room.kampus} - {room.gedung} (Lantai {room.lantai})</span>
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '12px' }}>
-                  🪑 Kapasitas: <b>{room.kapasitas} Kursi</b>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><PeopleFill size={14} /> Kapasitas: <b>{room.kapasitas} Kursi</b></span>
                 </p>
 
                 {room.conflict_reason && (
                   <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '8px 10px', borderRadius: '6px', fontSize: '12px', marginBottom: '12px', lineHeight: '1.4' }}>
-                    ⚠️ {room.conflict_reason}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ExclamationTriangleFill size={14} /> {room.conflict_reason}</span>
                   </div>
                 )}
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => handleOpenTimeline(room)}>
-                  📅 Lihat Jadwal
+                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}><CalendarWeekFill size={14} /> Lihat Jadwal</span>
                 </button>
                 {room.slot_available ? (
                   <button className="btn btn-primary btn-sm" style={{ flex: 1, background: '#2563eb' }} onClick={() => handleOpenBookingModal(room)}>
-                    📌 Pesan Ruang
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}><BookmarkCheckFill size={14} /> Pesan Ruang</span>
                   </button>
                 ) : (
                   <button className="btn btn-secondary btn-sm" style={{ flex: 1, cursor: 'not-allowed', opacity: 0.6 }} disabled title={room.conflict_reason}>
@@ -501,7 +514,7 @@ function DaftarKelas() {
         }}>
           <div className="card-flat" style={{ width: '100%', maxWidth: '640px', background: '#fff', padding: '24px', borderRadius: '12px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 'bold' }}>📅 Jadwal Mingguan Ruang {selectedRoom.nama}</h2>
+              <h2 style={{ fontSize: '18px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}><CalendarWeekFill size={18} /> Jadwal Mingguan Ruang {selectedRoom.nama}</h2>
               <button className="btn btn-secondary btn-sm" onClick={() => setSelectedRoom(null)}>Tutup</button>
             </div>
             {/* TAB FILTER NAMA HARI */}
@@ -521,7 +534,7 @@ function DaftarKelas() {
               <p style={{ textAlign: 'center', padding: '20px' }}>Memuat jadwal hari {selectedHari}...</p>
             ) : schedules.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '30px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-                <p style={{ color: '#10b981', fontWeight: 'bold', fontSize: '16px', marginBottom: '4px' }}>🎉 Ruangan Kosong Seharian pada Hari {selectedHari}!</p>
+                <p style={{ color: '#10b981', fontWeight: 'bold', fontSize: '16px', marginBottom: '4px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CheckCircleFill size={18} color="#10b981" /> Ruangan Kosong Seharian pada Hari {selectedHari}!</span></p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Tidak ada perkuliahan reguler maupun reservasi aktif pada hari {selectedHari}.</p>
               </div>
             ) : (
@@ -539,7 +552,7 @@ function DaftarKelas() {
                       </span>
                     </div>
                     <p style={{ fontSize: '13px', color: '#475569', margin: 0 }}>
-                      ⏰ Jam: <b>{item.waktu_mulai.substring(0, 5)} - {item.waktu_selesai.substring(0, 5)} WIB</b>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ClockFill size={12} /> Jam:</span> <b>{item.waktu_mulai.substring(0, 5)} - {item.waktu_selesai.substring(0, 5)} WIB</b>
                     </p>
                   </div>
                 ))}
@@ -547,7 +560,7 @@ function DaftarKelas() {
             )}
             {selectedRoom.status === 'tersedia' && (
               <button className="btn btn-primary" style={{ width: '100%', marginTop: '20px' }} onClick={() => { setSelectedRoom(null); handleOpenBookingModal(selectedRoom); }}>
-                📌 Lanjutkan Pesan Ruang {selectedRoom.nama}
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><BookmarkCheckFill size={16} /> Lanjutkan Pesan Ruang {selectedRoom.nama}</span>
               </button>
             )}
           </div>
@@ -561,7 +574,7 @@ function DaftarKelas() {
         }}>
           <div className="card-flat" style={{ width: '100%', maxWidth: '580px', background: '#fff', padding: '24px', borderRadius: '12px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>📌 Formulir Reservasi Instan</h2>
+              <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><BookmarkPlusFill size={18} /> Formulir Reservasi Instan</h2>
               <button className="btn btn-secondary btn-sm" onClick={() => setBookingRoom(null)}>Batal</button>
             </div>
             {bookingMessage.text && (
@@ -646,25 +659,25 @@ function DaftarKelas() {
                   </div>
                 ) : (
                   <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', padding: '12px 16px', borderRadius: '8px', fontSize: '13px' }}>
-                    ✅ Jam Selesai Otomatis: <b>{bookingForm.waktu_mulai} - {bookingForm.waktu_selesai} WIB</b> (TERSEDIA & AMAN)
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CheckCircleFill size={16} color="#16a34a" /> Jam Selesai Otomatis:</span> <b>{bookingForm.waktu_mulai} - {bookingForm.waktu_selesai} WIB</b> (TERSEDIA & AMAN)
                   </div>
                 )}
               </div>
               {/* PREVIEW JADWAL REAL-TIME DI TANGGAL TERPILIH */}
               <div style={{ marginBottom: '20px', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
                 <p style={{ fontSize: '13px', fontWeight: 'bold', color: '#475569', marginBottom: '8px' }}>
-                  📋 Agenda Ruangan pada Tanggal {bookingForm.tanggal}:
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CardList size={16} /> Agenda Ruangan pada Tanggal {bookingForm.tanggal}:</span>
                 </p>
                 {loadingDaySchedules ? (
                   <p style={{ fontSize: '12px', color: '#64748b' }}>Memeriksa ketersediaan jadwal...</p>
                 ) : daySchedulesForBooking.length === 0 ? (
-                  <p style={{ fontSize: '12px', color: '#10b981', fontWeight: 'bold' }}>🎉 Ruangan Kosong Seharian pada Tanggal Ini!</p>
+                  <p style={{ fontSize: '12px', color: '#10b981', fontWeight: 'bold' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CheckCircleFill size={16} color="#10b981" /> Ruangan Kosong Seharian pada Tanggal Ini!</span></p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '140px', overflowY: 'auto' }}>
                     {daySchedulesForBooking.map((sch, i) => (
                       <div key={i} style={{ fontSize: '12px', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', borderLeft: '3px solid #3b82f6', display: 'flex', justifyContent: 'space-between' }}>
                         <span><b>{sch.mata_kuliah}</b> ({sch.type})</span>
-                        <span>⏰ {sch.waktu_mulai.substring(0, 5)} - {sch.waktu_selesai.substring(0, 5)} WIB</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ClockFill size={12} /> {sch.waktu_mulai.substring(0, 5)} - {sch.waktu_selesai.substring(0, 5)} WIB</span>
                       </div>
                     ))}
                   </div>
@@ -673,7 +686,7 @@ function DaftarKelas() {
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setBookingRoom(null)}>Batal</button>
                 <button type="submit" className="btn btn-primary" disabled={actionLoading || !!conflictError}>
-                  {actionLoading ? 'Mengirim...' : '📌 Ajukan Reservasi Instan'}
+                  {actionLoading ? 'Mengirim...' : <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><BookmarkCheckFill size={16} /> Ajukan Reservasi Instan</span>}
                 </button>
               </div>
             </form>

@@ -306,24 +306,45 @@ router.patch('/:id/status', verifyToken, adminOnly, async (req, res) => {
             .from('reservations')
             .update(updateData)
             .eq('id', id)
-            .select('*')
+            .select('*, users(id, username, email), rooms(nama, gedung)')
             .single()
 
         if (error) throw error
 
-        if (data && data.users && data.users.email) {
-            const timeSlot = `${data.waktu_mulai} - ${data.waktu_selesai}`
+        const isApproved = status === 'approved'
+        const roomName = data.rooms?.nama || 'Ruangan'
+        const gedungName = data.rooms?.gedung ? ` (${data.rooms.gedung})` : ''
+        const fullRoom = `${roomName}${gedungName}`
+
+        // 1. NOTIFIKASI DALAM APLIKASI (IN-APP)
+        if (data?.user_id) {
+            try {
+                await supabase.from('notifications').insert({
+                    user_id: data.user_id,
+                    title: isApproved ? 'Reservasi Disetujui!' : 'Reservasi Ditolak',
+                    message: isApproved
+                        ? `Pengajuan reservasi Anda untuk ${data.mata_kuliah} di Ruang ${fullRoom} telah disetujui Admin.`
+                        : `Pengajuan reservasi Anda untuk ${data.mata_kuliah} ditolak dengan alasan: "${alasan_penolakan || 'Tidak memenuhi kriteria'}"`,
+                    type: isApproved ? 'success' : 'danger'
+                })
+            } catch (notifErr) {
+                console.error('Gagal membuat notifikasi in-app reservasi:', notifErr)
+            }
+        }
+
+        // 2. NOTIFIKASI LUAR APLIKASI (EMAIL RESEND)
+        if (data?.users?.email) {
+            const timeSlot = `${data.waktu_mulai?.substring(0, 5)} - ${data.waktu_selesai?.substring(0, 5)} WIB`
             sendReservationNotificationEmail(
                 data.users.email,
-                data.users.username,
+                data.users.username || 'PJ Kelas',
                 status,
-                data.rooms?.nama || 'Ruangan',
+                fullRoom,
                 data.tanggal,
                 timeSlot,
                 alasan_penolakan || ''
-            )
+            ).catch(err => console.error('Async email reservasi error:', err))
         }
-
 
         res.json({ message: `Status reservasi berhasil diubah menjadi ${status}.`, reservation: data })
     } catch (error) {
