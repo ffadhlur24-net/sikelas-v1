@@ -162,12 +162,25 @@ router.patch('/:id/resolve', verifyToken, adminOnly, async (req, res) => {
             updateData.alasan_penolakan = alasan_penolakan;
         }
 
-        const { data, error } = await supabase
+        let { data, error } = await supabase
             .from('reports')
             .update(updateData)
             .eq('id', id)
             .select('*, users(id, username, email), rooms(nama, gedung)')
             .single()
+
+        // Fallback otomatis jika kolom 'alasan_penolakan' belum dibuat di tabel Supabase
+        if (error && error.message && error.message.includes('alasan_penolakan')) {
+            delete updateData.alasan_penolakan
+            const retry = await supabase
+                .from('reports')
+                .update(updateData)
+                .eq('id', id)
+                .select('*, users(id, username, email), rooms(nama, gedung)')
+                .single()
+            data = retry.data
+            error = retry.error
+        }
 
         if (error) throw error
 
@@ -213,7 +226,7 @@ router.patch('/:id/resolve', verifyToken, adminOnly, async (req, res) => {
         })
     } catch (error) {
         console.error('Resolve report error:', error)
-        res.status(500).json({ error: 'Gagal menyelesaikan laporan.' })
+        res.status(500).json({ error: error.message || 'Gagal menyelesaikan laporan.' })
     }
 })
 
