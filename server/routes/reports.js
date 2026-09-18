@@ -38,6 +38,8 @@ router.get('/', verifyToken, async (req, res) => {
 
 router.post('/', verifyToken, async (req, res) => {
     try {
+        const { room_id, mata_kuliah, alasan, tanggal, waktu_mulai } = req.body
+
         const now = new Date()
         const yyyy = now.getFullYear()
         const mm = String(now.getMonth() + 1).padStart(2, '0')
@@ -85,7 +87,7 @@ router.post('/', verifyToken, async (req, res) => {
         }
 
         let validAlasan = 'DOSEN_BERHALANGAN'
-        if (['DOSEN_BERHALANGAN', 'RUANGAN_TERKUNCI', 'KELAS_ONLINE'].includes(alasan)) {
+        if (['DOSEN_BERHALANGAN', 'RUANGAN_TERKUNCI', 'KELAS_ONLINE'].includes(alasan) || (typeof alasan === 'string' && alasan.startsWith('LAINNYA'))) {
             validAlasan = alasan
         }
         const insertPayload = {
