@@ -40,7 +40,20 @@
 .pj-search-row { display:flex; flex:1; max-width:620px; gap:12px; }
 .pj-search-input { width:100%; min-height:48px; border:4px solid var(--pj-border); border-radius:0; padding:12px 16px; background:#fff; color:var(--pj-ink); font-weight:600; }
 .pj-search-input:focus { border-color:var(--pj-border); outline:3px solid var(--pj-blue); outline-offset:2px; box-shadow:none; }
-.pj-search-button { border:4px solid var(--pj-border); box-shadow:4px 4px 0 var(--pj-border); padding:10px 22px; background:var(--pj-blue); color:#fff; font-weight:800; cursor:pointer; }
+.pj-search-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  border: 4px solid var(--pj-border);
+  box-shadow: 4px 4px 0 var(--pj-border);
+  padding: 10px 22px;
+  background: var(--pj-blue);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
 .pj-search-button:hover { transform:translate(2px,2px); box-shadow:2px 2px 0 var(--pj-border); }
 
 .pj-table-card { overflow-x:auto; padding:24px; }
@@ -56,6 +69,141 @@
 .pj-action-approve { background:var(--pj-green) !important; color:var(--pj-ink) !important; }
 .pj-action-edit { background:#fff !important; color:var(--pj-ink) !important; }
 .pj-action-delete { background:#fecaca !important; color:#991b1b !important; }
+
+/* Global Form Controls for Manajemen Akun PJ */
+.pj-management-page .input-field {
+  width: 100%;
+  min-height: 48px;
+  border: 4px solid var(--pj-border);
+  border-radius: 0 !important;
+  background: #ffffff;
+  color: var(--pj-ink);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 14px;
+  box-sizing: border-box;
+}
+
+.pj-management-page .input-field:focus {
+  border-color: var(--pj-border);
+  outline: 3px solid var(--pj-blue);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.pj-management-page .input-field:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.pj-management-page .form-label {
+  display: block;
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--pj-ink);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* NeoSelect Brutalist Integration */
+.pj-management-page .neo-select-trigger {
+  border: 4px solid var(--pj-border) !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+  min-height: 48px !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.pj-management-page .neo-select-trigger:focus-visible {
+  outline: 3px solid var(--pj-blue);
+  outline-offset: 2px;
+}
+
+.pj-management-page .neo-select-dropdown {
+  border: 4px solid var(--pj-border) !important;
+  border-radius: 0 !important;
+  box-shadow: 4px 4px 0 var(--pj-border) !important;
+}
+
+.pj-management-page .neo-select-option {
+  border-radius: 0 !important;
+}
+
+/* Button Neo-Brutalist Styles */
+.pj-management-page .btn {
+  border: 4px solid var(--pj-border);
+  border-radius: 0 !important;
+  box-shadow: 4px 4px 0 var(--pj-border);
+  font-weight: 800;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pj-management-page .btn:hover:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--pj-border);
+}
+
+.pj-management-page .btn-primary {
+  background: var(--pj-green);
+  color: var(--pj-ink);
+}
+
+.pj-management-page .btn-secondary {
+  background: #ffffff;
+  color: var(--pj-ink);
+}
+
+/* Modal Overlay & Brutalist Modal Card */
+.pj-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.pj-modal-card {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  border: 4px solid var(--pj-border);
+  border-radius: 0 !important;
+  box-shadow: 8px 8px 0 var(--pj-border);
+  padding: 24px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.pj-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid var(--pj-border);
+}
+
+.pj-modal-header h2 {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 18px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--pj-ink);
+}
 
 .pj-management-page [style*="background: '#fff'"] { border-radius:0 !important; }
 .pj-management-page input, .pj-management-page select { border-radius:0; }

@@ -1,5 +1,7 @@
 import { useContext, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AuthContext } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
 import api from '../../api/axios'
 import './ProfilPJ.css'
 import {
@@ -7,20 +9,31 @@ import {
   XCircleFill,
   GeoAltFill,
   PersonBadge,
-  Grid3x3GapFill,
-  CalendarXFill,
   Tools,
   EnvelopeFill,
   EyeSlashFill,
   EyeFill,
   KeyFill,
   FloppyFill,
-  BoxArrowRight
+  XLg,
+  PersonFill,
+  DoorOpenFill,
+  ClockHistory,
+  CalendarWeekFill,
+  MortarboardFill,
+  Bank2,
+  BookFill,
+  TelephoneFill,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight
 } from 'react-bootstrap-icons'
 
 function ProfilPJ() {
-  // Ambil data user yang usdah login dari Context
-  const { user, logout, updateUser } = useContext(AuthContext)
+  const navigate = useNavigate()
+  const { showSuccess, showError, showWarning } = useToast()
+  // Ambil data user yang sudah login dari Context
+  const { user, updateUser } = useContext(AuthContext)
   const [reservations, setReservations] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 3
@@ -41,7 +54,6 @@ function ProfilPJ() {
   const [otpLoading, setOtpLoading] = useState(false)
   const [otpCountdown, setOtpCountdown] = useState(0)
 
-
   useEffect(() => {
     if (user) {
       setEditForm(prev => ({
@@ -57,38 +69,43 @@ function ProfilPJ() {
 
     if (editForm.new_password.trim() !== '') {
       if (editForm.new_password.length < 8) {
-        return alert('Password baru minimal harus 8 karakter!')
+        showWarning('Password baru minimal harus 8 karakter!', 'VALIDASI PASSWORD')
+        return
       }
       if (editForm.new_password !== editForm.confirm_password) {
-        return alert('Konfirmasi password baru tidak cocok!')
+        showWarning('Konfirmasi password baru tidak cocok!', 'VALIDASI PASSWORD')
+        return
       }
       if (!editForm.otp_code || editForm.otp_code.length !== 6) {
-        return alert('Masukkan 6-digit Kode OTP yang dikirim ke email Anda!')
+        showWarning('Masukkan 6-digit Kode OTP yang dikirim ke email Anda!', 'KODE OTP DIPERLUKAN')
+        return
       }
       if (!editForm.old_password) {
-        return alert('Silakan masukkan password lama Anda untuk konfirmasi keamanan.')
+        showWarning('Silakan masukkan password lama Anda untuk konfirmasi keamanan.', 'KEAMANAN AKUN')
+        return
       }
     }
     try {
       setEditLoading(true)
       const res = await api.put('/users/profile', editForm)
-      alert(res.data.message || 'Profil berhasil diperbarui!')
+      showSuccess(res.data.message || 'Profil berhasil diperbarui!', 'PROFIL DIPERBARUI')
       if (res.data.user) {
         updateUser(res.data.user)
       }
       setShowEditModal(false)
       setEditForm(prev => ({ ...prev, old_password: '', new_password: '' }))
     } catch (error) {
-      alert(error.response?.data?.error || 'Gagal memperbarui profil.')
+      showError(error.response?.data?.error || 'Gagal memperbarui profil.', 'GAGAL SIMPAN')
     } finally {
       setEditLoading(false)
     }
   }
+
   const handleRequestOtp = async () => {
     try {
       setOtpLoading(true)
       const res = await api.post('/users/request-password-otp')
-      alert(res.data.message || 'Kode OTP berhasil dikirim ke email Anda!')
+      showSuccess(res.data.message || 'Kode OTP berhasil dikirim ke email Anda!', 'OTP TERKIRIM')
       setOtpCountdown(60)
       const timer = setInterval(() => {
         setOtpCountdown((prev) => {
@@ -100,7 +117,7 @@ function ProfilPJ() {
         })
       }, 1000)
     } catch (error) {
-      alert(error.response?.data?.error || 'Gagal mengirim kode OTP')
+      showError(error.response?.data?.error || 'Gagal mengirim kode OTP', 'GAGAL KIRIM OTP')
     } finally {
       setOtpLoading(false)
     }
@@ -125,14 +142,42 @@ function ProfilPJ() {
 
   // Fungsi untuk mendapatkan 2 huruf pertama dari nama(untuk Afatar)
   const getInitials = (name) => {
-    if (!name) return 'pj'
+    if (!name) return 'PJ'
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+  }
+
+  const canCheckIn = (tanggal, waktuMulai) => {
+    if (!tanggal || !waktuMulai) return false
+    const now = new Date()
+    const yyyy = now.getFullYear()
+    const mm = String(now.getMonth() + 1).padStart(2, '0')
+    const dd = String(now.getDate()).padStart(2, '0')
+    const todayStr = `${yyyy}-${mm}-${dd}`
+    
+    // Hanya bisa check-in pada hari pelaksanaan
+    if (tanggal !== todayStr) return false
+
+    const currentHour = String(now.getHours()).padStart(2, '0')
+    const currentMinute = String(now.getMinutes()).padStart(2, '0')
+    const currentTimeStr = `${currentHour}:${currentMinute}`
+
+    const [startH, startM] = waktuMulai.split(':').map(Number)
+    const earlyDateObj = new Date(2000, 0, 1, startH, startM - 15)
+    const earlyTimeStr = earlyDateObj.toTimeString().substring(0, 5)
+
+    const expiryDateObj = new Date(2000, 0, 1, startH, startM + 15)
+    const expiryTimeStr = expiryDateObj.toTimeString().substring(0, 5)
+
+    return currentTimeStr >= earlyTimeStr && currentTimeStr <= expiryTimeStr
   }
 
   const isExpiredCheck = (tanggal, waktuMulai) => {
     if (!tanggal || !waktuMulai) return false
     const now = new Date()
-    const todayStr = now.toISOString().split('T')[0]
+    const yyyy = now.getFullYear()
+    const mm = String(now.getMonth() + 1).padStart(2, '0')
+    const dd = String(now.getDate()).padStart(2, '0')
+    const todayStr = `${yyyy}-${mm}-${dd}`
     if (tanggal < todayStr) return true
     if (tanggal === todayStr) {
       const currentHour = String(now.getHours()).padStart(2, '0')
@@ -151,10 +196,10 @@ function ProfilPJ() {
   const handleCheckIn = async (id) => {
     try {
       await api.patch(`/reservations/${id}/checkin`)
-      alert('Berhasil Check-In! Ruangan Siap digunakan.')
+      showSuccess('Berhasil Check-In! Ruangan siap digunakan.', 'CHECK-IN BERHASIL')
       fetchReservations()
     } catch (error) {
-      alert(error.response?.data?.error || 'Gagal check-in')
+      showError(error.response?.data?.error || 'Gagal check-in ruangan.', 'GAGAL CHECK-IN')
       fetchReservations()
     }
   }
@@ -166,164 +211,352 @@ function ProfilPJ() {
 
   return (
     <div className='profil-pj-page animate-fade-in'>
+      {/* 1. Header Halaman */}
       <div className='pj-page-heading'>
-        <p className='pj-eyebrow'>PENANGGUNG JAWAB KELAS / ACCOUNT CONTROL</p>
-        <h1>Profil & Reservasi PJ</h1>
-        <p>Kelola data Anda dan lakukan Check-In untuk ruangan yang disetujui.</p>
+        <h1 className="pj-page-title">Profil &amp; Reservasi PJ</h1>
+        <p className="pj-page-subtitle">Kelola data Anda dan lakukan Check-In untuk ruangan yang disetujui.</p>
       </div>
 
-      <div className='pj-profile-layout' style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px' }}>
-        {/* kolom kiri: Profil */}
-        <div className='profile-card pj-account-card card-flat' style={{ height: 'fit-content' }}>
-          <div className="profile-header">
-            <div className="profile-avatar">
-              {getInitials(user?.username)}
+      {/* 2. Top Grid: Kartu Profil (Kiri) & Ringkasan Fitur Sistem (Kanan) */}
+      <div className='pj-top-grid'>
+        {/* Kolom Kiri: Kartu Profil PJ */}
+        <div className='pj-profile-col'>
+          <div className='pj-profile-card'>
+            {/* Header Profil Neo-Brutalist */}
+            <div className="pj-profile-header">
+              <div className="pj-avatar-wrapper">
+                <div className="pj-avatar-box">
+                  {getInitials(user?.username)}
+                </div>
+                <span className="pj-avatar-status-dot" title="PJ Aktif" />
+              </div>
+
+              <div className="pj-profile-title-group">
+                <div className="pj-profile-name-row">
+                  <h3 className="pj-profile-username" title={user?.username || 'gong'}>
+                    {user?.username || 'gong'}
+                  </h3>
+                  <span className="pj-badge-status-aktif">
+                    <span className="pj-status-dot-inner" />
+                    PJ Aktif
+                  </span>
+                </div>
+                <div className="pj-badge-role">
+                  ROLE: {user?.role ? user.role.toUpperCase() : 'PJ MAHASISWA'}
+                </div>
+              </div>
             </div>
-            <div className="profile-info">
-              <h2>{user?.username || 'Nama PJ'}</h2>
-              <p>{user?.email || 'email@student.walisongo.ac.id'}</p>
-              <span className='badge badge-success'>PJ Aktif</span>
+
+            {/* Information Fields */}
+            <div className="pj-info-fields-list">
+              {/* Email */}
+              <div className="pj-info-row">
+                <div className="pj-info-label-group">
+                  <span className="pj-info-icon-box bg-dark">
+                    <EnvelopeFill size={13} />
+                  </span>
+                  <span className="pj-info-label">Email</span>
+                </div>
+                <span className="pj-info-value-badge font-mono" title={user?.email || '-'}>
+                  {user?.email || '-'}
+                </span>
+              </div>
+
+              {/* NIM */}
+              <div className="pj-info-row">
+                <div className="pj-info-label-group">
+                  <span className="pj-info-icon-box bg-dark">
+                    <PersonBadge size={13} />
+                  </span>
+                  <span className="pj-info-label">NIM</span>
+                </div>
+                <span className="pj-info-value-badge font-mono">
+                  {user?.nim_nip || '-'}
+                </span>
+              </div>
+
+              {/* Semester & Kelas Inline Grid */}
+              <div className="pj-info-dual-grid">
+                <div className="pj-info-dual-box">
+                  <div className="pj-info-label-group">
+                    <span className="pj-info-icon-box bg-dark">
+                      <CalendarWeekFill size={13} />
+                    </span>
+                    <span className="pj-info-label">Smt</span>
+                  </div>
+                  <span className="pj-info-dual-value">
+                    {user?.semester || ((user?.kelas && user?.kelas.endsWith('-U')) || (user?.mata_kuliah && user?.mata_kuliah.includes('Mengulang')) ? 'SPB' : '-')}
+                  </span>
+                </div>
+
+                <div className="pj-info-dual-box">
+                  <div className="pj-info-label-group">
+                    <span className="pj-info-icon-box bg-blue">
+                      <MortarboardFill size={13} />
+                    </span>
+                    <span className="pj-info-label">Kelas</span>
+                  </div>
+                  <span className="pj-info-dual-value">
+                    {user?.kelas || '-'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Program Studi */}
+              <div className="pj-info-block">
+                <div className="pj-info-label-group">
+                  <Bank2 size={14} className="pj-label-icon text-primary" />
+                  <span className="pj-info-label">Program Studi</span>
+                </div>
+                <span className="pj-info-block-value">
+                  {user?.prodi || '-'}
+                </span>
+              </div>
+
+              {/* Mata Kuliah Diampu */}
+              <div className="pj-info-block">
+                <div className="pj-info-label-group">
+                  <BookFill size={14} className="pj-label-icon text-blue" />
+                  <span className="pj-info-label">Mata Kuliah Diampu</span>
+                </div>
+                <span className="pj-info-block-value">
+                  {user?.mata_kuliah || '-'}
+                </span>
+              </div>
+
+              {/* No. HP */}
+              <div className="pj-info-row">
+                <div className="pj-info-label-group">
+                  <span className="pj-info-icon-box bg-green">
+                    <TelephoneFill size={13} />
+                  </span>
+                  <span className="pj-info-label">No. HP</span>
+                </div>
+                <span className="pj-info-value-badge font-mono">
+                  {user?.no_hp || '-'}
+                </span>
+              </div>
             </div>
+
+            {/* Tombol Edit Profil */}
+            <button
+              type="button"
+              className="pj-btn-edit-profile"
+              onClick={() => setShowEditModal(true)}
+            >
+              <PencilSquare size={18} />
+              <span>EDIT PROFIL SAYA</span>
+            </button>
           </div>
-
-          <div className="profile-details">
-            <div className="detail-item">
-              <span className="datail-label">NIM</span>
-              <span className="detail-value">{user?.nim_nip || '-'}</span>
-            </div>
-
-            <div className="detail-item">
-              <span className="datail-label">Semester</span>
-              <span className="detail-value">{user?.semester || ((user?.kelas && user?.kelas.endsWith('-U')) || (user?.mata_kuliah && user?.mata_kuliah.includes('Mengulang')) ? 'SPB' : '-')}</span>
-            </div>
-
-            <div className="detail-item">
-              <span className="datail-label">Kelas</span>
-              <span className="detail-value">{user?.kelas || '-'}</span>
-            </div>
-
-            <div className="detail-item">
-              <span className="datail-label">Program Studi</span>
-              <span className="detail-value">{user?.prodi || '-'}</span>
-            </div>
-
-            <div className="detail-item">
-              <span className="datail-label">Mata Kuliah</span>
-              <span className="detail-value">{user?.mata_kuliah || '-'}</span>
-            </div>
-
-            <div className="detail-item">
-              <span className="datail-label">No. HP</span>
-              <span className="detail-value">{user?.no_hp || '-'}</span>
-            </div>
-
-            <div className="detail-item">
-              <span className="datail-label">Role Akses</span>
-              <span className="detail-value" style={{ textTransform: 'capitalize' }}>{user?.role || 'PJ'}</span>
-            </div>
-          </div>
-
-          <button
-            className="btn btn-primary"
-            style={{ width: '100%', marginTop: 'var(--spacing-4)' }}
-            onClick={() => setShowEditModal(true)}
-          >
-            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><PencilSquare size={16} /> Edit Profil Saya</span>
-          </button>
-
-          <button
-            type="button"
-            className="btn btn-secondary pj-btn-logout"
-            onClick={logout}
-          >
-            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <BoxArrowRight size={16} /> Logout
-            </span>
-          </button>
         </div>
 
-        {/* Kolom Kanan: Riwayat Reservasi dan check-in*/}
-        <div className="pj-reservations-card card-flat">
-          <h2 className='pj-section-heading'>Riwayat Reservasi PJ</h2>
-          {loading ? (
-            <p>Memuat riwayat...</p>
-          ) : reservations.length === 0 ? (
-            <p style={{ color: 'gray' }}>Anda belum memiliki riwayat reservasi ruangan.</p>
+        {/* Kolom Kanan: Ringkasan Fitur Sistem */}
+        <div className="pj-features-col">
+          <div className="pj-features-header">
+            <h2 className="pj-features-title">RINGKASAN FITUR SISTEM</h2>
+            <span className="pj-features-badge-tag">Panduan Menu</span>
+          </div>
 
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {displayedReservations.map(res => (
-                <div key={res.id} className='pj-reservation-item' style={{ border: '1px solid #e2e8f0', padding: '16px', borderRadius: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: 'bold' }}>{res.mata_kuliah}</h3>
-                    {res.status === 'pending' && <span className="badge badge-warning">Menunggu</span>}
+          <div className="pj-features-list">
+            {/* Fitur 1: Profil & Reservasi */}
+            <div
+              className="pj-feature-card-neo"
+              onClick={() => {
+                const el = document.getElementById('riwayat-reservasi-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="pj-feature-main-content">
+                <div className="pj-feature-icon-box bg-blue">
+                  <PersonFill size={22} />
+                </div>
+                <div className="pj-feature-text-group">
+                  <h4 className="pj-feature-name">Profil &amp; Reservasi</h4>
+                  <p className="pj-feature-desc">
+                    Data akun akademik PJ, status keaktifan, daftar reservasi disetujui/menunggu, dan catatan pj.
+                  </p>
+                </div>
+              </div>
+              <ArrowRight size={20} className="pj-feature-arrow" />
+            </div>
+
+            {/* Fitur 2: Daftar Kelas & Ruangan */}
+            <div
+              className="pj-feature-card-neo"
+              onClick={() => navigate('/pj/daftar-kelas')}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="pj-feature-main-content">
+                <div className="pj-feature-icon-box bg-green">
+                  <DoorOpenFill size={22} />
+                </div>
+                <div className="pj-feature-text-group">
+                  <h4 className="pj-feature-name">Daftar Kelas &amp; Ruangan</h4>
+                  <p className="pj-feature-desc">
+                    Status fisik ruangan real-time, jadwal mingguan per kelas, serta pengajuan reservasi instan.
+                  </p>
+                </div>
+              </div>
+              <ArrowRight size={20} className="pj-feature-arrow" />
+            </div>
+
+            {/* Fitur 3: Pelaporan Kelas Kosong */}
+            <div
+              className="pj-feature-card-neo"
+              onClick={() => navigate('/pj/pelaporan')}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="pj-feature-main-content">
+                <div className="pj-feature-icon-box bg-orange">
+                  <ClockHistory size={22} />
+                </div>
+                <div className="pj-feature-text-group">
+                  <h4 className="pj-feature-name">Pelaporan Kelas Kosong</h4>
+                  <p className="pj-feature-desc">
+                    Melaporkan dosen berhalangan, kuliah daring, atau ruangan terkunci agar hak guna dapat dialihkan.
+                  </p>
+                </div>
+              </div>
+              <ArrowRight size={20} className="pj-feature-arrow" />
+            </div>
+
+            {/* Fitur 4: Pelaporan Kerusakan */}
+            <div
+              className="pj-feature-card-neo"
+              onClick={() => navigate('/pj/pelaporan-kerusakan')}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="pj-feature-main-content">
+                <div className="pj-feature-icon-box bg-blue">
+                  <Tools size={20} />
+                </div>
+                <div className="pj-feature-text-group">
+                  <h4 className="pj-feature-name">Pelaporan Kerusakan</h4>
+                  <p className="pj-feature-desc">
+                    Laporan kerusakan fasilitas &amp; sarpras kelas (seperti AC atau proyektor) kepada tim terkait.
+                  </p>
+                </div>
+              </div>
+              <ArrowRight size={20} className="pj-feature-arrow" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Section Bawah (Lebar Penuh / Full-Width): Riwayat Reservasi PJ */}
+      <section id="riwayat-reservasi-section" className="pj-reservations-section">
+        <div className="pj-reservations-header">
+          <h2 className="pj-reservations-title">RIWAYAT RESERVASI PJ</h2>
+        </div>
+
+        {loading ? (
+          <div className="pj-empty-box">Memuat riwayat...</div>
+        ) : reservations.length === 0 ? (
+          <div className="pj-empty-box">Anda belum memiliki riwayat reservasi ruangan.</div>
+        ) : (
+          <div className="pj-reservations-list">
+            {displayedReservations.map(res => (
+              <div key={res.id} className="pj-reservation-card">
+                <div className="pj-res-card-content">
+                  <div className="pj-res-details">
+                    <h3 className="pj-res-subject">{res.mata_kuliah}</h3>
+                    <p className="pj-res-room">Ruang {res.rooms?.nama} ({res.rooms?.gedung})</p>
+                    <p className="pj-res-time">
+                      Tanggal: {res.tanggal} | Waktu: {res.waktu_mulai} - {res.waktu_selesai}
+                    </p>
                     {res.status === 'rejected' && (
-                      <div style={{ background: '#fee2e2', color: '#dc2626', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', marginTop: '8px' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><XCircleFill size={15} color="#dc2626" /> <b>Ditolak Admin:</b></span> {res.alasan_penolakan || 'Tidak ada alasan yang dicantumkan.'}
+                      <div className="pj-res-rejected-box">
+                        <span className="pj-rejected-label"><XCircleFill size={15} /> <b>Ditolak Admin:</b></span> {res.alasan_penolakan || 'Tidak ada alasan yang dicantumkan.'}
                       </div>
                     )}
-                    {res.status === 'expired' && <span className="badge badge-error">Hangus (Ghosting)</span>}
+                  </div>
+
+                  <div className="pj-res-status-actions">
+                    {res.status === 'pending' && (
+                      <span className="pj-res-badge badge-pending">Menunggu</span>
+                    )}
+                    {res.status === 'rejected' && (
+                      <span className="pj-res-badge badge-rejected">Ditolak</span>
+                    )}
+                    {res.status === 'expired' && (
+                      <span className="pj-res-badge badge-expired">Kadaluwarsa / Hangus</span>
+                    )}
                     {res.status === 'approved' && !res.is_checked_in && (
                       isExpiredCheck(res.tanggal, res.waktu_mulai) ? (
-                        <span className="badge badge-error" style={{ background: '#ef4444', color: 'white' }}>Kadaluwarsa (&gt;15 Menit)</span>
+                        <span className="pj-res-badge badge-expired">Kadaluwarsa (&gt;15 Menit)</span>
                       ) : (
-                        <span className="badge badge-success">Disetujui (Belum Check-In)</span>
+                        <span className="pj-res-badge badge-approved">Disetujui</span>
                       )
                     )}
-                    {res.status === 'approved' && res.is_checked_in && <span className="badge badge-success" style={{ background: '#10b981', color: 'white' }}>Sudah Check-In</span>}
+                    {res.status === 'approved' && res.is_checked_in && (
+                      <span className="pj-res-badge badge-checkedin">Sudah Check-In</span>
+                    )}
+
+                    {/* Tombol Check-In */}
+                    {res.status === 'approved' && !res.is_checked_in && !isExpiredCheck(res.tanggal, res.waktu_mulai) && (
+                      canCheckIn(res.tanggal, res.waktu_mulai) ? (
+                        <button
+                          type="button"
+                          onClick={() => handleCheckIn(res.id)}
+                          className="pj-btn-checkin"
+                        >
+                          <GeoAltFill size={15} /> Check-In Sekarang
+                        </button>
+                      ) : (
+                        <span className="pj-res-badge" style={{ background: '#fef3c7', color: '#92400e', borderColor: '#000' }}>
+                          Check-In H-15 Menit
+                        </span>
+                      )
+                    )}
                   </div>
-                  <p style={{ fontSize: '14px', color: '#64748b' }}>
-                    Ruang {res.rooms?.nama} ({res.rooms?.gedung}) <br />
-                    Tanggal: {res.tanggal} | Waktu: {res.waktu_mulai} - {res.waktu_selesai}
-                  </p>
-
-                  {/* TOMBOL CHECK IN MUNCUL HANYA JIKA APPROVED & BELUM EXPIRED */}
-                  {res.status === 'approved' && !res.is_checked_in && !isExpiredCheck(res.tanggal, res.waktu_mulai) && (
-                    <button
-                      onClick={() => handleCheckIn(res.id)}
-                      className="btn btn-primary"
-                      style={{ marginTop: '12px', width: '100%', background: '#3b82f6' }}
-                    >
-                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><GeoAltFill size={16} /> Check-In Sekarang</span>
-                    </button>
-                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+              </div>
+            ))}
 
-      <section className='pj-feature-section'>
-        <h2 className='pj-section-heading'>Ringkasan Fitur</h2>
-        <article className='pj-feature-card feature-blue'>
-          <span className='pj-feature-icon' aria-hidden='true' style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><PersonBadge size={22} /></span>
-          <div><h3>Profil Saya & Reservasi Saya</h3><p>Menampilkan data akun akademik PJ, status keaktifan, riwayat reservasi, serta tombol Check-In kehadiran ruangan.</p></div>
-        </article>
-        <article className='pj-feature-card feature-green'>
-          <span className='pj-feature-icon' aria-hidden='true' style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Grid3x3GapFill size={22} /></span>
-          <div><h3>Daftar Kelas & Ketersediaan Ruangan</h3><p>Memantau status fisik ruangan secara real-time, melihat jadwal perkuliahan, dan mengajukan reservasi dengan kalkulasi durasi SKS.</p></div>
-        </article>
-        <article className='pj-feature-card feature-orange'>
-          <span className='pj-feature-icon' aria-hidden='true' style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CalendarXFill size={22} /></span>
-          <div><h3>Pelaporan Kelas Kosong</h3><p>Melaporkan kendala operasional perkuliahan agar sistem dapat melepaskan hak guna ruangan untuk kelas lain.</p></div>
-        </article>
-        <article className='pj-feature-card feature-warning'>
-          <span className='pj-feature-icon' aria-hidden='true' style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Tools size={22} /></span>
-          <div><h3>Pelaporan Kerusakan</h3><p>Melaporkan kerusakan aset dan fasilitas kelas dengan detail lokasi, kategori fasilitas, dan rincian masalah.</p></div>
-        </article>
+            {/* Paginasi Riwayat */}
+            {totalPages > 1 && (
+              <div className="pj-pagination-bar">
+                <button
+                  type="button"
+                  className="pj-page-nav-btn"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft size={16} /> Sebelumnya
+                </button>
+                <span className="pj-page-info">
+                  Halaman <b>{currentPage}</b> dari <b>{totalPages}</b>
+                </span>
+                <button
+                  type="button"
+                  className="pj-page-nav-btn"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Selanjutnya <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       {/* MODAL FORM EDIT PROFIL */}
       {showEditModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex',
-          alignItems: 'center', justifyContent: 'center', padding: '16px'
-        }}>
-          <div className="card-flat" style={{ width: '100%', maxWidth: '420px', background: '#fff', borderRadius: '12px', padding: '24px' }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#0f172a' }}><span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><PencilSquare size={16} /> Edit Profil Saya</span></h3>
-            <form onSubmit={handleEditSubmit}>
+        <div className="pj-modal-backdrop" onClick={() => setShowEditModal(false)}>
+          <div className="pj-modal-card card-flat" onClick={(e) => e.stopPropagation()}>
+            <div className="pj-modal-header">
+              <h3><span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><PencilSquare size={18} /> Edit Profil Saya</span></h3>
+              <button type="button" className="pj-modal-close-btn" onClick={() => setShowEditModal(false)} aria-label="Tutup modal">
+                <XLg size={16} />
+              </button>
+            </div>
+            <form onSubmit={handleEditSubmit} className="pj-modal-form">
               <div style={{ marginBottom: '14px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', marginBottom: '4px' }}>Nama Pengguna (Username)</label>
                 <input
@@ -464,7 +697,7 @@ function ProfilPJ() {
                   </div>
                 </>
               )}
-              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+              <div className="pj-modal-actions">
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={editLoading}>
                   {editLoading ? 'Menyimpan...' : <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><FloppyFill size={15} /> Simpan Perubahan</span>}
                 </button>

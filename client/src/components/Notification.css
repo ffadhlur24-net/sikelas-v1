@@ -5,6 +5,11 @@
   display: inline-flex;
 }
 
+/* Mobile & Tablet Backdrop */
+.neo-noti-backdrop {
+  display: none;
+}
+
 /* Bell Trigger Button */
 .neo-noti-trigger {
   width: 48px;
@@ -108,6 +113,55 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.neo-noti-title-badge {
+  font-size: 10px;
+  font-weight: 800;
+  background: #ff4500;
+  color: #ffffff;
+  padding: 1px 5px;
+  border: 1.5px solid #000000;
+  border-radius: 0;
+  box-shadow: 1px 1px 0 #000000;
+  text-transform: uppercase;
+}
+
+.neo-noti-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.neo-noti-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  background: #ffffff;
+  color: #000000;
+  border: 2px solid #000000;
+  box-shadow: 1.5px 1.5px 0 #000000;
+  border-radius: 0;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.12s ease, color 0.12s ease;
+}
+
+.neo-noti-close-btn:hover {
+  background: #ff4500;
+  color: #ffffff;
+  transform: translate(-1px, -1px);
+  box-shadow: 2.5px 2.5px 0 #000000;
+}
+
+.neo-noti-close-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
 }
 
 /* Toolbar Buttons */
@@ -309,4 +363,158 @@
   border: 2px dashed #9ca3af;
   background: #ffffff;
   margin: 6px 0;
+}
+
+/* ===================================================
+   RESPONSIVE NOTIFICATION: TABLET & MOBILE
+   =================================================== */
+
+/* Tablet & Mobile (≤900px) */
+@media (max-width: 900px) {
+  .neo-noti-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 9998;
+    animation: neoNotiFadeIn 0.2s ease;
+  }
+
+  .neo-noti-window {
+    z-index: 9999;
+  }
+}
+
+@keyframes neoNotiFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Mobile (≤600px / baseline 425px & 375px) */
+@media (max-width: 600px) {
+  /* Trigger Bell Button Sizing: 38px Matches Hamburger & Avatar */
+  .neo-noti-trigger {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    border-width: 2.5px;
+    box-shadow: 2px 2px 0 #000000;
+    font-size: 16px;
+  }
+
+  .neo-noti-badge {
+    top: -5px;
+    right: -5px;
+    font-size: 9.5px;
+    padding: 0 4px;
+    min-width: 16px;
+  }
+
+  /* Fixed Centered Viewport Positioning: 100% Prevents Horizontal Overflow */
+  .neo-noti-window {
+    position: fixed !important;
+    top: 68px !important;
+    left: 10px !important;
+    right: 10px !important;
+    width: auto !important;
+    max-width: calc(100vw - 20px) !important;
+    max-height: min(80vh, 520px) !important;
+    margin: 0 auto !important;
+    border-width: 3px !important;
+    box-shadow: 4px 4px 0px #000000 !important;
+    z-index: 9999 !important;
+    animation: neoNotiMobileSlide 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  @keyframes neoNotiMobileSlide {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* Compact Header */
+  .neo-noti-header {
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  .neo-noti-title {
+    font-size: 12px;
+    gap: 5px;
+  }
+
+  .neo-noti-header-actions {
+    gap: 6px;
+  }
+
+  .neo-noti-btn-readall {
+    padding: 4px 7px;
+    font-size: 10px;
+    gap: 3px;
+  }
+
+  .neo-noti-close-btn {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
+  }
+
+  /* Compact Toolbar */
+  .neo-noti-toolbar {
+    padding: 6px 10px;
+    gap: 5px;
+  }
+
+  .neo-noti-btn {
+    padding: 4px 7px;
+    font-size: 10.5px;
+    gap: 4px;
+  }
+
+  .neo-noti-select-bar {
+    padding: 5px 10px;
+    font-size: 10px;
+  }
+
+  /* List & Cards */
+  .neo-noti-list {
+    max-height: calc(80vh - 140px);
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .neo-noti-card {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .neo-noti-item-title {
+    font-size: 11.5px;
+  }
+
+  .neo-noti-item-msg {
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .neo-noti-item-time {
+    font-size: 9.5px;
+  }
+
+  .neo-noti-empty {
+    padding: 20px 12px;
+    font-size: 11px;
+    margin: 4px 0;
+  }
 }

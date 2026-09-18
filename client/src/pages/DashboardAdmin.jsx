@@ -1,4 +1,4 @@
-import { Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { Routes, Route, NavLink, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import ProfilAdmin from './admin/ProfilAdmin'
 import PersetujuanReservasi from './admin/PersetujuanReservasi'
 import ManajemenRuangan from './admin/ManajemenRuangan'
@@ -7,16 +7,22 @@ import LogPelaporan from './admin/LogPelaporan'
 import ManajemenProdi from './admin/ManajemenProdi'
 import LogKerusakanFasilitas from './admin/LogKerusakanFasilitas'
 import Notification from '../components/Notification'
-import { BoxArrowRight } from 'react-bootstrap-icons'
-import { useContext } from 'react'
+import { BoxArrowRight, List, XLg } from 'react-bootstrap-icons'
+import { useContext, useState, useEffect } from 'react'
 import { AuthContext } from '../context/AuthContext'
 import './DashboardPJ.css' // Reuse the shared dashboard layout styles
 import './DashboardAdmin.css'
 
 function DashboardAdmin() {
   const { user, logout } = useContext(AuthContext)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+
+  // Otomatis tutup sidebar saat rute halaman berpindah
+  useEffect(() => {
+    setIsSidebarOpen(false)
+  }, [location.pathname])
 
   const getPageTitle = () => {
     if (location.pathname.includes('/admin/log-kerusakan')) return 'Log Kerusakan'
@@ -35,35 +41,54 @@ function DashboardAdmin() {
 
   return (
     <div className="dashboard-layout admin-dashboard">
+      {/* Backdrop Overlay untuk Tablet & Mobile */}
+      {isSidebarOpen && (
+        <div 
+          className="admin-sidebar-backdrop" 
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${isSidebarOpen ? 'is-open' : ''}`}>
         <div className="sidebar-top">
-          {/* Logo */}
+          {/* Logo Brand & Close Button */}
           <div className="sidebar-brand">
-            <img src="/assets/logo_sikelas.png" alt="Logo SiKelas" className="sidebar-brand-icon" />
-            <div>
-              <span className="sidebar-brand-text">SiKelas</span>
-              <span className="sidebar-brand-sub">Admin Dashboard</span>
+            <div className="sidebar-brand-left">
+              <img src="/assets/logo_sikelas.png" alt="Logo SiKelas" className="sidebar-brand-icon" />
+              <div>
+                <span className="sidebar-brand-text">SiKelas</span>
+                <span className="sidebar-brand-sub">Admin Dashboard</span>
+              </div>
             </div>
+            <button 
+              type="button" 
+              className="admin-sidebar-close-btn"
+              onClick={() => setIsSidebarOpen(false)}
+              aria-label="Tutup menu sidebar"
+            >
+              <XLg size={20} />
+            </button>
           </div>
 
           {/* Navigation */}
           <nav className="sidebar-nav">
-            <NavLink to="/admin/profil" className="sidebar-link">
+            <NavLink to="/admin/profil" className="sidebar-link" id="admin-nav-profil">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
               Profil Admin
             </NavLink>
-            <NavLink to="/admin/persetujuan" className="sidebar-link">
+            <NavLink to="/admin/persetujuan" className="sidebar-link" id="admin-nav-persetujuan">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                 <polyline points="22 4 12 14.01 9 11.01" />
               </svg>
               Persetujuan
             </NavLink>
-            <NavLink to="/admin/ruangan" className="sidebar-link">
+            <NavLink to="/admin/ruangan" className="sidebar-link" id="admin-nav-ruangan">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="7" height="7" />
                 <rect x="14" y="3" width="7" height="7" />
@@ -72,7 +97,7 @@ function DashboardAdmin() {
               </svg>
               Manajemen Ruangan
             </NavLink>
-            <NavLink to="/admin/akun-pj" className="sidebar-link">
+            <NavLink to="/admin/akun-pj" className="sidebar-link" id="admin-nav-akun-pj">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
@@ -81,7 +106,7 @@ function DashboardAdmin() {
               </svg>
               Manajemen PJ
             </NavLink>
-            <NavLink to="/admin/prodi" className="sidebar-link">
+            <NavLink to="/admin/prodi" className="sidebar-link" id="admin-nav-prodi">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 21h18" />
                 <path d="M5 21V7l7-4 7 4v14" />
@@ -89,7 +114,7 @@ function DashboardAdmin() {
               </svg>
               Manajemen Prodi & Fakultas
             </NavLink>
-            <NavLink to="/admin/log" className="sidebar-link">
+            <NavLink to="/admin/log" className="sidebar-link" id="admin-nav-log">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
@@ -99,7 +124,7 @@ function DashboardAdmin() {
               </svg>
               Log Pelaporan
             </NavLink>
-            <NavLink to="/admin/log-kerusakan" className="sidebar-link">
+            <NavLink to="/admin/log-kerusakan" className="sidebar-link" id="admin-nav-log-kerusakan">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 3 2.8 20h18.4L12 3Z" fill="currentColor" stroke="currentColor" />
                 <path d="M12 9v5" stroke="#ffffff" strokeWidth="2.5" />
@@ -121,9 +146,20 @@ function DashboardAdmin() {
       <main className="dashboard-main">
         {/* Top Header Bar */}
         <header className="dashboard-header">
-          <div className="admin-navbar-title">
-            <p className="admin-navbar-kicker">SIKELAS / ADMINISTRATOR</p>
-            <h1>{getPageTitle()}</h1>
+          <div className="admin-header-left-group">
+            {/* Tombol Hamburger Menu (Tablet & Mobile) */}
+            <button 
+              type="button" 
+              className="admin-sidebar-toggle-btn"
+              onClick={() => setIsSidebarOpen(true)}
+              aria-label="Buka menu navigasi"
+            >
+              <List size={22} />
+            </button>
+            <div className="admin-navbar-title">
+              <p className="admin-navbar-kicker">SIKELAS / ADMINISTRATOR</p>
+              <h1>{getPageTitle()}</h1>
+            </div>
           </div>
           <div className="admin-navbar-actions">
             <Notification />
@@ -140,6 +176,7 @@ function DashboardAdmin() {
         {/* Page Content */}
         <div className="dashboard-content">
           <Routes>
+            <Route index element={<Navigate to="profil" replace />} />
             <Route path="profil" element={<ProfilAdmin />} />
             <Route path="persetujuan" element={<PersetujuanReservasi />} />
             <Route path="ruangan" element={<ManajemenRuangan />} />
@@ -147,6 +184,7 @@ function DashboardAdmin() {
             <Route path="prodi" element={<ManajemenProdi />} />
             <Route path="log" element={<LogPelaporan />} />
             <Route path="log-kerusakan" element={<LogKerusakanFasilitas />} />
+            <Route path="*" element={<Navigate to="profil" replace />} />
           </Routes>
         </div>
 

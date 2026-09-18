@@ -2,6 +2,9 @@ import { useState, useEffect, useContext } from 'react'
 import { AuthContext } from '../../context/AuthContext'
 import api from '../../api/axios'
 import { supabaseClient } from '../../config/supabase'
+import NeoDatePicker from '../../components/DatePicker/NeoDatePicker'
+import NeoTimePicker from '../../components/TimePicker/NeoTimePicker'
+import NeoSelect from '../../components/Select/NeoSelect'
 import './DaftarKelas.css'
 import {
   Buildings,
@@ -67,13 +70,15 @@ function DaftarKelas() {
   const lantaiOptions = [...new Set(availableLantaiRooms.map(r => r.lantai).filter(l => l !== null && l !== undefined))].sort((a, b) => a - b)
 
   const handleKampusChange = (e) => {
-    setFilterKampus(e.target.value)
+    const val = typeof e === 'object' && e?.target ? e.target.value : (e || '')
+    setFilterKampus(val)
     setFilterGedung('')
     setFilterLantai('')
   }
 
   const handleGedungChange = (e) => {
-    setFilterGedung(e.target.value)
+    const val = typeof e === 'object' && e?.target ? e.target.value : (e || '')
+    setFilterGedung(val)
     setFilterLantai('')
   }
 
@@ -149,7 +154,7 @@ function DaftarKelas() {
       // Filter: Reservasi yang sudah lewat dari tanggal hari ini TIDAK DITAMPILKAN lagi
       const currentDateStr = new Date().toISOString().split('T')[0]
       const cleanSchedule = (res.data.schedule || []).filter(item => {
-        if (item.type === 'Dipesan' && item.tanggal && item.tanggal < currentDateStr) {
+        if ((item.type === 'Dipesan' || item.type === 'Menunggu ACC') && item.tanggal && item.tanggal < currentDateStr) {
           return false
         }
         return true
@@ -169,7 +174,8 @@ function DaftarKelas() {
     const targetIdx = hariIdxMap[targetHari]
     let diff = targetIdx - currentIdx
     if (diff < 0) diff += 7
-    const resultDate = new Date(now.setDate(now.getDate() + diff))
+    const resultDate = new Date(now.getTime())
+    resultDate.setDate(resultDate.getDate() + diff)
     return resultDate.toISOString().split('T')[0]
   }
   // Kalkulator SKS Otomatis (50 Menit per SKS)
@@ -185,6 +191,17 @@ function DaftarKelas() {
   const validateOverlap = (start, end, scheduleList, dateVal = bookingForm.tanggal) => {
     if (!start || !end) {
       setConflictError('')
+      return
+    }
+    // 0. Cek Batas Jam Operasional Kampus (06:00 - 23:00 WIB)
+    if (start < '06:00') {
+      setConflictError(`Ruangan kampus belum dibuka pada pukul [${start} WIB]. Jam operasional dimulai pukul 06:00 WIB.`)
+      return
+    }
+    const [eH, eM] = end.split(':').map(Number)
+    const endTotalMin = (eH || 0) * 60 + (eM || 0)
+    if (end > '23:00' || endTotalMin > 23 * 60 || end <= start) {
+      setConflictError(`Waktu selesai [${end} WIB] melebihi batas jam operasional kampus (maksimal 23:00 WIB). Silakan kurangi SKS atau majukan jam mulai.`)
       return
     }
     // 1. Cek Apakah Waktu Sudah Berlalu Hari Ini
@@ -208,7 +225,8 @@ function DaftarKelas() {
         return sStart < end && sEnd > start
       })
       if (conflictItem) {
-        setConflictError(`Waktu [${start} - ${end}] BENTROK dengan ${conflictItem.type} (${conflictItem.mata_kuliah}: ${conflictItem.waktu_mulai.substring(0, 5)} - ${conflictItem.waktu_selesai.substring(0, 5)} WIB)!`)
+        const typeLabel = conflictItem.type === 'Menunggu ACC' ? 'Pengajuan Lain (Menunggu ACC)' : conflictItem.type
+        setConflictError(`Waktu [${start} - ${end}] BENTROK dengan ${typeLabel} (${conflictItem.mata_kuliah}: ${conflictItem.waktu_mulai.substring(0, 5)} - ${conflictItem.waktu_selesai.substring(0, 5)} WIB)!`)
         return
       }
     }
@@ -247,9 +265,7 @@ function DaftarKelas() {
   const handleBookingFormChange = (e) => {
     const { name, value } = e.target
     let newForm = { ...bookingForm }
-    let newSks = sks
     if (name === 'sks') {
-      newSks = value
       setSks(value)
       newForm.waktu_selesai = calculateEndTime(newForm.waktu_mulai, value)
     } else if (name === 'waktu_mulai') {
@@ -348,34 +364,43 @@ function DaftarKelas() {
           {/* Dropdown 1: Kampus */}
           <div>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>1. Kampus</label>
-            <select className="input-field" value={filterKampus} onChange={handleKampusChange} style={{ background: '#f8fafc' }}>
-              <option value="">-- Semua Kampus ({kampusOptions.length}) --</option>
-              {kampusOptions.map(k => (
-                <option key={k} value={k}>{k}</option>
-              ))}
-            </select>
+            <NeoSelect
+              value={filterKampus}
+              onChange={handleKampusChange}
+              options={[
+                { value: '', label: '-- Semua Kampus --' },
+                ...kampusOptions.map(k => ({ value: k, label: k }))
+              ]}
+              placeholder="-- Semua Kampus --"
+            />
           </div>
 
           {/* Dropdown 2: Gedung (Cascading) */}
           <div>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>2. Gedung</label>
-            <select className="input-field" value={filterGedung} onChange={handleGedungChange} style={{ background: '#f8fafc' }}>
-              <option value="">-- Semua Gedung ({gedungOptions.length}) --</option>
-              {gedungOptions.map(g => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </select>
+            <NeoSelect
+              value={filterGedung}
+              onChange={handleGedungChange}
+              options={[
+                { value: '', label: '-- Semua Gedung --' },
+                ...gedungOptions.map(g => ({ value: g, label: g }))
+              ]}
+              placeholder="-- Semua Gedung --"
+            />
           </div>
 
           {/* Dropdown 3: Lantai (Cascading) */}
           <div>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>3. Lantai</label>
-            <select className="input-field" value={filterLantai} onChange={(e) => setFilterLantai(e.target.value)} style={{ background: '#f8fafc' }}>
-              <option value="">-- Semua Lantai ({lantaiOptions.length}) --</option>
-              {lantaiOptions.map(l => (
-                <option key={l} value={l}>Lantai {l}</option>
-              ))}
-            </select>
+            <NeoSelect
+              value={filterLantai}
+              onChange={(val) => setFilterLantai(val)}
+              options={[
+                { value: '', label: '-- Semua Lantai --' },
+                ...lantaiOptions.map(l => ({ value: String(l), label: `Lantai ${l}` }))
+              ]}
+              placeholder="-- Semua Lantai --"
+            />
           </div>
 
           {/* Input 4: Live Search Nama Ruangan */}
@@ -401,37 +426,31 @@ function DaftarKelas() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', alignItems: 'end' }}>
           <div>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><CalendarEvent size={13} /> Tanggal Peminjaman</span></label>
-            <input
-              type="date"
-              className="input-field"
+            <NeoDatePicker
               value={filterTanggal}
-              onChange={(e) => setFilterTanggal(e.target.value)}
-              style={{ background: '#fff' }}
+              onChange={(val) => setFilterTanggal(val)}
+              minDate={todayDefaultStr}
             />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Clock size={13} /> Jam Mulai Peminjaman</span></label>
-            <input
-              type="time"
-              className="input-field"
+            <NeoTimePicker
               value={filterWaktuMulai}
-              onChange={(e) => setFilterWaktuMulai(e.target.value)}
-              style={{ background: '#fff' }}
+              onChange={(val) => setFilterWaktuMulai(val)}
             />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><HourglassSplit size={13} /> Jumlah SKS (1 SKS = 50 Mnt)</span></label>
-            <select
-              className="input-field"
+            <NeoSelect
               value={filterSks}
-              onChange={(e) => setFilterSks(e.target.value)}
-              style={{ background: '#fff' }}
-            >
-              <option value="1">1 SKS (50 Menit)</option>
-              <option value="2">2 SKS (100 Menit / 1 Jam 40 Mnt)</option>
-              <option value="3">3 SKS (150 Menit / 2 Jam 30 Mnt)</option>
-              <option value="4">4 SKS (200 Menit / 3 Jam 20 Mnt)</option>
-            </select>
+              onChange={(val) => setFilterSks(val)}
+              options={[
+                { value: '1', label: '1 SKS (50 Menit)' },
+                { value: '2', label: '2 SKS (100 Menit / 1 Jam 40 Mnt)' },
+                { value: '3', label: '3 SKS (150 Menit / 2 Jam 30 Mnt)' },
+                { value: '4', label: '4 SKS (200 Menit / 3 Jam 20 Mnt)' }
+              ]}
+            />
           </div>
           <button
             className="btn btn-primary"
@@ -471,6 +490,8 @@ function DaftarKelas() {
                   <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Ruang {room.nama}</h3>
                   {room.slot_available ? (
                     <span className="badge badge-success" style={{ background: '#059669', color: 'white' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CircleFill size={8} /> Tersedia Slot Ini</span></span>
+                  ) : room.conflict_reason?.includes('Menunggu ACC') ? (
+                    <span className="badge" style={{ background: '#d97706', color: 'white' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CircleFill size={8} /> Menunggu ACC PJ Lain</span></span>
                   ) : (
                     <span className="badge badge-error" style={{ background: '#dc2626', color: 'white' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CircleFill size={8} /> Terpakai / Bentrok</span></span>
                   )}
@@ -483,7 +504,12 @@ function DaftarKelas() {
                 </p>
 
                 {room.conflict_reason && (
-                  <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '8px 10px', borderRadius: '6px', fontSize: '12px', marginBottom: '12px', lineHeight: '1.4' }}>
+                  <div style={{
+                    background: room.conflict_reason.includes('Menunggu ACC') ? '#fefce8' : '#fef2f2',
+                    border: room.conflict_reason.includes('Menunggu ACC') ? '1px solid #fef08a' : '1px solid #fecaca',
+                    color: room.conflict_reason.includes('Menunggu ACC') ? '#854d0e' : '#991b1b',
+                    padding: '8px 10px', borderRadius: '6px', fontSize: '12px', marginBottom: '12px', lineHeight: '1.4'
+                  }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ExclamationTriangleFill size={14} /> {room.conflict_reason}</span>
                   </div>
                 )}
@@ -498,7 +524,7 @@ function DaftarKelas() {
                   </button>
                 ) : (
                   <button className="btn btn-secondary btn-sm" style={{ flex: 1, cursor: 'not-allowed', opacity: 0.6 }} disabled title={room.conflict_reason}>
-                    Terpakai di Slot Ini
+                    {room.conflict_reason?.includes('Menunggu ACC') ? 'Sedang Diajukan' : 'Terpakai di Slot Ini'}
                   </button>
                 )}
               </div>
@@ -539,23 +565,31 @@ function DaftarKelas() {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {schedules.map((item, idx) => (
-                  <div key={idx} style={{
-                    padding: '12px 16px', borderRadius: '8px', borderLeft: '4px solid',
-                    borderColor: item.type === 'Reguler' ? '#3b82f6' : '#f59e0b',
-                    background: item.type === 'Reguler' ? '#eff6ff' : '#fffbeb'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '14px', marginBottom: '4px' }}>
-                      <span>{item.mata_kuliah}</span>
-                      <span className="badge" style={{ background: item.type === 'Reguler' ? '#dbeafe' : '#fef3c7', color: item.type === 'Reguler' ? '#1e40af' : '#92400e' }}>
-                        {item.type} {item.tanggal ? `(${item.tanggal})` : ''}
-                      </span>
+                {schedules.map((item, idx) => {
+                  const isReguler = item.type === 'Reguler'
+                  const isPending = item.type === 'Menunggu ACC'
+                  const borderColor = isReguler ? '#3b82f6' : isPending ? '#f59e0b' : '#ef4444'
+                  const bgColor = isReguler ? '#eff6ff' : isPending ? '#fffbeb' : '#fef2f2'
+                  const badgeBg = isReguler ? '#dbeafe' : isPending ? '#fef3c7' : '#fee2e2'
+                  const badgeColor = isReguler ? '#1e40af' : isPending ? '#92400e' : '#991b1b'
+
+                  return (
+                    <div key={idx} style={{
+                      padding: '12px 16px', borderRadius: '8px', borderLeft: '4px solid',
+                      borderColor, background: bgColor
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '14px', marginBottom: '4px' }}>
+                        <span>{item.mata_kuliah}</span>
+                        <span className="badge" style={{ background: badgeBg, color: badgeColor }}>
+                          {item.type} {item.tanggal ? `(${item.tanggal})` : ''}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '13px', color: '#475569', margin: 0 }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ClockFill size={12} /> Jam:</span> <b>{item.waktu_mulai.substring(0, 5)} - {item.waktu_selesai.substring(0, 5)} WIB</b>
+                      </p>
                     </div>
-                    <p style={{ fontSize: '13px', color: '#475569', margin: 0 }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ClockFill size={12} /> Jam:</span> <b>{item.waktu_mulai.substring(0, 5)} - {item.waktu_selesai.substring(0, 5)} WIB</b>
-                    </p>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
             {selectedRoom.status === 'tersedia' && (
@@ -610,45 +644,35 @@ function DaftarKelas() {
               {/* Tanggal Pemakaian */}
               <div className="form-group" style={{ marginBottom: '16px' }}>
                 <label className="form-label">Tanggal Pemakaian</label>
-                <input
-                  type="date"
-                  className="input-field"
-                  name="tanggal"
+                <NeoDatePicker
                   value={bookingForm.tanggal}
-                  onChange={handleBookingFormChange}
-                  min={new Date().toISOString().split('T')[0]}
-                  required
+                  onChange={(val) => handleBookingFormChange({ target: { name: 'tanggal', value: val } })}
+                  minDate={todayDefaultStr}
                 />
               </div>
               {/* Jam Mulai & Jumlah SKS (1 - 6 SKS) */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                 <div className="form-group">
-                  <label className="form-label">Jam Mulai</label>
-                  <input
-                    type="time"
-                    className="input-field"
-                    name="waktu_mulai"
+                  <label className="form-label">Jam Mulai (24 Jam WIB)</label>
+                  <NeoTimePicker
                     value={bookingForm.waktu_mulai}
-                    onChange={handleBookingFormChange}
-                    required
+                    onChange={(val) => handleBookingFormChange({ target: { name: 'waktu_mulai', value: val } })}
                   />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Jumlah SKS (1–6 SKS)</label>
-                  <select
-                    name="sks"
+                  <NeoSelect
                     value={sks}
-                    onChange={handleBookingFormChange}
-                    className="input-field"
-                    required
-                  >
-                    <option value="1">1 SKS (50 Menit)</option>
-                    <option value="2">2 SKS (100 Menit)</option>
-                    <option value="3">3 SKS (150 Menit)</option>
-                    <option value="4">4 SKS (200 Menit)</option>
-                    <option value="5">5 SKS (250 Menit)</option>
-                    <option value="6">6 SKS (300 Menit)</option>
-                  </select>
+                    onChange={(val) => handleBookingFormChange({ target: { name: 'sks', value: val } })}
+                    options={[
+                      { value: '1', label: '1 SKS (50 Menit)' },
+                      { value: '2', label: '2 SKS (100 Menit)' },
+                      { value: '3', label: '3 SKS (150 Menit)' },
+                      { value: '4', label: '4 SKS (200 Menit)' },
+                      { value: '5', label: '5 SKS (250 Menit)' },
+                      { value: '6', label: '6 SKS (300 Menit)' }
+                    ]}
+                  />
                 </div>
               </div>
               {/* LIVE ANTI-BENTROK REAL-TIME INDICATOR */}

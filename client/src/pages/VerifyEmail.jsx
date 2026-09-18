@@ -2,6 +2,17 @@ import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import api from '../api/axios'
 import './VerifyEmail.css'
+import {
+  EnvelopeFill,
+  CheckCircleFill,
+  ExclamationTriangleFill,
+  Check2,
+  HourglassSplit,
+  ArrowRightCircleFill,
+  ArrowClockwise,
+  ArrowLeft,
+  ArrowDown
+} from 'react-bootstrap-icons'
 
 function VerifyEmail() {
   const navigate = useNavigate()
@@ -181,8 +192,8 @@ function VerifyEmail() {
                   <path d="M0 44 L20 22" />
                   <path d="M56 44 L36 22" />
                 </svg>
-                <div className="verify-envelope-arrow">
-                  ↓
+                <div className="verify-envelope-arrow" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ArrowDown size={14} />
                 </div>
               </div>
             </div>
@@ -196,7 +207,7 @@ function VerifyEmail() {
             </p>
 
             <div className="verify-email-pill">
-              <span>📧</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}><EnvelopeFill size={15} /></span>
               <span className="underline-text">{email || 'godong@student.walisongo.ac.id'}</span>
             </div>
           </section>
@@ -207,14 +218,14 @@ function VerifyEmail() {
               {/* Alert Message Box */}
               {message && (
                 <div className="verify-alert verify-alert-success">
-                  <span>✅</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center' }}><CheckCircleFill size={16} /></span>
                   <span>{message}</span>
                 </div>
               )}
 
               {error && (
                 <div className="verify-alert verify-alert-error">
-                  <span>⚠️</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center' }}><ExclamationTriangleFill size={16} /></span>
                   <span>{error}</span>
                 </div>
               )}
@@ -241,8 +252,8 @@ function VerifyEmail() {
                     required
                   />
                   {email && (
-                    <span className="verify-email-valid-badge">
-                      ✓ Valid
+                    <span className="verify-email-valid-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Check2 size={15} /> Valid
                     </span>
                   )}
                 </div>
@@ -254,8 +265,8 @@ function VerifyEmail() {
                   <label className="verify-label" style={{ margin: 0 }}>
                     Masukkan 6-Digit OTP
                   </label>
-                  <span className="verify-timer-badge">
-                    ⏳ <span>{formatSessionTime(sessionTime)}</span>
+                  <span className="verify-timer-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                    <HourglassSplit size={13} /> <span>{formatSessionTime(sessionTime)}</span>
                   </span>
                 </div>
 
@@ -291,7 +302,7 @@ function VerifyEmail() {
                   className="verify-btn-submit"
                 >
                   <span>{loading ? 'Memverifikasi...' : 'Verifikasi Email Sekarang'}</span>
-                  <span style={{ fontSize: '18px' }}>🚀</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center' }}><ArrowRightCircleFill size={18} /></span>
                 </button>
               </div>
 
@@ -303,7 +314,7 @@ function VerifyEmail() {
                   disabled={countdown > 0 || resendLoading || !email}
                   className="verify-btn-resend"
                 >
-                  <span>📥</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center' }}><ArrowClockwise size={15} /></span>
                   <span>
                     {resendLoading
                       ? 'Mengirim Ulang...'
@@ -325,7 +336,7 @@ function VerifyEmail() {
           {/* Navigation & Return Link */}
           <div className="verify-return-container">
             <Link to="/login" className="verify-link-return">
-              <span className="verify-return-arrow">←</span>
+              <span className="verify-return-arrow" style={{ display: 'inline-flex', alignItems: 'center' }}><ArrowLeft size={16} /></span>
               <span className="underline-text">Kembali ke Halaman Login</span>
             </Link>
           </div>

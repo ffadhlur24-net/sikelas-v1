@@ -438,10 +438,10 @@ router.post('/login', loginLimiter, async (req, res) => {
         // 5. Buat JWT token
         const token = jwt.sign({
             id: user.id,
-            nama: user.nama,
-            nim: user.nim,
+            username: user.username,
             email: user.email,
-            role: user.role
+            role: user.role,
+            nim_nip: user.nim_nip
         },
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }

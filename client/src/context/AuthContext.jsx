@@ -15,7 +15,14 @@ export const AuthProvider = ({ children }) => {
         const storedToken = localStorage.getItem('sikelas_token')
 
         if (storedUser && storedToken) {
-            setUser(JSON.parse(storedUser)) // Pulihkan data user
+            try {
+                setUser(JSON.parse(storedUser)) // Pulihkan data user
+            } catch (err) {
+                console.error('Data user di localStorage rusak/invalid, mereset session:', err)
+                localStorage.removeItem('sikelas_user')
+                localStorage.removeItem('sikelas_token')
+                setUser(null)
+            }
         }
 
         setLoading(false);

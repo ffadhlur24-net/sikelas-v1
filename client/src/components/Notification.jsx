@@ -1,22 +1,32 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import api from "../api/axios"
+import { useToast } from '../context/ToastContext'
+import ConfirmModal from './Modal/ConfirmModal'
 import {
     BellFill,
     CheckAll,
     XCircleFill,
     CheckSquareFill,
-    TrashFill
+    TrashFill,
+    XLg
 } from 'react-bootstrap-icons'
 import './Notification.css'
 
 function Notification() {
+    const { showSuccess, showError, showWarning } = useToast()
     const location = useLocation()
     const [notifications, setNotifications] = useState([])
     const [unreadCount, setUnreadCount] = useState(0)
     const [isOpen, setIsOpen] = useState(false)
     const [selectedIds, setSelectedIds] = useState([])
     const [isSelectMode, setIsSelectMode] = useState(false)
+    const [confirmModal, setConfirmModal] = useState({
+        open: false,
+        deleteAll: false,
+        count: 0,
+        loading: false
+    })
     const dropdownRef = useRef(null)
 
     // Tutup Pop-up Notifikasi secara Otomatis saat Berpindah Halaman/Rute
@@ -29,6 +39,7 @@ function Notification() {
     // Tutup Pop-up Notifikasi saat mengklik di luar area pop-up
     useEffect(() => {
         const handleClickOutside = (event) => {
+            if (confirmModal.open) return
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setIsOpen(false)
                 setIsSelectMode(false)
@@ -41,7 +52,7 @@ function Notification() {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside)
         }
-    }, [isOpen])
+    }, [isOpen, confirmModal.open])
 
     const fetcNotification = async () => {
         try {
@@ -62,27 +73,47 @@ function Notification() {
     const handleMarkReadAll = async () => {
         try {
             await api.patch('/notifications/read-all')
+            showSuccess('Semua notifikasi ditandai sudah dibaca.', 'NOTIFIKASI')
             fetcNotification()
         } catch (error) {
             console.error('Gagal tandai baca:', error)
+            showError('Gagal menandai notifikasi.', 'NOTIFIKASI')
         }
     }
 
-    const handleDelete = async (deleteAll = false) => {
+    const handleDelete = (deleteAll = false) => {
         if (!deleteAll && selectedIds.length === 0) {
-            alert('Pilih minimal satu pesan untuk dihapus!')
+            showWarning('Pilih minimal satu pesan untuk dihapus!', 'KOTAK NOTIFIKASI')
             return
         }
-        if (!window.confirm(deleteAll ? 'Hapus SEMUA pesan notifikasi?' : `Hapus ${selectedIds.length} pesan terpilih?`))
-            return
 
+        setConfirmModal({
+            open: true,
+            deleteAll,
+            count: selectedIds.length,
+            loading: false
+        })
+    }
+
+    const handleConfirmDelete = async () => {
+        const { deleteAll, count } = confirmModal
+        setConfirmModal(prev => ({ ...prev, loading: true }))
         try {
             await api.post('/notifications/delete-all', { ids: deleteAll ? null : selectedIds })
+            showSuccess(
+                deleteAll
+                    ? 'Seluruh pesan notifikasi berhasil dibersihkan!'
+                    : `${count} pesan notifikasi berhasil dihapus!`,
+                'NOTIFIKASI'
+            )
             setSelectedIds([])
             setIsSelectMode(false)
+            setConfirmModal({ open: false, deleteAll: false, count: 0, loading: false })
             fetcNotification()
         } catch (error) {
             console.error('Gagal menghapus notifikasi:', error)
+            showError('Gagal menghapus notifikasi.', 'NOTIFIKASI')
+            setConfirmModal(prev => ({ ...prev, loading: false }))
         }
     }
 
@@ -109,23 +140,55 @@ function Notification() {
 
             {/* DROPDOWN KOTAK MASUK NEO-BRUTALIST */}
             {isOpen && (
-                <div className="neo-noti-window">
-                    {/* Header Pop-up */}
-                    <div className="neo-noti-header">
-                        <h4 className="neo-noti-title">
-                            <BellFill size={15} color="#0058be" />
-                            Notifikasi
-                        </h4>
-                        <button
-                            type="button"
-                            className="neo-noti-btn neo-noti-btn-readall"
-                            onClick={handleMarkReadAll}
-                            title="Tandai semua notifikasi sudah dibaca"
-                        >
-                            <CheckAll size={16} />
-                            <span>Dibaca Semua</span>
-                        </button>
-                    </div>
+                <>
+                    {/* Backdrop Overlay untuk Tablet & Mobile */}
+                    <div 
+                        className="neo-noti-backdrop" 
+                        onClick={() => {
+                            setIsOpen(false)
+                            setIsSelectMode(false)
+                            setSelectedIds([])
+                        }}
+                        aria-hidden="true"
+                    />
+
+                    <div className="neo-noti-window">
+                        {/* Header Pop-up */}
+                        <div className="neo-noti-header">
+                            <h4 className="neo-noti-title">
+                                <BellFill size={15} color="#0058be" />
+                                <span>Notifikasi</span>
+                                {unreadCount > 0 && (
+                                    <span className="neo-noti-title-badge">
+                                        {unreadCount} Baru
+                                    </span>
+                                )}
+                            </h4>
+                            <div className="neo-noti-header-actions">
+                                <button
+                                    type="button"
+                                    className="neo-noti-btn neo-noti-btn-readall"
+                                    onClick={handleMarkReadAll}
+                                    title="Tandai semua notifikasi sudah dibaca"
+                                >
+                                    <CheckAll size={16} />
+                                    <span>Dibaca Semua</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    className="neo-noti-close-btn"
+                                    onClick={() => {
+                                        setIsOpen(false)
+                                        setIsSelectMode(false)
+                                        setSelectedIds([])
+                                    }}
+                                    aria-label="Tutup jendela notifikasi"
+                                    title="Tutup"
+                                >
+                                    <XLg size={13} />
+                                </button>
+                            </div>
+                        </div>
 
                     {/* Toolbar Aksi & Bulk Actions */}
                     <div className="neo-noti-toolbar">
@@ -222,7 +285,25 @@ function Notification() {
                         )}
                     </div>
                 </div>
-            )}
+            </>
+        )}
+
+            {/* Modal Konfirmasi Hapus Notifikasi */}
+            <ConfirmModal
+                isOpen={confirmModal.open}
+                title={confirmModal.deleteAll ? 'Bersihkan Semua Notifikasi' : 'Hapus Notifikasi Terpilih'}
+                message={
+                    confirmModal.deleteAll
+                        ? 'Apakah Anda yakin ingin menghapus SEMUA pesan notifikasi dari kotak masuk? Tindakan ini tidak dapat dibatalkan.'
+                        : `Apakah Anda yakin ingin menghapus ${confirmModal.count} pesan notifikasi terpilih?`
+                }
+                confirmText={confirmModal.deleteAll ? 'Ya, Bersihkan Semua' : 'Ya, Hapus'}
+                cancelText="Batal"
+                variant="danger"
+                loading={confirmModal.loading}
+                onConfirm={handleConfirmDelete}
+                onCancel={() => !confirmModal.loading && setConfirmModal({ open: false, deleteAll: false, count: 0, loading: false })}
+            />
         </div>
     )
 }

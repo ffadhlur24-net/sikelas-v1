@@ -679,7 +679,7 @@ function Register() {
                         value={formData.mata_kuliah}
                         onChange={handleChange}
                       >
-                        <option value="">-- Pilih Mata Kuliah dari Database --</option>
+                        <option value="">-- Pilih Mata Kuliah --</option>
                         {uniqueCourseOptions.map((m, i) => (
                           <option key={i} value={m}>{m}</option>
                         ))}

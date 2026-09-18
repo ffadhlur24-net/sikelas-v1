@@ -81,8 +81,51 @@
 
 .room-management-page .card-flat h3,
 .room-management-page .card-flat h2 { font-family: 'Archivo Black', sans-serif; }
-.room-management-page .input-field { border: 4px solid var(--room-border); border-radius: 0; background: #ffffff; min-height: 48px; font-weight: 600; }
-.room-management-page .input-field:focus { border-color: var(--room-border); outline: 3px solid var(--room-blue); outline-offset: 2px; box-shadow: none; }
+
+.room-management-page .input-field {
+  border: 4px solid var(--room-border);
+  border-radius: 0;
+  background: #ffffff;
+  min-height: 48px;
+  font-weight: 600;
+}
+.room-management-page .input-field:focus {
+  border-color: var(--room-border);
+  outline: 3px solid var(--room-blue);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.room-management-page .neo-select-trigger,
+.room-management-page .neo-time-input-btn {
+  border: 4px solid var(--room-border) !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+  min-height: 48px !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.room-management-page .neo-select-trigger:focus-visible,
+.room-management-page .neo-time-input-btn:focus-visible {
+  outline: 3px solid var(--room-blue) !important;
+  outline-offset: 2px !important;
+}
+
+.room-management-page .neo-select-dropdown,
+.room-management-page .neo-time-popover {
+  border: 4px solid var(--room-border) !important;
+  border-radius: 0 !important;
+  box-shadow: 4px 4px 0 var(--room-border) !important;
+}
+
+.room-management-page .neo-select-option,
+.room-management-page .neo-time-slot-btn,
+.room-management-page .neo-time-col-box,
+.room-management-page .neo-time-apply-btn {
+  border-radius: 0 !important;
+}
+
 .room-management-page .btn { border: 4px solid var(--room-border); border-radius: 0; box-shadow: 4px 4px 0 var(--room-border); font-weight: 800; }
 .room-management-page .btn:hover:not(:disabled) { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--room-border); }
 .room-management-page .btn-primary { background: var(--room-green); color: var(--room-ink); }
@@ -110,45 +153,27 @@
   line-height: 1.3;
 }
 
-.room-add-campus-card form {
-  align-items: stretch;
-}
-
-.room-add-campus-card .input-field {
-  min-height: 52px;
-}
-
-.room-add-campus-card .btn-primary {
-  min-width: 130px;
-}
-
 .room-campus-grid {
+  display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: 24px !important;
 }
 
 .room-campus-card {
-  min-height: 300px;
-  padding: 24px;
-  border-left: 8px solid var(--room-green) !important;
-  cursor: pointer;
-  transition: transform 100ms ease, box-shadow 100ms ease;
+  min-height: 280px;
+  padding: 28px !important;
+  border: 4px solid var(--room-border) !important;
+  border-left-width: 10px !important;
+  border-left-color: var(--room-blue) !important;
+  background: var(--room-surface) !important;
+  box-shadow: 6px 6px 0 var(--room-border) !important;
+  text-align: left;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .room-campus-card:hover {
-  transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0 var(--room-border);
-}
-
-.room-campus-card > div:first-child {
-  display: grid;
-  width: 96px;
-  height: 96px;
-  place-items: center;
-  border: 4px solid var(--room-border);
-  background: #ffffff;
-  font-size: 48px !important;
-  box-shadow: 4px 4px 0 var(--room-border);
+  transform: translate(-3px, -3px);
+  box-shadow: 9px 9px 0 var(--room-border) !important;
 }
 
 .room-campus-card h3 {

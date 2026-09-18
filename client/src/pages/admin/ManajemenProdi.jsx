@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import api from '../../api/axios'
 import './ManajemenProdi.css'
+import { useToast } from '../../context/ToastContext'
+import ConfirmModal from '../../components/Modal/ConfirmModal'
 import {
   Building,
   GeoAltFill,
@@ -9,14 +11,16 @@ import {
   PlusLg,
   MortarboardFill,
   PencilSquare,
-  TrashFill
+  TrashFill,
+  ClockFill,
+  Search
 } from 'react-bootstrap-icons'
 
 function ManajemenProdi() {
+  const { showSuccess, showError } = useToast();
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [message, setMessage] = useState('');
   const [prodiSearch, setProdiSearch] = useState('')
   const [currentTime, setCurrentTime] = useState(new Date())
 
@@ -27,6 +31,7 @@ function ManajemenProdi() {
   const [formFakultas, setFormFakultas] = useState({ fakultas: '' });
   const [formProdi, setFormProdi] = useState({ nama_prodi: '', kode_prodi: '' });
   const [editingId, setEditingId] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null, prodiName: '', loading: false });
 
   const fetchDepartments = async () => {
     try {
@@ -65,14 +70,13 @@ function ManajemenProdi() {
         nama_prodi: `${formFakultas.fakultas.trim()} (Umum)`,
         kode_prodi: 'UMUM'
       })
-      setMessage(`Fakultas "${formFakultas.fakultas}" berhasil ditambahkan!`)
+      showSuccess(`Fakultas "${formFakultas.fakultas}" berhasil ditambahkan!`, 'FAKULTAS')
       setFormFakultas({ fakultas: '' })
       fetchDepartments()
     } catch (error) {
-      alert(error.response?.data?.error || 'Gagal menyimpan fakultas.')
+      showError(error.response?.data?.error || 'Gagal menyimpan fakultas.', 'FAKULTAS')
     } finally {
       setActionLoading(false)
-      setTimeout(() => setMessage(''), 3000)
     }
   }
 
@@ -90,20 +94,19 @@ function ManajemenProdi() {
 
       if (editingId) {
         await api.put(`/departemen/${editingId}`, payload)
-        setMessage('Program Studi berhasil diperbarui!')
+        showSuccess('Program Studi berhasil diperbarui!', 'PROGRAM STUDI')
       } else {
         await api.post('/departemen', payload)
-        setMessage('Program Studi baru berhasil ditambahkan!')
+        showSuccess('Program Studi baru berhasil ditambahkan!', 'PROGRAM STUDI')
       }
 
       setFormProdi({ nama_prodi: '', kode_prodi: '' })
       setEditingId(null)
       fetchDepartments()
     } catch (error) {
-      alert(error.response?.data?.error || 'Gagal menyimpan Program Studi.')
+      showError(error.response?.data?.error || 'Gagal menyimpan Program Studi.', 'PROGRAM STUDI')
     } finally {
       setActionLoading(false)
-      setTimeout(() => setMessage(''), 3000)
     }
   }
 
@@ -115,18 +118,21 @@ function ManajemenProdi() {
     })
   }
 
-  const handleDeleteProdi = async (id) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus Program Studi ini?')) return
-    setActionLoading(true)
+  const handleDeleteProdi = (id, prodiName) => {
+    setConfirmDelete({ open: true, id, prodiName: prodiName || 'ini', loading: false })
+  }
+
+  const handleConfirmDeleteProdi = async () => {
+    const { id, prodiName } = confirmDelete
+    setConfirmDelete(prev => ({ ...prev, loading: true }))
     try {
       await api.delete(`/departemen/${id}`)
-      setMessage('Program Studi berhasil dihapus!')
+      showSuccess(`Program Studi "${prodiName}" berhasil dihapus!`, 'PROGRAM STUDI')
+      setConfirmDelete({ open: false, id: null, prodiName: '', loading: false })
       fetchDepartments()
     } catch (error) {
-      alert('Gagal menghapus Program Studi.')
-    } finally {
-      setActionLoading(false)
-      setTimeout(() => setMessage(''), 3000)
+      showError('Gagal menghapus Program Studi.', 'PROGRAM STUDI')
+      setConfirmDelete(prev => ({ ...prev, loading: false }))
     }
   }
 
@@ -148,7 +154,7 @@ function ManajemenProdi() {
   return (
     <div className="faculty-management-page animate-fade-in">
       <section className="faculty-clock-card">
-        <div className="faculty-clock-icon" aria-hidden="true">◷</div>
+        <div className="faculty-clock-icon" aria-hidden="true"><ClockFill size={20} /></div>
         <div>
           <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
         </div>
@@ -167,12 +173,6 @@ function ManajemenProdi() {
         <h1>Manajemen Fakultas & Program Studi</h1>
         <p>Kelola struktur Fakultas dan Program Studi akademik secara teratur dan konsisten.</p>
       </div>
-
-      {message && (
-        <div style={{ background: 'var(--color-success-bg)', color: 'var(--color-success)', padding: '12px', borderRadius: '8px', marginBottom: '20px', fontWeight: '500' }}>
-          {message}
-        </div>
-      )}
 
       {/* NAVIGASI BREADCRUMB LEVEL */}
       <div className="faculty-breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', fontSize: '14px', fontWeight: 'bold' }}>
@@ -293,12 +293,19 @@ function ManajemenProdi() {
 
           <section className="faculty-prodi-search">
             <div className="faculty-search-title">
-              <span aria-hidden="true">⌕</span>
+              <span aria-hidden="true" style={{ display: 'inline-flex' }}><Search size={16} /></span>
               <h3>PENELUSURAN PROGRAM STUDI</h3>
             </div>
             <div className="faculty-search-row">
               <input type="search" className="faculty-search-input" value={prodiSearch} onChange={(e) => setProdiSearch(e.target.value)} placeholder="Masukkan Nama Program Studi untuk mencari..." aria-label="Cari program studi" />
-              <button type="button" className="faculty-search-button" onClick={() => setProdiSearch(prodiSearch.trim())}>⌕ CARI</button>
+              <button
+                type="button"
+                className="faculty-search-button"
+                onClick={() => setProdiSearch(prodiSearch.trim())}
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                <Search size={15} /> CARI
+              </button>
             </div>
           </section>
 
@@ -319,8 +326,8 @@ function ManajemenProdi() {
                   <td style={{ padding: '12px 16px', fontWeight: 'bold' }}>{dep.nama_prodi}</td>
                   <td style={{ padding: '12px 16px', color: '#64748b' }}>{dep.fakultas}</td>
                   <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                    <button className="btn btn-secondary btn-sm" style={{ marginRight: '6px', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleEditProdi(dep)}><PencilSquare size={13} /> Edit</button>
-                    <button className="btn btn-secondary btn-sm" style={{ color: '#dc2626', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleDeleteProdi(dep.id)}><TrashFill size={13} /> Hapus</button>
+                    <button className="btn btn-secondary btn-sm faculty-action-edit" style={{ marginRight: '8px', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleEditProdi(dep)}><PencilSquare size={13} /> Edit</button>
+                    <button className="btn btn-secondary btn-sm faculty-action-delete" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleDeleteProdi(dep.id, dep.nama_prodi)}><TrashFill size={13} /> Hapus</button>
                   </td>
                 </tr>
               )) : (
@@ -334,6 +341,19 @@ function ManajemenProdi() {
           </table>
         </div>
       )}
+
+      {/* MODAL KONFIRMASI HAPUS PRODI */}
+      <ConfirmModal
+        isOpen={confirmDelete.open}
+        title="Hapus Program Studi"
+        message={`Apakah Anda yakin ingin menghapus Program Studi "${confirmDelete.prodiName}"? Tindakan ini tidak dapat dibatalkan.`}
+        confirmText="Ya, Hapus Prodi"
+        cancelText="Batal"
+        variant="danger"
+        loading={confirmDelete.loading}
+        onConfirm={handleConfirmDeleteProdi}
+        onCancel={() => !confirmDelete.loading && setConfirmDelete({ open: false, id: null, prodiName: '', loading: false })}
+      />
     </div>
   )
 }

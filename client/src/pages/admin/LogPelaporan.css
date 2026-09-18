@@ -736,3 +736,133 @@
   from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* ===================================================
+   RESPONSIVE: TABLET & MOBILE (Log Pelaporan)
+   =================================================== */
+@media (max-width: 900px) {
+  .neo-toolbar-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .neo-filter-group {
+    width: 100%;
+  }
+
+  .neo-action-tools {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .neo-tool-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .neo-clock-card {
+    padding: 16px;
+    gap: 12px;
+    box-shadow: 4px 4px 0px 0px var(--neo-shadow);
+  }
+
+  .neo-clock-content {
+    gap: 12px;
+  }
+
+  .neo-clock-icon-box {
+    width: 40px;
+    height: 40px;
+  }
+
+  .neo-clock-icon-box .material-symbols-outlined {
+    font-size: 22px;
+  }
+
+  .neo-clock-time {
+    font-size: 20px;
+  }
+
+  .neo-system-online-badge {
+    width: 100%;
+    justify-content: center;
+    padding: 6px 12px;
+  }
+
+  .neo-page-title {
+    font-size: 22px;
+  }
+
+  .neo-page-subtitle {
+    font-size: 13px;
+  }
+
+  .neo-toolbar-card {
+    padding: 12px;
+    box-shadow: 3px 3px 0px 0px var(--neo-shadow);
+  }
+
+  .neo-filter-label {
+    width: 100%;
+    margin-bottom: 2px;
+  }
+
+  .neo-filter-btn {
+    flex: 1 1 calc(50% - 6px);
+    justify-content: center;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .neo-filter-btn.active-all {
+    flex: 1 1 100%;
+  }
+
+  .neo-action-tools {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .neo-tool-btn {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .neo-table-card {
+    box-shadow: 4px 4px 0px 0px var(--neo-shadow);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .neo-table-head th,
+  .neo-table-cell {
+    padding: 12px 14px;
+  }
+
+  .neo-modal-backdrop {
+    padding: 14px;
+  }
+
+  .neo-modal-card {
+    padding: 18px 16px;
+    box-shadow: 4px 4px 0px 0px var(--neo-shadow);
+  }
+
+  .neo-modal-title {
+    font-size: 18px;
+  }
+
+  .neo-modal-desc {
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+
+  .neo-modal-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import HalamanLogin from './pages/HalamanLogin'
 import DashboardPJ from './pages/DashboardPJ'
@@ -6,7 +6,6 @@ import DashboardAdmin from './pages/DashboardAdmin'
 import ProtectedRoute from './components/ProtectedRoute'
 import Register from './pages/auth/Register'
 import VerifyEmail from './pages/VerifyEmail'
-import './App.css'
 
 function App() {
   return (

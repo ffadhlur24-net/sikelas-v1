@@ -1,17 +1,22 @@
 import { useState, useEffect } from 'react'
 import api from '../../api/axios'
 import './ManajemenAkunPJ.css'
-import { PencilSquare, TrashFill } from 'react-bootstrap-icons'
+import { useToast } from '../../context/ToastContext'
+import ConfirmModal from '../../components/Modal/ConfirmModal'
+import NeoSelect from '../../components/Select/NeoSelect'
+import { PencilSquare, TrashFill, ClockFill, Search } from 'react-bootstrap-icons'
 
 function ManajemenAkunPJ() {
+  const { showSuccess, showError } = useToast()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
-  const [message, setMessage] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [currentTime, setCurrentTime] = useState(new Date())
   const [availableSchedules, setAvailableSchedules] = useState([])
   const [editingUser, setEditingUser] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null, username: '', loading: false })
+
   const [editForm, setEditForm] = useState({
     username: '',
     nim_nip: '',
@@ -22,7 +27,6 @@ function ManajemenAkunPJ() {
     no_hp: '',
     status: ''
   })
-
 
   // 1. Ambil data semua data user & jadwal
   const fetchUsers = async () => {
@@ -52,22 +56,24 @@ function ManajemenAkunPJ() {
   }, [])
 
   // Handler hapus PJ
-  const handleDeleteUser = async (id, username) => {
-    if (!window.confirm(`Apakah kamu yakin mau menghapus akun PJ ${username} ?`)) {
-      return
-    }
+  const handleDeleteUser = (id, username) => {
+    setConfirmDelete({ open: true, id, username, loading: false })
+  }
+
+  const handleConfirmDelete = async () => {
+    const { id, username } = confirmDelete
+    setConfirmDelete(prev => ({ ...prev, loading: true }))
     try {
-      setActionLoading(true)
       await api.delete(`/users/${id}`)
-      setMessage(`Akun PJ "${username}" berhasil dihapus`)
+      showSuccess(`Akun PJ "${username}" berhasil dihapus!`, 'AKUN PJ')
+      setConfirmDelete({ open: false, id: null, username: '', loading: false })
       fetchUsers()
     } catch (error) {
-      alert('Gagal menghapus akun PJ.')
-    } finally {
-      setActionLoading(false)
-      setTimeout(() => setMessage(''), 3000)
+      showError('Gagal menghapus akun PJ.', 'AKUN PJ')
+      setConfirmDelete(prev => ({ ...prev, loading: false }))
     }
   }
+
   // Handler edit user
   const handleOpenEdit = (u) => {
     setEditingUser(u)
@@ -82,36 +88,38 @@ function ManajemenAkunPJ() {
       status: u.status || ''
     })
   }
+
   // Handler simpan edit
   const handleSaveEdit = async (e) => {
     e.preventDefault()
+    if (!editForm.prodi || !editForm.semester || !editForm.kelas || !editForm.mata_kuliah) {
+      showError('Harap lengkapi seluruh data akademik (Prodi, Semester, Kelas, dan Mata Kuliah)!', 'DATA PJ')
+      return
+    }
     try {
       setActionLoading(true)
       await api.put(`/users/${editingUser.id}`, editForm)
-      setMessage(`Data PJ "${editForm.username}" berhasil diupdate!`)
+      showSuccess(`Data PJ "${editForm.username}" berhasil diupdate!`, 'DATA PJ')
       setEditingUser(null)
       fetchUsers()
     } catch (error) {
-      alert('Gagal mengupdate data PJ')
+      showError(error.response?.data?.error || 'Gagal mengupdate data PJ', 'DATA PJ')
     } finally {
       setActionLoading(false)
-      setTimeout(() => setMessage(''), 3000)
     }
   }
-  // 2. Buat ubah status bro!!
+
+  // Ubah status pengguna
   const handleUpdateStatus = async (id, newStatus) => {
     setActionLoading(true)
-    setMessage('')
-
     try {
       await api.patch(`/users/${id}/status`, { status: newStatus })
-      setMessage(`Status pengguna berhasil diubah menjadi ${newStatus}`)
-      fetchUsers() // Refresh data
+      showSuccess(`Status akun pengguna berhasil diubah menjadi ${newStatus}!`, 'STATUS AKUN')
+      fetchUsers()
     } catch (error) {
-      alert('Gagal mengubah status pengguna')
+      showError('Gagal mengubah status pengguna', 'STATUS AKUN')
     } finally {
       setActionLoading(false)
-      setTimeout(() => setMessage(''), 3000)
     }
   }
 
@@ -126,7 +134,8 @@ function ManajemenAkunPJ() {
     );
     return !isTakenByOther;
   });
-  const editProdiList = [...new Set(availableForEdit.map(s => s.prodi))];
+
+  const editProdiList = [...new Set(availableForEdit.map(s => s.prodi))].sort();
   const editSemesterList = [...new Set(availableForEdit
     .filter(s => s.prodi === editForm.prodi)
     .map(s => String(s.semester))
@@ -151,11 +160,10 @@ function ManajemenAkunPJ() {
   const pendingUsers = users.filter(user => user.status === 'pending').length
   const inactiveUsers = users.filter(user => user.status === 'nonaktif').length
 
-
   return (
     <div className="pj-management-page animate-fade-in">
       <section className="pj-clock-card">
-        <div className="pj-clock-icon" aria-hidden="true">◷</div>
+        <div className="pj-clock-icon" aria-hidden="true"><ClockFill size={20} /></div>
         <div>
           <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
         </div>
@@ -174,11 +182,7 @@ function ManajemenAkunPJ() {
         <h1>Manajemen Akun PJ</h1>
         <p>Kelola persetujuan, perbarui data, dan hapus akun penanggung jawab kelas.</p>
       </div>
-      {message && (
-        <div style={{ background: 'var(--color-success-bg)', color: 'var(--color-success)', padding: '12px', borderRadius: '8px', marginBottom: '20px', fontWeight: '500' }}>
-          {message}
-        </div>
-      )}
+
       {!loading && (
         <section className="pj-search-card">
           <div>
@@ -187,10 +191,18 @@ function ManajemenAkunPJ() {
           </div>
           <div className="pj-search-row">
             <input type="search" className="pj-search-input" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Masukkan NIM, username, email, atau prodi..." aria-label="Cari akun PJ" />
-            <button type="button" className="pj-search-button" onClick={() => setSearchTerm(searchTerm.trim())}>⌕ Cari</button>
+            <button
+              type="button"
+              className="pj-search-button"
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              onClick={() => setSearchTerm(searchTerm.trim())}
+            >
+              <Search size={14} /> Cari
+            </button>
           </div>
         </section>
       )}
+
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Memuat data pengguna...</div>
       ) : (
@@ -259,21 +271,30 @@ function ManajemenAkunPJ() {
           </table>
         </div>
       )}
+
       {/* MODAL EDIT DATA PJ PINTAR */}
       {editingUser && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-        }}>
-          <div className="card-flat" style={{ width: '100%', maxWidth: '520px', background: '#fff', padding: '24px', borderRadius: '12px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}><PencilSquare size={18} /> Edit Data PJ ({editingUser.username})</h2>
+        <div className="pj-modal-overlay">
+          <div className="pj-modal-card">
+            <div className="pj-modal-header">
+              <h2><PencilSquare size={18} /> Edit Data PJ ({editingUser.username})</h2>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setEditingUser(null)}
+                style={{ padding: '4px 10px', minHeight: 'auto', fontSize: '13px' }}
+                title="Tutup Modal"
+              >
+                ✕
+              </button>
+            </div>
 
             <form onSubmit={handleSaveEdit}>
-              <div className="form-group" style={{ marginBottom: '12px' }}>
+              <div className="form-group" style={{ marginBottom: '14px' }}>
                 <label className="form-label">Nama PJ / Username</label>
                 <input type="text" className="input-field" value={editForm.username} onChange={(e) => setEditForm({ ...editForm, username: e.target.value })} required />
               </div>
-              <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+              <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '14px' }}>
                 <div className="form-group" style={{ flex: 1 }}>
                   <label className="form-label">NIM / NIP</label>
                   <input type="text" className="input-field" value={editForm.nim_nip} onChange={(e) => setEditForm({ ...editForm, nim_nip: e.target.value })} required />
@@ -283,47 +304,77 @@ function ManajemenAkunPJ() {
                   <input type="text" className="input-field" value={editForm.no_hp} onChange={(e) => setEditForm({ ...editForm, no_hp: e.target.value })} required />
                 </div>
               </div>
+
               {/* DROPDOWN 1: PRODI (HANYA MEMUNCULKAN PRODI YANG MASIH ADA JADWAL KOSONG) */}
-              <div className="form-group" style={{ marginBottom: '12px' }}>
+              <div className="form-group" style={{ marginBottom: '14px' }}>
                 <label className="form-label">Program Studi (Prodi)</label>
-                <select className="input-field" value={editForm.prodi} onChange={(e) => setEditForm({ ...editForm, prodi: e.target.value, semester: '', kelas: '', mata_kuliah: '' })} required>
-                  <option value="">-- Pilih Prodi --</option>
-                  {editProdiList.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
+                <NeoSelect
+                  value={editForm.prodi}
+                  onChange={(val) => setEditForm({ ...editForm, prodi: val, semester: '', kelas: '', mata_kuliah: '' })}
+                  options={editProdiList.map(p => ({ value: p, label: p }))}
+                  placeholder="-- Pilih Prodi --"
+                />
               </div>
+
               {/* DROPDOWN 2 & 3: SEMESTER & KELAS */}
-              <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-                <div className="form-group" style={{ flex: 1 }}>
+              <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '14px' }}>
+                <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
                   <label className="form-label">Semester</label>
-                  <select className="input-field" value={editForm.semester} onChange={(e) => setEditForm({ ...editForm, semester: e.target.value, kelas: '', mata_kuliah: '' })} disabled={!editForm.prodi} required>
-                    <option value="">-- Pilih --</option>
-                    {editSemesterList.map(s => <option key={s} value={s}>Semester {s}</option>)}
-                  </select>
+                  <NeoSelect
+                    value={editForm.semester}
+                    onChange={(val) => setEditForm({ ...editForm, semester: val, kelas: '', mata_kuliah: '' })}
+                    options={editSemesterList.map(s => ({ value: String(s), label: `Semester ${s}` }))}
+                    placeholder={editForm.prodi ? '-- Pilih Semester --' : '-- Pilih Prodi Dulu --'}
+                    disabled={!editForm.prodi}
+                  />
                 </div>
-                <div className="form-group" style={{ flex: 1 }}>
+                <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
                   <label className="form-label">Kelas</label>
-                  <select className="input-field" value={editForm.kelas} onChange={(e) => setEditForm({ ...editForm, kelas: e.target.value, mata_kuliah: '' })} disabled={!editForm.semester} required>
-                    <option value="">-- Pilih Kelas --</option>
-                    {editKelasList.map(k => <option key={k} value={k}>Kelas {k}</option>)}
-                  </select>
+                  <NeoSelect
+                    value={editForm.kelas}
+                    onChange={(val) => setEditForm({ ...editForm, kelas: val, mata_kuliah: '' })}
+                    options={editKelasList.map(k => ({ value: k, label: `Kelas ${k}` }))}
+                    placeholder={editForm.semester ? '-- Pilih Kelas --' : '-- Pilih Semester Dulu --'}
+                    disabled={!editForm.semester}
+                  />
                 </div>
               </div>
+
               {/* DROPDOWN 4: MATA KULIAH */}
-              <div className="form-group" style={{ marginBottom: '20px' }}>
+              <div className="form-group" style={{ marginBottom: '24px' }}>
                 <label className="form-label">Mata Kuliah</label>
-                <select className="input-field" value={editForm.mata_kuliah} onChange={(e) => setEditForm({ ...editForm, mata_kuliah: e.target.value })} disabled={!editForm.kelas} required>
-                  <option value="">-- Pilih Mata Kuliah --</option>
-                  {editCourseList.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <NeoSelect
+                  value={editForm.mata_kuliah}
+                  onChange={(val) => setEditForm({ ...editForm, mata_kuliah: val })}
+                  options={editCourseList.map(c => ({ value: c, label: c }))}
+                  placeholder={editForm.kelas ? '-- Pilih Mata Kuliah --' : '-- Pilih Kelas Dulu --'}
+                  disabled={!editForm.kelas}
+                />
               </div>
+
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setEditingUser(null)}>Batal</button>
-                <button type="submit" className="btn btn-primary" disabled={actionLoading}>Simpan Perubahan</button>
+                <button type="submit" className="btn btn-primary" disabled={actionLoading}>
+                  {actionLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* MODAL KONFIRMASI HAPUS PJ */}
+      <ConfirmModal
+        isOpen={confirmDelete.open}
+        title="Hapus Akun PJ"
+        message={`Apakah Anda yakin ingin menghapus akun PJ "${confirmDelete.username}"? Akun dan akses login yang bersangkutan akan dihapus permanen.`}
+        confirmText="Ya, Hapus Akun"
+        cancelText="Batal"
+        variant="danger"
+        loading={confirmDelete.loading}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => !confirmDelete.loading && setConfirmDelete({ open: false, id: null, username: '', loading: false })}
+      />
     </div>
   )
 }

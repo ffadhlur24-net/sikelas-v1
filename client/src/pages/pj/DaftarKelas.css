@@ -36,9 +36,52 @@
 .reservation-location-filter h3,
 .reservation-slot-filter h3 { color:var(--reservation-ink) !important; font:20px 'Archivo Black', sans-serif; }
 .reservation-page label { color:var(--reservation-muted) !important; font-weight:800 !important; }
+
+/* Input Field, NeoSelect, NeoDatePicker, NeoTimePicker harmonized */
 .reservation-page .input-field { min-height:52px; border:4px solid var(--reservation-border); border-radius:0; background:#fff !important; color:var(--reservation-ink); font-weight:700; }
 .reservation-page .input-field:focus { border-color:var(--reservation-border); outline:3px solid var(--reservation-blue); outline-offset:2px; box-shadow:none; }
-.reservation-page .btn { border:4px solid var(--reservation-border); border-radius:0; box-shadow:4px 4px 0 var(--reservation-border); font-weight:800; }
+
+.reservation-page .neo-select-trigger,
+.reservation-page .neo-date-input-btn,
+.reservation-page .neo-time-input-btn {
+  min-height: 52px !important;
+  border: 4px solid var(--reservation-border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: #ffffff !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: var(--reservation-ink) !important;
+}
+
+.reservation-page .neo-select-trigger:focus-visible,
+.reservation-page .neo-date-input-btn:focus-visible,
+.reservation-page .neo-time-input-btn:focus-visible {
+  outline: 3px solid var(--reservation-blue) !important;
+  outline-offset: 2px !important;
+}
+
+.reservation-page .neo-select-dropdown,
+.reservation-page .neo-date-popover,
+.reservation-page .neo-time-popover {
+  border: 4px solid var(--reservation-border) !important;
+  border-radius: 0 !important;
+  box-shadow: 4px 4px 0 var(--reservation-border) !important;
+}
+
+.reservation-page .neo-select-option,
+.reservation-page .neo-date-cell,
+.reservation-page .neo-quick-chip-btn,
+.reservation-page .neo-date-nav-btn,
+.reservation-page .neo-time-preset-btn,
+.reservation-page .neo-time-col-box,
+.reservation-page .neo-time-slot-btn,
+.reservation-page .neo-time-apply-btn,
+.reservation-page .neo-time-badge-wib {
+  border-radius: 0 !important;
+}
+
+.reservation-page .btn { border:4px solid var(--reservation-border); border-radius:0; box-shadow:4px 4px 0 var(--reservation-border); font-weight:800; min-height: 52px; }
 .reservation-page .btn:hover:not(:disabled) { transform:translate(2px,2px); box-shadow:2px 2px 0 var(--reservation-border); }
 .reservation-slot-filter .btn-primary { background:var(--reservation-blue) !important; color:#fff; }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { exportToCSV } from '../../utils/exportExcel'
 import api from '../../api/axios'
+import { useToast } from '../../context/ToastContext'
 import './PersetujuanReservasi.css'
 import {
   HourglassSplit,
@@ -9,15 +10,35 @@ import {
   ExclamationTriangleFill,
   CardList,
   PrinterFill,
-  FileEarmarkSpreadsheetFill
+  FileEarmarkSpreadsheetFill,
+  X,
+  ClockFill,
+  ChevronLeft,
+  ChevronRight
 } from 'react-bootstrap-icons'
 function PersetujuanReservasi() {
+  const { showSuccess, showError, showWarning } = useToast()
   const [reservations, setReservations] = useState([])
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
-  const [message, setMessage] = useState('')
+  const [rejectModal, setRejectModal] = useState({
+    open: false,
+    id: null,
+    mataKuliah: '',
+    pemohon: '',
+    reason: ''
+  })
   const [filterStatus, setFilterStatus] = useState('pending') // Default tab
   const [currentTime, setCurrentTime] = useState(new Date())
+
+  // Konfigurasi Paginasi (15 Baris per Halaman)
+  const ITEMS_PER_PAGE = 15
+  const [currentPage, setCurrentPage] = useState(1)
+
+  // Reset ke halaman 1 saat filter status reservasi berganti
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filterStatus])
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
@@ -62,28 +83,51 @@ function PersetujuanReservasi() {
   useEffect(() => {
     fetchReservations()
   }, [])
-  const handleAction = async (id, status) => {
-    let alasan_penolakan = '';
-    if (status === 'rejected') {
-      alasan_penolakan = prompt('Masukan alasan penolakan reservasi ini:');
-      if (alasan_penolakan === null) return;
-      if (!alasan_penolakan.trim()) {
-        alert('Alasan penolakan wajib diisi!');
-        return;
-      }
+  const handleApprove = async (id) => {
+    try {
+      setActionLoading(true)
+      await api.patch(`/reservations/${id}/status`, { status: 'approved' })
+      showSuccess('Reservasi berhasil disetujui! Notifikasi in-app dan email telah dikirim ke PJ.', 'RESERVASI DISETUJUI')
+      fetchReservations()
+    } catch (error) {
+      console.error(error)
+      showError(error.response?.data?.error || 'Gagal mengubah status reservasi.', 'GAGAL UBAH STATUS')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleOpenRejectModal = (res) => {
+    setRejectModal({
+      open: true,
+      id: res.id,
+      mataKuliah: res.mata_kuliah || '-',
+      pemohon: `${res.users?.username || 'PJ'} (NIM: ${res.users?.nim_nip || '-'})`,
+      reason: ''
+    })
+  }
+
+  const handleConfirmReject = async (e) => {
+    e.preventDefault()
+    if (!rejectModal.reason.trim()) {
+      showWarning('Alasan penolakan wajib diisi sebelum menolak pengajuan!', 'VALIDASI PENOLAKAN')
+      return
     }
 
     try {
       setActionLoading(true)
-      await api.patch(`/reservations/${id}/status`, { status, alasan_penolakan });
-      setMessage(status === 'approved' ? 'Reservasi berhasil disetujui! Notifikasi in-app dan email telah dikirim ke PJ.' : 'Reservasi telah ditolak.');
-      fetchReservations();
+      await api.patch(`/reservations/${rejectModal.id}/status`, {
+        status: 'rejected',
+        alasan_penolakan: rejectModal.reason.trim()
+      })
+      showSuccess('Pengajuan reservasi telah berhasil ditolak.', 'RESERVASI DITOLAK')
+      setRejectModal({ open: false, id: null, mataKuliah: '', pemohon: '', reason: '' })
+      fetchReservations()
     } catch (error) {
-      console.error(error);
-      alert(error.response?.data?.error || 'Gagal mengubah status reservasi.');
+      console.error(error)
+      showError(error.response?.data?.error || 'Gagal menolak status reservasi.', 'GAGAL UBAH STATUS')
     } finally {
-      setActionLoading(false);
-      setTimeout(() => setMessage(''), 3000)
+      setActionLoading(false)
     }
   }
 
@@ -96,6 +140,36 @@ function PersetujuanReservasi() {
     if (filterStatus === 'rejected') return res.status === 'rejected'
     return true // 'Semua'
   })
+
+  // Perhitungan Paginasi (15 Data per Halaman)
+  const totalItems = filteredReservations.length
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1
+  const validCurrentPage = Math.min(Math.max(1, currentPage), totalPages)
+  const startIndex = (validCurrentPage - 1) * ITEMS_PER_PAGE
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalItems)
+  const paginatedReservations = filteredReservations.slice(startIndex, endIndex)
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > totalPages || newPage === validCurrentPage) return
+    setCurrentPage(newPage)
+    const tableEl = document.querySelector('.approval-table-card')
+    if (tableEl) {
+      tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
+  const getPageNumbers = () => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1)
+    }
+    if (validCurrentPage <= 3) {
+      return [1, 2, 3, 4, '...', totalPages]
+    }
+    if (validCurrentPage >= totalPages - 2) {
+      return [1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages]
+    }
+    return [1, '...', validCurrentPage - 1, validCurrentPage, validCurrentPage + 1, '...', totalPages]
+  }
   // Ekspor Excel (.CSV)
   const handleExportExcel = () => {
     const headers = ['ID Tiket', 'Mata Kuliah', 'Ruangan', 'Gedung', 'Pemohon (PJ)', 'NIM', 'Tanggal Peminjaman', 'Jam Perkuliahan', 'Status Reservasi']
@@ -110,6 +184,10 @@ function PersetujuanReservasi() {
       `${r.waktu_mulai.substring(0, 5)} - ${r.waktu_selesai.substring(0, 5)} WIB`,
       isReservationExpired(r) ? 'Kadaluarsa' : r.status === 'pending' ? 'Menunggu ACC' : r.status === 'approved' ? 'Disetujui' : 'Ditolak'
     ])
+    if (rows.length === 0) {
+      showWarning('Tidak ada data reservasi untuk diekspor pada filter ini!', 'DATA KOSONG')
+      return
+    }
     exportToCSV('Laporan_Reservasi_Kelas', headers, rows)
   }
   const handlePrintPDF = () => {
@@ -121,7 +199,7 @@ function PersetujuanReservasi() {
   return (
     <div className="approval-page animate-fade-in">
       <section className="approval-clock-card">
-        <div className="approval-clock-icon" aria-hidden="true">◷</div>
+        <div className="approval-clock-icon" aria-hidden="true"><ClockFill size={20} /></div>
         <div>
           <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
         </div>
@@ -143,11 +221,6 @@ function PersetujuanReservasi() {
         </div>
         <span className="approval-count-badge">{reservations.length} TOTAL</span>
       </div>
-      {message && (
-        <div className="approval-feedback" role="status">
-          {message}
-        </div>
-      )}
       {/* FILTER TAB BAR STATUS RESERVASI */}
       <div className="approval-filter-bar no-print">
         <span className="approval-filter-label">STATUS RESERVASI</span>
@@ -224,7 +297,7 @@ function PersetujuanReservasi() {
               </tr>
             </thead>
             <tbody>
-              {filteredReservations.length > 0 ? filteredReservations.map((res) => {
+              {paginatedReservations.length > 0 ? paginatedReservations.map((res) => {
                 const expired = isReservationExpired(res)
                 return (
                   <tr key={res.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
@@ -263,14 +336,14 @@ function PersetujuanReservasi() {
                           <button
                             className="btn btn-sm btn-success"
                             style={{ marginRight: '8px' }}
-                            onClick={() => handleAction(res.id, 'approved')}
+                            onClick={() => handleApprove(res.id)}
                             disabled={actionLoading}
                           >
                             Setujui
                           </button>
                           <button
                             className="btn btn-sm btn-danger"
-                            onClick={() => handleAction(res.id, 'rejected')}
+                            onClick={() => handleOpenRejectModal(res)}
                             disabled={actionLoading}
                           >
                             Tolak
@@ -299,7 +372,112 @@ function PersetujuanReservasi() {
             </tbody>
           </table>
         )}
+
+        {/* BILAH KONTROL PAGINASI (HANYA DITAMPILKAN JIKA LEBIH DARI 1 HALAMAN) */}
+        {!loading && totalPages > 1 && (
+          <div className="approval-pagination no-print">
+            <div className="approval-pagination-info">
+              Menampilkan <strong>{totalItems === 0 ? 0 : startIndex + 1}</strong> - <strong>{endIndex}</strong> dari <strong>{totalItems}</strong> pengajuan
+            </div>
+            <div className="approval-pagination-controls">
+              <button
+                type="button"
+                className="approval-page-btn approval-page-nav-btn"
+                onClick={() => handlePageChange(validCurrentPage - 1)}
+                disabled={validCurrentPage === 1}
+              >
+                <ChevronLeft size={13} /> Prev
+              </button>
+
+              {getPageNumbers().map((page, idx) => {
+                if (page === '...') {
+                  return (
+                    <span key={`ellipsis-${idx}`} className="approval-page-ellipsis">
+                      ...
+                    </span>
+                  )
+                }
+                return (
+                  <button
+                    key={page}
+                    type="button"
+                    className={`approval-page-btn approval-page-num-btn ${validCurrentPage === page ? 'is-active' : ''}`}
+                    onClick={() => handlePageChange(page)}
+                  >
+                    {page}
+                  </button>
+                )
+              })}
+
+              <button
+                type="button"
+                className="approval-page-btn approval-page-nav-btn"
+                onClick={() => handlePageChange(validCurrentPage + 1)}
+                disabled={validCurrentPage === totalPages}
+              >
+                Next <ChevronRight size={13} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* MODAL PENOLAKAN NEO-BRUTALIST */}
+      {rejectModal.open && (
+        <div className="approval-modal-backdrop" role="presentation" onClick={() => setRejectModal({ open: false, id: null, mataKuliah: '', pemohon: '', reason: '' })}>
+          <div className="approval-modal-card" role="dialog" aria-modal="true" aria-labelledby="reject-modal-title" onClick={(e) => e.stopPropagation()}>
+            <div className="approval-modal-header">
+              <h2 id="reject-modal-title" className="approval-modal-title">
+                <XCircleFill size={20} color="#dc2626" /> Penolakan Reservasi
+              </h2>
+              <button
+                type="button"
+                className="approval-modal-close"
+                onClick={() => setRejectModal({ open: false, id: null, mataKuliah: '', pemohon: '', reason: '' })}
+                aria-label="Tutup modal"
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            <div className="approval-modal-info">
+              <div><b>Mata Kuliah:</b> {rejectModal.mataKuliah}</div>
+              <div><b>Pemohon (PJ):</b> {rejectModal.pemohon}</div>
+            </div>
+
+            <form onSubmit={handleConfirmReject}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '700', color: 'var(--approval-ink)' }}>
+                Alasan Penolakan:
+              </label>
+              <textarea
+                className="approval-modal-textarea"
+                placeholder="Tuliskan alasan penolakan untuk PJ (contoh: Ruangan sedang dialokasikan untuk ujian praktikum)..."
+                value={rejectModal.reason}
+                onChange={(e) => setRejectModal({ ...rejectModal, reason: e.target.value })}
+                autoFocus
+              />
+
+              <div className="approval-modal-actions">
+                <button
+                  type="button"
+                  className="approval-btn approval-btn-cancel"
+                  onClick={() => setRejectModal({ open: false, id: null, mataKuliah: '', pemohon: '', reason: '' })}
+                  disabled={actionLoading}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="approval-btn approval-btn-reject"
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? 'Memproses...' : 'Tolak Reservasi'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

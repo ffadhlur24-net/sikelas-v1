@@ -1,0 +1,203 @@
+/* ============================================
+   Neo-Brutalist Floating Toast - SiKelas
+   ============================================ */
+
+.neo-toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 420px;
+  width: calc(100% - 48px);
+  pointer-events: none;
+}
+
+.neo-toast-item {
+  pointer-events: auto;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 3px solid #000000;
+  box-shadow: 4px 4px 0px #000000;
+  border-radius: 4px;
+  animation: neoToastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.neo-toast-item:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #000000;
+}
+
+@keyframes neoToastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Accent border & icon */
+.neo-toast-icon-wrap {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0px #000000;
+  font-size: 17px;
+}
+
+.neo-toast-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.neo-toast-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #111827;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.neo-toast-msg {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 500;
+  color: #374151;
+  word-break: break-word;
+}
+
+/* Close Button */
+.neo-toast-close {
+  flex-shrink: 0;
+  background: transparent;
+  border: 2px solid transparent;
+  cursor: pointer;
+  color: #4b5563;
+  padding: 2px 4px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.neo-toast-close:hover {
+  color: #000000;
+  background: #f3f4f6;
+  border-color: #000000;
+}
+
+/* Progress bar at bottom */
+.neo-toast-progress-track {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.neo-toast-progress-bar {
+  height: 100%;
+  width: 100%;
+  transform-origin: left;
+  animation: neoToastProgress linear forwards;
+}
+
+.neo-toast-item:hover .neo-toast-progress-bar {
+  animation-play-state: paused;
+}
+
+@keyframes neoToastProgress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* Variants */
+/* Success */
+.neo-toast-item.type-success {
+  border-left: 8px solid #10b981;
+}
+.neo-toast-item.type-success .neo-toast-icon-wrap {
+  background: #10b981;
+  color: #ffffff;
+}
+.neo-toast-item.type-success .neo-toast-progress-bar {
+  background: #10b981;
+}
+
+/* Error */
+.neo-toast-item.type-error {
+  border-left: 8px solid #ef4444;
+}
+.neo-toast-item.type-error .neo-toast-icon-wrap {
+  background: #ef4444;
+  color: #ffffff;
+}
+.neo-toast-item.type-error .neo-toast-progress-bar {
+  background: #ef4444;
+}
+
+/* Warning */
+.neo-toast-item.type-warning {
+  border-left: 8px solid #f59e0b;
+}
+.neo-toast-item.type-warning .neo-toast-icon-wrap {
+  background: #fbbf24;
+  color: #000000;
+}
+.neo-toast-item.type-warning .neo-toast-progress-bar {
+  background: #f59e0b;
+}
+
+/* Info */
+.neo-toast-item.type-info {
+  border-left: 8px solid #3b82f6;
+}
+.neo-toast-item.type-info .neo-toast-icon-wrap {
+  background: #3b82f6;
+  color: #ffffff;
+}
+.neo-toast-item.type-info .neo-toast-progress-bar {
+  background: #3b82f6;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 640px) {
+  .neo-toast-container {
+    top: 14px;
+    right: 14px;
+    left: 14px;
+    width: auto;
+    max-width: none;
+  }
+  
+  .neo-toast-item {
+    padding: 12px 14px;
+  }
+}

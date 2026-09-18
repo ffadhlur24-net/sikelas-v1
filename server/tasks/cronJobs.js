@@ -2,8 +2,11 @@ import supabase from "../config/supabase.js";
 
 const runPhantomBookingCleaner = async () => {
     try {
-        const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
-        const currentDate = now.toISOString().split('T')[0];
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const currentDate = `${yyyy}-${mm}-${dd}`;
 
         // Hitung waktu (Sekarang - 15 Menit) dalam format HH:MM:SS lokal
         const checkTimeObj = new Date(now.getTime() - 15 * 60000)
@@ -23,6 +26,24 @@ const runPhantomBookingCleaner = async () => {
 
         if (expiredRes && expiredRes.length > 0) {
             console.log(`[CronJob - Sweeper] 🚨 ${expiredRes.length} reservasi gantung diubah menjadi EXPIRED (Tidak Check-In >15 Menit).`)
+        }
+
+        // Hitung waktu sekarang HH:MM:SS untuk cek pending yang kadaluwarsa
+        const currentHNow = String(now.getHours()).padStart(2, '0')
+        const currentMNow = String(now.getMinutes()).padStart(2, '0')
+        const currentSNow = String(now.getSeconds()).padStart(2, '0')
+        const currentTimeNow = `${currentHNow}:${currentMNow}:${currentSNow}`
+
+        // Update reservasi pending yang tanggal/jam mulainya sudah lewat tanpa di-ACC
+        const { data: expiredPendingRes } = await supabase
+            .from('reservations')
+            .update({ status: 'expired' })
+            .eq('status', 'pending')
+            .or(`tanggal.lt.${currentDate},and(tanggal.eq.${currentDate},waktu_mulai.lte.${currentTimeNow})`)
+            .select()
+
+        if (expiredPendingRes && expiredPendingRes.length > 0) {
+            console.log(`[CronJob - Sweeper] ⌛ ${expiredPendingRes.length} reservasi pending kadaluwarsa diubah menjadi EXPIRED.`)
         }
 
         const { data: expiredRep, error: repErr } = await supabase
@@ -58,20 +79,8 @@ const runPendingUserCleaner = async () => {
     }
 }
 
-const runMidnightReset = async () => {
-    try {
-        const now = new Date()
-        if (now.getHours() === 23 && now.getMinutes() === 59) {
-            console.log('🌙 [CronJob - Midnight Reset] Pembersihan harian selesai. Server siap untuk besok!')
-        }
-    } catch (error) {
-        console.error('[CronJob - Midnight Error]:', error.message)
-    }
-}
-
 export const initCronJobs = () => {
     console.log('🤖 [CronJobs] Mengaktifkan Sweeper Latar Belakang & Task Automation...')
     setInterval(runPhantomBookingCleaner, 60000)
     setInterval(runPendingUserCleaner, 60000)
-    setInterval(runMidnightReset, 60000)
 }

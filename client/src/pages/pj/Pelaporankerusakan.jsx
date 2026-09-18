@@ -268,7 +268,6 @@ function PelaporanKerusakan() {
                     </div>
                     <button
                         type="submit"
-                        className="btn btn-primary"
                         className="damage-submit-button btn btn-primary"
                         style={{ width: '100%', padding: '12px' }}
                         disabled={submitting || !selectedRoomId || !kategori || !rincian.trim()}

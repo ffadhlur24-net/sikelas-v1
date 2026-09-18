@@ -9,7 +9,7 @@ import { sendReservationNotificationEmail } from '../utils/sendEmail.js'
 
 const router = Router()
 
-//GET /api/reservations - Ambil reservasi
+// GET /api/reservations - Ambil reservasi
 router.get('/', verifyToken, async (req, res) => {
     try {
         let query = supabase
@@ -17,11 +17,9 @@ router.get('/', verifyToken, async (req, res) => {
             .select('*, rooms(nama, gedung), users(username, nim_nip, prodi, kelas, no_hp)')
             .order('created_at', { ascending: false })
 
-
         // Jika PJ, hanya tampilkan miliknya sendiri
         if (req.user.role === 'pj') {
             query = query.eq('user_id', req.user.id)
-
         }
         const { data, error } = await query
         if (error) throw error
@@ -43,6 +41,15 @@ router.post('/', verifyToken, async (req, res) => {
                 error: 'Semua Kolom wajib diisi..'
             })
         }
+
+        // 0. Validasi Jam Operasional Kampus (06:00 - 23:00 WIB)
+        if (waktu_mulai < '06:00') {
+            return res.status(400).json({ error: 'Gagal: Gedung kampus belum dibuka pada pukul tersebut. Jam operasional peminjaman dimulai pukul 06:00 WIB.' })
+        }
+        if (waktu_selesai > '23:00' || waktu_selesai <= waktu_mulai) {
+            return res.status(400).json({ error: 'Gagal: Batas akhir kegiatan perkuliahan/peminjaman maksimal adalah pukul 23:00 WIB demi keamanan kampus.' })
+        }
+
         const now = new Date()
         const yyyy = now.getFullYear()
         const mm = String(now.getMonth() + 1).padStart(2, '0')
@@ -54,14 +61,12 @@ router.post('/', verifyToken, async (req, res) => {
             return res.status(400).json({ error: 'Gagal: Waktu pemakaian yang Anda pilih sudah berlalu!' })
         }
 
-
         // 1. Cari tahu Hari apa tanggal yang diinputkan (0 = Minggu, 1 = Senin, dst)
         const hariArray = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
         const dateObj = new Date(tanggal + 'T00:00:00')
         const namaHari = hariArray[dateObj.getDay()]
 
         // 2. CEK BENTROK DENGAN JADWAL REGULER (SIAKAD)
-        // Ambil laporan kelas kosong yang sudah disetujui pada tanggal peminjaman ini
         const { data: approvedReports } = await supabase
             .from('reports')
             .select('mata_kuliah')
@@ -92,14 +97,14 @@ router.post('/', verifyToken, async (req, res) => {
             })
         }
 
-        // 3. CEK BENTROK DENGAN RESERVASI ORANG LAIN (RACE CONDITION)
-        // Cek apakah ada reservasi yang sudah di-approve di ruangan, tanggal, dan jam yang tumpang tindih
+        // 3. CEK BENTROK DENGAN RESERVASI ORANG LAIN (STRICT LOCK: APPROVED & PENDING)
+        // Cek apakah ada reservasi yang sudah di-approve ATAU sedang diajukan (pending) yang tumpang tindih
         const { data: reservationConflicts, error: reservationError } = await supabase
             .from('reservations')
-            .select('id, waktu_mulai')
+            .select('id, waktu_mulai, status, mata_kuliah, is_checked_in')
             .eq('room_id', room_id)
             .eq('tanggal', tanggal)
-            .eq('status', 'approved')
+            .in('status', ['approved', 'pending'])
             .lt('waktu_mulai', waktu_selesai)
             .gt('waktu_selesai', waktu_mulai)
 
@@ -107,26 +112,36 @@ router.post('/', verifyToken, async (req, res) => {
 
         const currentMins = now.getHours() * 60 + now.getMinutes()
 
-        // Filter reservasi yang MASIH VALID (abaikan yang >15 menit belum check-in hari ini)
+        // Filter reservasi yang MASIH VALID (abaikan yang sudah lewat waktunya)
         const activeResConflicts = (reservationConflicts || []).filter(res => {
             if (tanggal === todayStr) {
                 const [sH, sM] = res.waktu_mulai.split(':').map(Number)
                 const startMins = sH * 60 + sM
-                if (currentMins > startMins + 15) {
-                    return false // Hangus/expired, abaikan dari bentrok!
+                // Jika approved: hanya hangus jika BELUM check-in dan sudah >15 menit dari jam mulai
+                if (res.status === 'approved' && !res.is_checked_in && currentMins > startMins + 15) {
+                    return false
+                }
+                // Jika pending: hangus jika waktu mulai sudah lewat
+                if (res.status === 'pending' && currentMins >= startMins) {
+                    return false
                 }
             }
             return true
         })
 
-        // Jika ada orang yang keduluan meminjam (dan belum kadaluwarsa), langsung tolak!
+        // Jika ada bentrok dengan pengajuan lain yang aktif, tolak dengan pesan yang tepat!
         if (activeResConflicts.length > 0) {
-            return res.status(400).json({
-                error: 'Gagal: Ruangan sudah direservasi oleh PJ lain pada jam tersebut.'
-            })
+            const hasApproved = activeResConflicts.some(r => r.status === 'approved')
+            if (hasApproved) {
+                return res.status(400).json({
+                    error: '❌ Gagal: Ruangan sudah resmi direservasi dan disetujui untuk PJ lain pada jam tersebut.'
+                })
+            } else {
+                return res.status(400).json({
+                    error: '⏳ Gagal: Ruangan sedang dalam proses pengajuan oleh PJ lain pada jam tersebut (Menunggu Persetujuan Admin). Silakan pilih ruangan atau jam lain.'
+                })
+            }
         }
-
-        // --- AKHIR FASE 9 ---
 
         const { data, error } = await supabase
             .from('reservations')
@@ -165,20 +180,27 @@ router.post('/', verifyToken, async (req, res) => {
         }
 
         res.status(201).json({
-            message: ' Reserbasi berhasil diajukan!\n Menunggu persetjuan admin.',
+            message: 'Reservasi berhasil diajukan!\nMenunggu persetujuan admin.',
             reservation: data
         })
 
     } catch (error) {
-        console.error(' Create reservation error:', error)
+        console.error('Create reservation error:', error)
         res.status(500).json({ error: error.message || 'gagal membuat reservasi.' })
     }
 })
 
 // PATCH /api/reservations/:id/approve - Setuju reservasi (Admin Only)
-
 router.patch('/:id/approve', verifyToken, adminOnly, async (req, res) => {
-    if (status === 'approved') {
+    try {
+        const { id } = req.params
+        const now = new Date()
+        const yyyy = now.getFullYear()
+        const mm = String(now.getMonth() + 1).padStart(2, '0')
+        const dd = String(now.getDate()).padStart(2, '0')
+        const todayStr = `${yyyy}-${mm}-${dd}`
+        const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+
         const { data: targetRes } = await supabase
             .from('reservations')
             .select('*')
@@ -186,15 +208,12 @@ router.patch('/:id/approve', verifyToken, adminOnly, async (req, res) => {
             .single()
 
         if (targetRes) {
-            if (targetRes.tanggal < todayStr || (tanggal === todayStr && targetRes.waktu_mulai <= currentTimeStr)) {
+            if (targetRes.tanggal < todayStr || (targetRes.tanggal === todayStr && targetRes.waktu_mulai <= currentTimeStr)) {
                 return res.status(400).json({
                     error: 'Gagal: Reservasi ini sudah lewat waktu. Tidak dapat disetujui.'
                 })
             }
         }
-    }
-    try {
-        const { id } = req.params
 
         const { data, error } = await supabase
             .from('reservations')
@@ -212,7 +231,6 @@ router.patch('/:id/approve', verifyToken, adminOnly, async (req, res) => {
 })
 
 // PATCH /api/reservations/:id/reject - Tolak reservasi (Admin Only)
-
 router.patch('/:id/reject', verifyToken, adminOnly, async (req, res) => {
     try {
         const { id } = req.params
@@ -244,21 +262,36 @@ router.patch('/:id/checkin', verifyToken, async (req, res) => {
             .eq('status', 'approved')
             .single()
 
-
         if (checkError || !reservation) {
             return res.status(404).json({ error: 'Reservasi tidak ditemukan atau belum disetujui.' });
         }
 
-        // ⏱️ PROTEKSI REAL-TIME: CEK TOLERANSI WAKTU CHECK-IN (MAKSIMAL 15 MENIT DARI WAKTU MULAI)
+        // ⏱️ PROTEKSI REAL-TIME: CEK TOLERANSI WAKTU CHECK-IN (JENDELA: 15 MENIT SEBELUM S.D. 15 MENIT SETELAH WAKTU MULAI)
         const now = new Date()
-        const todayStr = now.toISOString().split('T')[0]
+        const yyyy = now.getFullYear()
+        const mm = String(now.getMonth() + 1).padStart(2, '0')
+        const dd = String(now.getDate()).padStart(2, '0')
+        const todayStr = `${yyyy}-${mm}-${dd}`
         const currentHour = String(now.getHours()).padStart(2, '0')
         const currentMinute = String(now.getMinutes()).padStart(2, '0')
         const currentTimeStr = `${currentHour}:${currentMinute}`
 
         const [startH, startM] = reservation.waktu_mulai.split(':').map(Number)
+        
+        // Batas awal check-in: 15 menit sebelum waktu mulai
+        const earlyDateObj = new Date(2000, 0, 1, startH, startM - 15)
+        const earlyTimeStr = earlyDateObj.toTimeString().substring(0, 5)
+
+        // Batas akhir check-in: 15 menit setelah waktu mulai
         const expiryDateObj = new Date(2000, 0, 1, startH, startM + 15)
         const expiryTimeStr = expiryDateObj.toTimeString().substring(0, 5)
+
+        // Cek jika belum memasuki jendela check-in (terlalu awal)
+        if (reservation.tanggal > todayStr || (reservation.tanggal === todayStr && currentTimeStr < earlyTimeStr)) {
+            return res.status(400).json({
+                error: `⏳ Check-In Belum Dibuka! Check-in baru dapat dilakukan 15 menit sebelum kelas dimulai (${earlyTimeStr} WIB).`
+            })
+        }
 
         const isDateExpired = reservation.tanggal < todayStr
         const isTimeExpired = (reservation.tanggal === todayStr && currentTimeStr > expiryTimeStr)
@@ -291,10 +324,44 @@ router.patch('/:id/checkin', verifyToken, async (req, res) => {
     }
 })
 
+// PATCH /api/reservations/:id/status - Admin Approval/Rejection with Double-Booking Guard
 router.patch('/:id/status', verifyToken, adminOnly, async (req, res) => {
     try {
         const { id } = req.params;
         const { status, alasan_penolakan } = req.body;
+
+        // Ambil data reservasi target terlebih dahulu
+        const { data: targetRes, error: targetErr } = await supabase
+            .from('reservations')
+            .select('*')
+            .eq('id', id)
+            .single()
+
+        if (targetErr || !targetRes) {
+            return res.status(404).json({ error: 'Reservasi tidak ditemukan.' })
+        }
+
+        if (status === 'approved') {
+            // DOUBLE-BOOKING GUARD: Cek apakah sudah ada reservasi approved lain yang tumpang tindih
+            const { data: existingApproved, error: conflictErr } = await supabase
+                .from('reservations')
+                .select('id, mata_kuliah, waktu_mulai, waktu_selesai')
+                .eq('room_id', targetRes.room_id)
+                .eq('tanggal', targetRes.tanggal)
+                .eq('status', 'approved')
+                .neq('id', id)
+                .lt('waktu_mulai', targetRes.waktu_selesai)
+                .gt('waktu_selesai', targetRes.waktu_mulai)
+
+            if (conflictErr) throw conflictErr
+
+            if (existingApproved && existingApproved.length > 0) {
+                const conf = existingApproved[0]
+                return res.status(400).json({
+                    error: `❌ Gagal Menyetujui! Ruangan ini sudah disetujui untuk kelas lain: "${conf.mata_kuliah}" (${conf.waktu_mulai.substring(0, 5)} - ${conf.waktu_selesai.substring(0, 5)} WIB).`
+                })
+            }
+        }
 
         const updateData = { status };
         // Jika ditolak, simpan alasan penolakan dari admin
@@ -349,7 +416,7 @@ router.patch('/:id/status', verifyToken, adminOnly, async (req, res) => {
         res.json({ message: `Status reservasi berhasil diubah menjadi ${status}.`, reservation: data })
     } catch (error) {
         console.error('Update reservasi error:', error)
-        res.status(500).json({ error: 'gagal mengubah status reservasi.' })
+        res.status(500).json({ error: error.message || 'gagal mengubah status reservasi.' })
     }
 })
 
@@ -367,4 +434,5 @@ router.delete('/:id', verifyToken, adminOnly, async (req, res) => {
         res.status(500).json({ error: error.message || 'Gagal menghapus reservasi.' })
     }
 })
+
 export default router

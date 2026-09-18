@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
 import api from '../../api/axios'
 import './ManajemenRuangan.css'
+import { useToast } from '../../context/ToastContext'
+import ConfirmModal from '../../components/Modal/ConfirmModal'
+import NeoTimePicker from '../../components/TimePicker/NeoTimePicker'
+import NeoSelect from '../../components/Select/NeoSelect'
 import {
   Building,
   Buildings,
@@ -11,16 +15,49 @@ import {
   LayersFill,
   CalendarEventFill,
   PencilSquare,
-  TrashFill
+  TrashFill,
+  ClockFill,
+  ArrowCounterclockwise
 } from 'react-bootstrap-icons'
 
+const SEMESTER_OPTIONS = [
+  { value: '1', label: 'Semester 1' },
+  { value: '2', label: 'Semester 2' },
+  { value: '3', label: 'Semester 3' },
+  { value: '4', label: 'Semester 4' },
+  { value: '5', label: 'Semester 5' },
+  { value: '6', label: 'Semester 6' },
+  { value: '7', label: 'Semester 7' },
+  { value: '8', label: 'Semester 8' },
+  { value: 'SPB', label: 'SPB (Semester Pendek)' }
+]
+
+const SKS_OPTIONS = [
+  { value: '1', label: '1 SKS (50 Menit)' },
+  { value: '2', label: '2 SKS (100 Menit)' },
+  { value: '3', label: '3 SKS (150 Menit)' },
+  { value: '4', label: '4 SKS (200 Menit)' }
+]
+
+const HARI_OPTIONS = [
+  { value: 'Senin', label: 'Senin' },
+  { value: 'Selasa', label: 'Selasa' },
+  { value: 'Rabu', label: 'Rabu' },
+  { value: 'Kamis', label: 'Kamis' },
+  { value: 'Jumat', label: 'Jumat' },
+  { value: 'Sabtu', label: 'Sabtu' },
+  { value: 'Minggu', label: 'Minggu' }
+]
+
 function ManajemenRuangan() {
+  const { showSuccess, showError } = useToast()
   const [rooms, setRooms] = useState([])
   const [departments, setDepartments] = useState([])
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [message, setMessage] = useState({ text: '', type: '' })
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [confirmDeleteSched, setConfirmDeleteSched] = useState({ open: false, id: null, matkul: '', loading: false })
 
   // NAVIGASI HIERARKI BERJENJANG:
   // selectedKampus: null (Level 1: Daftar Kampus), String (mis: "Kampus 3")
@@ -63,6 +100,10 @@ function ManajemenRuangan() {
     waktu_selesai: '10:00'
   })
 
+  // State mode input kelas kustom/manual
+  const [isCustomClassInitial, setIsCustomClassInitial] = useState(false)
+  const [isCustomClassSched, setIsCustomClassSched] = useState(false)
+
   // State Modal Kelola Jadwal Ruangan
   const [selectedRoomModal, setSelectedRoomModal] = useState(null)
   const [roomSchedules, setRoomSchedules] = useState([])
@@ -82,6 +123,37 @@ function ManajemenRuangan() {
     waktu_mulai: '07:30',
     waktu_selesai: '10:00'
   })
+
+  // Deteksi kode kelas mengulang otomatis berdasarkan prodi (misal: TIF-U, SI-U, TI-U)
+  const getRepeatClassCode = (prodiName) => {
+    if (!prodiName) return 'U'
+    const dep = departments.find(d => d.nama_prodi === prodiName)
+    if (dep?.kode_prodi) return `${dep.kode_prodi.toUpperCase()}-U`
+    const initials = prodiName
+      .replace(/[^a-zA-Z\s]/g, '')
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(w => w[0])
+      .join('')
+      .toUpperCase()
+    return `${initials || 'U'}-U`
+  }
+
+  // Generate opsi kelas: standar (A-G), mengulang prodi, mengulang umum, dan opsi ketik manual
+  const getClassOptions = (prodiName) => {
+    const base = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].map(k => ({ value: k, label: `Kelas ${k}` }))
+    const repeatCode = getRepeatClassCode(prodiName)
+    const repeatOptions = [
+      { value: repeatCode, label: `${repeatCode} (Kelas Mengulang)` },
+      { value: 'U', label: 'Kelas U (Mengulang Umum)' }
+    ]
+    const uniqueRepeat = repeatOptions.filter(opt => opt.value !== 'U' || repeatCode !== 'U')
+    return [
+      ...base,
+      ...uniqueRepeat,
+      { value: '__CUSTOM__', label: '✏️ + Ketik Manual / Kode Khusus...' }
+    ]
+  }
 
   const fetchRooms = async () => {
     try {
@@ -139,6 +211,15 @@ function ManajemenRuangan() {
 
   // Ekstrak Daftar Fakultas Unik dari Database
   const listFakultas = Array.from(new Set(departments.map(d => d.fakultas).filter(Boolean)))
+  const fakultasOptions = listFakultas.map(fak => ({ value: fak, label: fak }))
+
+  const prodiOptionsInitial = departments
+    .filter(d => d.fakultas === initialSched.fakultas && !d.nama_prodi.includes('(Umum)'))
+    .map(dep => ({ value: dep.nama_prodi, label: dep.nama_prodi }))
+
+  const prodiOptionsSched = departments
+    .filter(d => d.fakultas === schedForm.fakultas && !d.nama_prodi.includes('(Umum)'))
+    .map(dep => ({ value: dep.nama_prodi, label: dep.nama_prodi }))
 
   // Ekstrak Daftar Kampus Unik & Daftar Gedung Unik
   const kampusList = Array.from(new Set(rooms.map(r => r.kampus).filter(Boolean)))
@@ -178,6 +259,14 @@ function ManajemenRuangan() {
   const handleAddRooms = async (e) => {
     e.preventDefault()
     if (!selectedKampus || !selectedGedung) return
+
+    if (addWithSchedule) {
+      if (!initialSched.fakultas || !initialSched.prodi || !initialSched.mata_kuliah.trim() || !initialSched.dosen.trim() || !initialSched.kelas.trim()) {
+        showError('Harap lengkapi semua data jadwal perkuliahan!', 'TAMBAH RUANGAN')
+        return
+      }
+    }
+
     setActionLoading(true)
     setMessage({ text: '', type: '' })
 
@@ -201,6 +290,19 @@ function ManajemenRuangan() {
       setMessage({ text: `Ruangan ${formData.nama} berhasil ditambahkan ke ${selectedGedung}!`, type: 'success' })
       setFormData({ nama: '', lantai: 1, kapasitas: 40 })
       setAddWithSchedule(false)
+      setIsCustomClassInitial(false)
+      setInitialSched({
+        fakultas: '',
+        prodi: '',
+        semester: '1',
+        kelas: 'A',
+        mata_kuliah: '',
+        dosen: '',
+        hari: 'Senin',
+        sks: '3',
+        waktu_mulai: '07:30',
+        waktu_selesai: '10:00'
+      })
       fetchRooms()
     } catch (error) {
       setMessage({
@@ -217,9 +319,10 @@ function ManajemenRuangan() {
     setActionLoading(true)
     try {
       await api.patch(`/rooms/${id}/status`, { status })
+      showSuccess(`Status ruangan berhasil diubah menjadi ${status}!`, 'STATUS RUANGAN')
       fetchRooms()
     } catch (error) {
-      alert('Gagal mengupdate status ruangan.')
+      showError('Gagal mengupdate status ruangan.', 'STATUS RUANGAN')
     } finally {
       setActionLoading(false)
     }
@@ -241,6 +344,7 @@ function ManajemenRuangan() {
     setSelectedRoomModal(room)
     setShowFormSched(false)
     setEditingSchedId(null)
+    setIsCustomClassSched(false)
     fetchRoomSchedules(room.id)
   }
 
@@ -248,34 +352,52 @@ function ManajemenRuangan() {
     e.preventDefault()
     if (!selectedRoomModal) return
 
+    if (!schedForm.fakultas || !schedForm.prodi || !schedForm.mata_kuliah.trim() || !schedForm.dosen.trim() || !schedForm.kelas.trim()) {
+      showError('Harap lengkapi semua data jadwal perkuliahan!', 'JADWAL KULIAH')
+      return
+    }
+
     try {
       if (editingSchedId) {
         await api.put(`/schedules/${editingSchedId}`, {
           ...schedForm,
           room_id: selectedRoomModal.id
         })
+        showSuccess('Jadwal perkuliahan berhasil diperbarui!', 'JADWAL KULIAH')
       } else {
         await api.post('/schedules', {
           ...schedForm,
           room_id: selectedRoomModal.id
         })
+        showSuccess('Jadwal perkuliahan berhasil ditambahkan!', 'JADWAL KULIAH')
       }
 
       setShowFormSched(false)
       setEditingSchedId(null)
+      setIsCustomClassSched(false)
       fetchRoomSchedules(selectedRoomModal.id)
     } catch (error) {
-      alert(error.response?.data?.error || 'Gagal menyimpan jadwal perkuliahan.')
+      showError(error.response?.data?.error || 'Gagal menyimpan jadwal perkuliahan.', 'JADWAL KULIAH')
     }
   }
 
-  const handleDeleteSchedule = async (id) => {
-    if (!window.confirm('Apakah anda yakin ingin menghapus jadwal perkuliahan ini?')) return
+  const handleDeleteSchedule = (id, matkul) => {
+    setConfirmDeleteSched({ open: true, id, matkul: matkul || 'ini', loading: false })
+  }
+
+  const handleConfirmDeleteSchedule = async () => {
+    const { id, matkul } = confirmDeleteSched
+    setConfirmDeleteSched(prev => ({ ...prev, loading: true }))
     try {
       await api.delete(`/schedules/${id}`)
-      fetchRoomSchedules(selectedRoomModal.id)
+      showSuccess(`Jadwal perkuliahan "${matkul}" berhasil dihapus!`, 'JADWAL KULIAH')
+      setConfirmDeleteSched({ open: false, id: null, matkul: '', loading: false })
+      if (selectedRoomModal) {
+        fetchRoomSchedules(selectedRoomModal.id)
+      }
     } catch (error) {
-      alert('Gagal menghapus jadwal.')
+      showError('Gagal menghapus jadwal.', 'JADWAL KULIAH')
+      setConfirmDeleteSched(prev => ({ ...prev, loading: false }))
     }
   }
 
@@ -292,6 +414,11 @@ function ManajemenRuangan() {
         derivedSks = String(Math.max(1, Math.round(durationMin / 50)))
       }
     }
+
+    const repeatCode = getRepeatClassCode(sched.prodi)
+    const standardCodes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'U', repeatCode]
+    const isCustom = sched.kelas && !standardCodes.includes(sched.kelas)
+    setIsCustomClassSched(Boolean(isCustom))
 
     setEditingSchedId(sched.id)
     setSchedForm({
@@ -316,7 +443,7 @@ function ManajemenRuangan() {
   return (
     <div className="room-management-page animate-fade-in">
       <section className="room-clock-card">
-        <div className="room-clock-icon" aria-hidden="true">◷</div>
+        <div className="room-clock-icon" aria-hidden="true"><ClockFill size={20} /></div>
         <div>
           <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
         </div>
@@ -333,7 +460,7 @@ function ManajemenRuangan() {
       <div className="room-page-heading">
         <p className="room-eyebrow">ADMINISTRATOR / FACILITY CONTROL</p>
         <h1>Manajemen Ruangan & Jadwal</h1>
-        <p>Inventaris fisik teratur berbasis hierarki Kampus ➔ Gedung ➔ Ruangan Per Lantai.</p>
+        <p>Inventaris fisik teratur berbasis hierarki Kampus <ArrowRight size={12} style={{ margin: '0 4px' }} /> Gedung <ArrowRight size={12} style={{ margin: '0 4px' }} /> Ruangan Per Lantai.</p>
       </div>
 
       {message.text && (
@@ -477,7 +604,7 @@ function ManajemenRuangan() {
               <h2 style={{ fontSize: "18px", fontWeight: "bold", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}><GeoAltFill size={20} /> Ruangan {selectedGedung} ({selectedKampus})</h2>
               <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Daftar inventaris ruang terbagi otomatis per lantai gedung.</p>
             </div>
-            <button className="btn btn-secondary btn-sm" onClick={() => setSelectedGedung(null)}>⬅️ Kembali ke Daftar Gedung</button>
+            <button className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }} onClick={() => setSelectedGedung(null)}><ArrowLeft size={14} /> Kembali ke Daftar Gedung</button>
           </div>
 
           {/* Form Tambah Ruangan Baru di Gedung Terpilih */}
@@ -500,8 +627,8 @@ function ManajemenRuangan() {
               </div>
 
               {/* Tambah Jadwal Pertama Sekaligus (Cascading Fakultas ➔ Prodi + SKS System) */}
-              <div style={{ marginBottom: '16px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: '500', fontSize: '14px' }}>
+              <div style={{ marginBottom: '16px', background: '#f8fafc', padding: '16px', border: '4px solid var(--room-border)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '14px' }}>
                   <input
                     type="checkbox"
                     checked={addWithSchedule}
@@ -511,54 +638,87 @@ function ManajemenRuangan() {
                 </label>
 
                 {addWithSchedule && (
-                  <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #cbd5e1' }}>
+                  <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '2px solid var(--room-border)' }}>
                     <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
                       {/* DROPDOWN FAKULTAS (CASCADING 1) */}
                       <div className="form-group" style={{ flex: 1, minWidth: '160px' }}>
-                        <label className="form-label">1. Pilih Fakultas</label>
-                        <select
-                          className="input-field"
+                        <label className="form-label">Fakultas</label>
+                        <NeoSelect
                           value={initialSched.fakultas}
-                          onChange={(e) => setInitialSched({ ...initialSched, fakultas: e.target.value, prodi: '' })}
-                          required={addWithSchedule}
-                        >
-                          <option value="">-- Pilih Fakultas --</option>
-                          {listFakultas.map((fak, i) => (
-                            <option key={i} value={fak}>{fak}</option>
-                          ))}
-                        </select>
+                          onChange={(val) => setInitialSched({ ...initialSched, fakultas: val, prodi: '' })}
+                          options={fakultasOptions}
+                          placeholder="-- Pilih Fakultas --"
+                        />
                       </div>
 
                       {/* DROPDOWN PRODI (CASCADING 2 - HANYA PRODI FAKULTAS TERPILIH) */}
                       <div className="form-group" style={{ flex: 1, minWidth: '160px' }}>
-                        <label className="form-label">2. Pilih Program Studi</label>
-                        <select
-                          className="input-field"
+                        <label className="form-label">Program Studi</label>
+                        <NeoSelect
                           value={initialSched.prodi}
-                          onChange={(e) => setInitialSched({ ...initialSched, prodi: e.target.value })}
-                          required={addWithSchedule}
+                          onChange={(val) => {
+                            const newRepeat = getRepeatClassCode(val)
+                            setInitialSched(prev => ({
+                              ...prev,
+                              prodi: val,
+                              kelas: isCustomClassInitial ? prev.kelas : (prev.kelas.endsWith('-U') ? newRepeat : prev.kelas)
+                            }))
+                          }}
+                          options={prodiOptionsInitial}
+                          placeholder={initialSched.fakultas ? '-- Pilih Prodi --' : '-- Pilih Fakultas Dulu --'}
                           disabled={!initialSched.fakultas}
-                        >
-                          <option value="">{initialSched.fakultas ? '-- Pilih Prodi --' : '-- Pilih Fakultas Dulu --'}</option>
-                          {departments
-                            .filter(d => d.fakultas === initialSched.fakultas && !d.nama_prodi.includes('(Umum)'))
-                            .map(dep => (
-                              <option key={dep.id} value={dep.nama_prodi}>{dep.nama_prodi}</option>
-                            ))}
-                        </select>
+                        />
                       </div>
 
-                      <div className="form-group" style={{ flex: 1, minWidth: '100px' }}>
+                      <div className="form-group" style={{ flex: 1, minWidth: '130px' }}>
                         <label className="form-label">Semester</label>
-                        <select className="input-field" value={initialSched.semester} onChange={(e) => setInitialSched({ ...initialSched, semester: e.target.value })} required={addWithSchedule}>
-                          {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <option key={s} value={String(s)}>Semester {s}</option>)}
-                        </select>
+                        <NeoSelect
+                          value={initialSched.semester}
+                          onChange={(val) => setInitialSched({ ...initialSched, semester: val })}
+                          options={SEMESTER_OPTIONS}
+                        />
                       </div>
-                      <div className="form-group" style={{ flex: 1, minWidth: '80px' }}>
+
+                      <div className="form-group" style={{ flex: 1, minWidth: '140px' }}>
                         <label className="form-label">Kelas</label>
-                        <select className="input-field" value={initialSched.kelas} onChange={(e) => setInitialSched({ ...initialSched, kelas: e.target.value })} required={addWithSchedule}>
-                          {['A', 'B', 'C', 'D', 'E', 'F', 'G'].map(k => <option key={k} value={k}>Kelas {k}</option>)}
-                        </select>
+                        {isCustomClassInitial ? (
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <input
+                              type="text"
+                              className="input-field"
+                              placeholder="Misal: TIF-U / SPB"
+                              value={initialSched.kelas}
+                              onChange={(e) => setInitialSched({ ...initialSched, kelas: e.target.value.toUpperCase() })}
+                              style={{ flex: 1, minWidth: '0', textTransform: 'uppercase' }}
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              onClick={() => {
+                                setIsCustomClassInitial(false)
+                                setInitialSched(prev => ({ ...prev, kelas: 'A' }))
+                              }}
+                              title="Kembali ke pilihan dropdown"
+                              style={{ padding: '0 12px', minHeight: '48px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                              <ArrowCounterclockwise size={16} />
+                            </button>
+                          </div>
+                        ) : (
+                          <NeoSelect
+                            value={initialSched.kelas}
+                            onChange={(val) => {
+                              if (val === '__CUSTOM__') {
+                                setIsCustomClassInitial(true)
+                                setInitialSched(prev => ({ ...prev, kelas: '' }))
+                              } else {
+                                setInitialSched(prev => ({ ...prev, kelas: val }))
+                              }
+                            }}
+                            options={getClassOptions(initialSched.prodi)}
+                          />
+                        )}
                       </div>
                     </div>
 
@@ -575,45 +735,35 @@ function ManajemenRuangan() {
 
                     {/* SKS SYSTEM & KALKULATOR JAM SELESAI OTOMATIS */}
                     <div className="form-row" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                      <div className="form-group" style={{ flex: 1, minWidth: '110px' }}>
+                      <div className="form-group" style={{ flex: 1, minWidth: '130px' }}>
                         <label className="form-label">Hari</label>
-                        <select className="input-field" value={initialSched.hari} onChange={(e) => setInitialSched({ ...initialSched, hari: e.target.value })} required={addWithSchedule}>
-                          {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map(h => <option key={h} value={h}>{h}</option>)}
-                        </select>
-                      </div>
-
-                      <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
-                        <label className="form-label">Bobot SKS</label>
-                        <select
-                          className="input-field"
-                          value={initialSched.sks}
-                          onChange={(e) => handleInitialSchedTimeChange(initialSched.waktu_mulai, e.target.value)}
-                          required={addWithSchedule}
-                        >
-                          <option value="1">1 SKS (50 Menit)</option>
-                          <option value="2">2 SKS (100 Menit)</option>
-                          <option value="3">3 SKS (150 Menit)</option>
-                          <option value="4">4 SKS (200 Menit)</option>
-                        </select>
-                      </div>
-
-                      <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
-                        <label className="form-label">Jam Mulai</label>
-                        <input
-                          type="time"
-                          className="input-field"
-                          value={initialSched.waktu_mulai}
-                          onChange={(e) => handleInitialSchedTimeChange(e.target.value, initialSched.sks)}
-                          required={addWithSchedule}
+                        <NeoSelect
+                          value={initialSched.hari}
+                          onChange={(val) => setInitialSched({ ...initialSched, hari: val })}
+                          options={HARI_OPTIONS}
                         />
                       </div>
 
-                      <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
-                        <label className="form-label">Jam Selesai (Otomatis)</label>
-                        <input
-                          type="time"
-                          className="input-field"
-                          style={{ background: '#f1f5f9', cursor: 'not-allowed', fontWeight: 'bold' }}
+                      <div className="form-group" style={{ flex: 1, minWidth: '160px' }}>
+                        <label className="form-label">Bobot SKS</label>
+                        <NeoSelect
+                          value={initialSched.sks}
+                          onChange={(val) => handleInitialSchedTimeChange(initialSched.waktu_mulai, val)}
+                          options={SKS_OPTIONS}
+                        />
+                      </div>
+
+                      <div className="form-group" style={{ flex: 1, minWidth: '130px' }}>
+                        <label className="form-label">Jam Mulai</label>
+                        <NeoTimePicker
+                          value={initialSched.waktu_mulai}
+                          onChange={(val) => handleInitialSchedTimeChange(val, initialSched.sks)}
+                        />
+                      </div>
+
+                      <div className="form-group" style={{ flex: 1, minWidth: '130px' }}>
+                        <label className="form-label">Jam Selesai</label>
+                        <NeoTimePicker
                           value={initialSched.waktu_selesai}
                           readOnly
                         />
@@ -694,7 +844,7 @@ function ManajemenRuangan() {
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
-          <div className="card-flat" style={{ width: '100%', maxWidth: '720px', background: '#fff', padding: '24px', borderRadius: '12px', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className="card-flat" style={{ width: '100%', maxWidth: '720px', background: '#fff', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}><CalendarEventFill size={18} /> Jadwal SIAKAD Ruang {selectedRoomModal.nama}</h2>
               <button className="btn btn-secondary btn-sm" onClick={() => setSelectedRoomModal(null)}>Tutup</button>
@@ -706,6 +856,7 @@ function ManajemenRuangan() {
                 style={{ marginBottom: '16px' }}
                 onClick={() => {
                   setEditingSchedId(null)
+                  setIsCustomClassSched(false)
                   const defaultStart = '07:30'
                   const defaultSks = '3'
                   setSchedForm({
@@ -729,7 +880,7 @@ function ManajemenRuangan() {
 
             {/* FORM TAMBAH / EDIT JADWAL RUANGAN (CASCADING FAKULTAS ➔ PRODI + SKS SYSTEM) */}
             {showFormSched && (
-              <form onSubmit={handleSaveSchedule} style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
+              <form onSubmit={handleSaveSchedule} style={{ background: '#f8fafc', padding: '16px', marginBottom: '16px', border: '4px solid var(--room-border)' }}>
                 <h3 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px' }}>
                   {editingSchedId ? (<span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><PencilSquare size={14} /> Edit Jadwal</span>) : (<span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><PlusLg size={14} /> Tambah Jadwal Baru</span>)}
                 </h3>
@@ -737,50 +888,82 @@ function ManajemenRuangan() {
                 <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
                   {/* DROPDOWN FAKULTAS (CASCADING 1) */}
                   <div className="form-group" style={{ flex: 1, minWidth: '160px' }}>
-                    <label className="form-label">1. Pilih Fakultas</label>
-                    <select
-                      className="input-field"
+                    <label className="form-label">Fakultas</label>
+                    <NeoSelect
                       value={schedForm.fakultas}
-                      onChange={(e) => setSchedForm({ ...schedForm, fakultas: e.target.value, prodi: '' })}
-                      required
-                    >
-                      <option value="">-- Pilih Fakultas --</option>
-                      {listFakultas.map((fak, i) => (
-                        <option key={i} value={fak}>{fak}</option>
-                      ))}
-                    </select>
+                      onChange={(val) => setSchedForm({ ...schedForm, fakultas: val, prodi: '' })}
+                      options={fakultasOptions}
+                      placeholder="-- Pilih Fakultas --"
+                    />
                   </div>
 
                   {/* DROPDOWN PRODI (CASCADING 2 - HANYA PRODI FAKULTAS TERPILIH) */}
                   <div className="form-group" style={{ flex: 1, minWidth: '160px' }}>
-                    <label className="form-label">2. Pilih Program Studi</label>
-                    <select
-                      className="input-field"
+                    <label className="form-label">Program Studi</label>
+                    <NeoSelect
                       value={schedForm.prodi}
-                      onChange={(e) => setSchedForm({ ...schedForm, prodi: e.target.value })}
-                      required
+                      onChange={(val) => {
+                        const newRepeat = getRepeatClassCode(val)
+                        setSchedForm(prev => ({
+                          ...prev,
+                          prodi: val,
+                          kelas: isCustomClassSched ? prev.kelas : (prev.kelas.endsWith('-U') ? newRepeat : prev.kelas)
+                        }))
+                      }}
+                      options={prodiOptionsSched}
+                      placeholder={schedForm.fakultas ? '-- Pilih Prodi --' : '-- Pilih Fakultas Dulu --'}
                       disabled={!schedForm.fakultas}
-                    >
-                      <option value="">{schedForm.fakultas ? '-- Pilih Prodi --' : '-- Pilih Fakultas Dulu --'}</option>
-                      {departments
-                        .filter(d => d.fakultas === schedForm.fakultas && !d.nama_prodi.includes('(Umum)'))
-                        .map(dep => (
-                          <option key={dep.id} value={dep.nama_prodi}>{dep.nama_prodi}</option>
-                        ))}
-                    </select>
+                    />
                   </div>
 
-                  <div className="form-group" style={{ flex: 1, minWidth: '100px' }}>
+                  <div className="form-group" style={{ flex: 1, minWidth: '130px' }}>
                     <label className="form-label">Semester</label>
-                    <select className="input-field" value={schedForm.semester} onChange={(e) => setSchedForm({ ...schedForm, semester: e.target.value })} required>
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <option key={s} value={String(s)}>Semester {s}</option>)}
-                    </select>
+                    <NeoSelect
+                      value={schedForm.semester}
+                      onChange={(val) => setSchedForm({ ...schedForm, semester: val })}
+                      options={SEMESTER_OPTIONS}
+                    />
                   </div>
-                  <div className="form-group" style={{ flex: 1, minWidth: '80px' }}>
+                  <div className="form-group" style={{ flex: 1, minWidth: '140px' }}>
                     <label className="form-label">Kelas</label>
-                    <select className="input-field" value={schedForm.kelas} onChange={(e) => setSchedForm({ ...schedForm, kelas: e.target.value })} required>
-                      {['A', 'B', 'C', 'D', 'E', 'F', 'G'].map(k => <option key={k} value={k}>Kelas {k}</option>)}
-                    </select>
+                    {isCustomClassSched ? (
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <input
+                          type="text"
+                          className="input-field"
+                          placeholder="Misal: TIF-U / SPB"
+                          value={schedForm.kelas}
+                          onChange={(e) => setSchedForm({ ...schedForm, kelas: e.target.value.toUpperCase() })}
+                          style={{ flex: 1, minWidth: '0', textTransform: 'uppercase' }}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setIsCustomClassSched(false)
+                            setSchedForm(prev => ({ ...prev, kelas: 'A' }))
+                          }}
+                          title="Kembali ke pilihan dropdown"
+                          style={{ padding: '0 12px', minHeight: '48px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <ArrowCounterclockwise size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <NeoSelect
+                        value={schedForm.kelas}
+                        onChange={(val) => {
+                          if (val === '__CUSTOM__') {
+                            setIsCustomClassSched(true)
+                            setSchedForm(prev => ({ ...prev, kelas: '' }))
+                          } else {
+                            setSchedForm(prev => ({ ...prev, kelas: val }))
+                          }
+                        }}
+                        options={getClassOptions(schedForm.prodi)}
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -797,45 +980,35 @@ function ManajemenRuangan() {
 
                 {/* SKS SYSTEM & KALKULATOR JAM SELESAI OTOMATIS */}
                 <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                  <div className="form-group" style={{ flex: 1, minWidth: '110px' }}>
+                  <div className="form-group" style={{ flex: 1, minWidth: '130px' }}>
                     <label className="form-label">Hari</label>
-                    <select className="input-field" value={schedForm.hari} onChange={(e) => setSchedForm({ ...schedForm, hari: e.target.value })} required>
-                      {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map(h => <option key={h} value={h}>{h}</option>)}
-                    </select>
-                  </div>
-
-                  <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
-                    <label className="form-label">Bobot SKS</label>
-                    <select
-                      className="input-field"
-                      value={schedForm.sks}
-                      onChange={(e) => handleSchedFormTimeChange(schedForm.waktu_mulai, e.target.value)}
-                      required
-                    >
-                      <option value="1">1 SKS (50 Menit)</option>
-                      <option value="2">2 SKS (100 Menit)</option>
-                      <option value="3">3 SKS (150 Menit)</option>
-                      <option value="4">4 SKS (200 Menit)</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
-                    <label className="form-label">Jam Mulai</label>
-                    <input
-                      type="time"
-                      className="input-field"
-                      value={schedForm.waktu_mulai}
-                      onChange={(e) => handleSchedFormTimeChange(e.target.value, schedForm.sks)}
-                      required
+                    <NeoSelect
+                      value={schedForm.hari}
+                      onChange={(val) => setSchedForm({ ...schedForm, hari: val })}
+                      options={HARI_OPTIONS}
                     />
                   </div>
 
-                  <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
-                    <label className="form-label">Jam Selesai (Otomatis)</label>
-                    <input
-                      type="time"
-                      className="input-field"
-                      style={{ background: '#f1f5f9', cursor: 'not-allowed', fontWeight: 'bold' }}
+                  <div className="form-group" style={{ flex: 1, minWidth: '160px' }}>
+                    <label className="form-label">Bobot SKS</label>
+                    <NeoSelect
+                      value={schedForm.sks}
+                      onChange={(val) => handleSchedFormTimeChange(schedForm.waktu_mulai, val)}
+                      options={SKS_OPTIONS}
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ flex: 1, minWidth: '130px' }}>
+                    <label className="form-label">Jam Mulai</label>
+                    <NeoTimePicker
+                      value={schedForm.waktu_mulai}
+                      onChange={(val) => handleSchedFormTimeChange(val, schedForm.sks)}
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ flex: 1, minWidth: '130px' }}>
+                    <label className="form-label">Jam Selesai</label>
+                    <NeoTimePicker
                       value={schedForm.waktu_selesai}
                       readOnly
                     />
@@ -843,7 +1016,7 @@ function ManajemenRuangan() {
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowFormSched(false)}>Batal</button>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setShowFormSched(false); setIsCustomClassSched(false); }}>Batal</button>
                   <button type="submit" className="btn btn-primary btn-sm">Simpan Jadwal</button>
                 </div>
               </form>
@@ -880,7 +1053,7 @@ function ManajemenRuangan() {
                       </td>
                       <td style={{ padding: '10px 10px', textAlign: 'right' }}>
                         <button className="btn btn-secondary btn-sm" style={{ marginRight: '4px', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleEditScheduleClick(s)}><PencilSquare size={13} /> Edit</button>
-                        <button className="btn btn-secondary btn-sm" style={{ color: 'red', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleDeleteSchedule(s.id)}><TrashFill size={13} /> Hapus</button>
+                        <button className="btn btn-secondary btn-sm" style={{ color: 'red', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleDeleteSchedule(s.id, s.mata_kuliah)}><TrashFill size={13} /> Hapus</button>
                       </td>
                     </tr>
                   ))}
@@ -890,6 +1063,19 @@ function ManajemenRuangan() {
           </div>
         </div>
       )}
+
+      {/* MODAL KONFIRMASI HAPUS JADWAL */}
+      <ConfirmModal
+        isOpen={confirmDeleteSched.open}
+        title="Hapus Jadwal Kuliah"
+        message={`Apakah Anda yakin ingin menghapus jadwal perkuliahan "${confirmDeleteSched.matkul}"?`}
+        confirmText="Ya, Hapus Jadwal"
+        cancelText="Batal"
+        variant="danger"
+        loading={confirmDeleteSched.loading}
+        onConfirm={handleConfirmDeleteSchedule}
+        onCancel={() => !confirmDeleteSched.loading && setConfirmDeleteSched({ open: false, id: null, matkul: '', loading: false })}
+      />
     </div>
   )
 }

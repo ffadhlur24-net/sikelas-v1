@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { exportToCSV } from '../../utils/exportExcel'
 import api from '../../api/axios'
 import './LogPelaporan.css'
+import { useToast } from '../../context/ToastContext'
 import {
   HourglassSplit,
   CheckCircleFill,
@@ -12,6 +13,7 @@ import {
 } from 'react-bootstrap-icons'
 
 function LogPelaporan() {
+  const { showSuccess, showError, showWarning } = useToast()
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
@@ -81,7 +83,7 @@ function LogPelaporan() {
   const handleResolve = async (id, status = 'verified', customReason = '') => {
     let alasan_penolakan = customReason
     if (status === 'rejected' && !alasan_penolakan.trim()) {
-      alert('Alasan penolakan wajib diisi!')
+      showWarning('Alasan penolakan wajib diisi sebelum menolak laporan!', 'VALIDASI PENOLAKAN')
       return
     }
 
@@ -89,11 +91,11 @@ function LogPelaporan() {
     setMessage('')
     try {
       const res = await api.patch(`reports/${id}/resolve`, { status, alasan_penolakan })
-      setMessage(res.data.message || 'Status laporan berhasil diperbarui! Notifikasi in-app dan email telah dikirim ke PJ.')
+      showSuccess(res.data.message || 'Status laporan berhasil diperbarui! Notifikasi in-app dan email telah dikirim ke PJ.', 'STATUS LAPORAN')
       fetchReports()
     } catch (error) {
       console.error(error)
-      alert(error.response?.data?.error || 'Terjadi kesalahan saat mengirim perubahan laporan')
+      showError(error.response?.data?.error || 'Terjadi kesalahan saat mengirim perubahan laporan', 'STATUS LAPORAN')
     } finally {
       setActionLoading(false)
       setRejectModal({ open: false, id: null, subject: '', reason: '' })
@@ -106,11 +108,11 @@ function LogPelaporan() {
     setActionLoading(true)
     try {
       await api.delete(`/reports/${id}`)
-      setMessage('Laporan berhasil dihapus dari sistem!')
+      showSuccess('Laporan berhasil dihapus dari sistem!', 'HAPUS LAPORAN')
       fetchReports()
     } catch (error) {
       console.error(error)
-      alert('Gagal menghapus laporan.')
+      showError('Gagal menghapus laporan.', 'HAPUS LAPORAN')
     } finally {
       setActionLoading(false)
       setDeleteModal({ open: false, id: null, subject: '' })
@@ -142,6 +144,10 @@ function LogPelaporan() {
       r.users?.nim_nip || '-',
       isReportExpired(r) ? 'Kadaluarsa' : r.status === 'verified' ? 'Disetujui / Kosong' : r.status === 'rejected' ? 'Ditolak' : 'Menunggu ACC'
     ])
+    if (rows.length === 0) {
+      showWarning('Tidak ada data laporan kelas kosong untuk diekspor pada filter ini!', 'DATA KOSONG')
+      return
+    }
     exportToCSV('Laporan_Kelas_Kosong', headers, rows)
   }
 

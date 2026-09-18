@@ -2,9 +2,11 @@
 // Export Excel (CSV)
 //================================
 
-export const exportToCSV = (filename, headers, dataRows) => {
+export const exportToCSV = (filename, headers, dataRows, onError) => {
     if (!dataRows || !dataRows.length) {
-        alert('Tidak ada data yang dapat diexport!')
+        if (typeof onError === 'function') {
+            onError('Tidak ada data yang dapat diekspor!')
+        }
         return;
     }
     //1. Baris Header

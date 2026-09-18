@@ -1,17 +1,14 @@
-﻿/* ===================================================
+/* ===================================================
    Neobrutalist Campus Core - Register PJ Kelas
    SiKelas Institutional Management
    =================================================== */
 
 .pj-register-wrapper {
+  position: relative;
   min-height: 100vh;
   background-color: #f5f0e6;
-  background-image: url('/assets/background.png');
   width: 100%;
-  background-size: 100% 100%;
-  background-position: center;
-  background-attachment: fixed;
-  background-repeat: no-repeat;
+  overflow-x: hidden;
   
   padding: 40px 16px;
   display: flex;
@@ -23,10 +20,26 @@
   box-sizing: border-box;
 }
 
+/* Fixed Viewport Backdrop: Anti-distorsi, bebas jitter mobile keyboard, rasio aspek cover */
+.pj-register-wrapper::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image: 
+    linear-gradient(rgba(245, 240, 230, 0.74), rgba(245, 240, 230, 0.82)),
+    url('/assets/background.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
 .pj-register-container {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 680px;
-  position: relative;
   margin: auto;
 }
 
@@ -45,6 +58,7 @@
   letter-spacing: 0.1em;
   padding: 6px 14px;
   border: 2.5px solid #000000;
+  border-radius: 0 !important;
   box-shadow: 2px 2px 0px #000000;
   transform: rotate(6deg);
   transition: transform 0.2s ease;
@@ -186,27 +200,32 @@
   background-color: #f5f5f5;
   padding: 2px 6px;
   border: 1px solid #000000;
+  border-radius: 0 !important;
   letter-spacing: 0.05em;
 }
 
 .pj-input-text {
   width: 100%;
   background-color: #fcfbf7;
-  border: 2.5px solid #000000;
+  border: 2.5px solid #000000 !important;
+  border-radius: 0 !important;
   box-shadow: 2px 2px 0px #000000;
   padding: 12px 16px;
   font-family: 'Chivo Mono', monospace;
   font-size: 14px;
   font-weight: 700;
   color: #000000;
-  outline: none;
+  outline: none !important;
   transition: all 0.15s ease;
   box-sizing: border-box;
 }
 
-.pj-input-text:focus {
-  background-color: #ffffff;
-  box-shadow: 4px 4px 0px #000000;
+.pj-input-text:focus,
+.pj-input-text:focus-visible {
+  border-color: #000000 !important;
+  outline: none !important;
+  background-color: #ffffff !important;
+  box-shadow: 4px 4px 0px #000000 !important;
 }
 
 .pj-input-text::placeholder {
@@ -218,10 +237,17 @@
 .pj-nim-combo {
   display: flex;
   flex-direction: column;
-  border: 2.5px solid #000000;
+  border: 2.5px solid #000000 !important;
+  border-radius: 0 !important;
   box-shadow: 2px 2px 0px #000000;
   overflow: hidden;
   background-color: #ffffff;
+  transition: all 0.15s ease;
+}
+
+.pj-nim-combo:focus-within {
+  border-color: #000000 !important;
+  box-shadow: 4px 4px 0px #000000 !important;
 }
 
 @media (min-width: 640px) {
@@ -232,24 +258,32 @@
 
 .pj-nim-input {
   flex: 1;
-  border: none;
+  border: none !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
   padding: 12px 16px;
   font-family: 'Chivo Mono', monospace;
   font-size: 14px;
   font-weight: 700;
   color: #000000;
   background-color: #fcfbf7;
-  outline: none;
   box-sizing: border-box;
+  transition: background-color 0.15s ease;
 }
 
-.pj-nim-input:focus {
-  background-color: #ffffff;
+.pj-nim-input:focus,
+.pj-nim-input:focus-visible {
+  background-color: #ffffff !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .pj-nim-suffix {
   background-color: #eeeae2;
   border-top: 2px solid #000000;
+  border-radius: 0 !important;
   padding: 10px 14px;
   font-size: 13px;
   font-weight: 700;
@@ -272,6 +306,7 @@
   position: relative;
   display: flex;
   align-items: center;
+  border-radius: 0 !important;
 }
 
 .pj-password-toggle {
@@ -279,6 +314,7 @@
   right: 12px;
   background: transparent;
   border: 1px solid transparent;
+  border-radius: 0 !important;
   padding: 6px;
   cursor: pointer;
   display: flex;
@@ -316,6 +352,7 @@
 /* Stepper Container (5 Steps) */
 .pj-stepper-box {
   border: 3.5px solid #000000;
+  border-radius: 0 !important;
   background-color: #fbf9f4;
   padding: 20px 16px;
   box-shadow: 4px 4px 0px #000000;
@@ -376,6 +413,7 @@
   font-weight: 900;
   font-size: 13px;
   border: 2px solid #000000;
+  border-radius: 0 !important;
   transition: all 0.15s ease;
 }
 
@@ -439,6 +477,7 @@
 /* Stepper Dashed Content Pane */
 .pj-stepper-pane {
   border: 2px dashed #000000;
+  border-radius: 0 !important;
   background-color: #ffffff;
   padding: 20px;
   display: flex;
@@ -471,14 +510,15 @@
 .pj-select-brutal {
   width: 100%;
   background-color: #fcfbf7;
-  border: 2.5px solid #000000;
+  border: 2.5px solid #000000 !important;
+  border-radius: 0 !important;
   box-shadow: 2px 2px 0px #000000;
   padding: 12px 14px;
   font-family: 'Chivo Mono', monospace;
   font-size: 13px;
   font-weight: 700;
   color: #000000;
-  outline: none;
+  outline: none !important;
   cursor: pointer;
   transition: all 0.15s ease;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23000'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
@@ -491,9 +531,12 @@
   box-sizing: border-box;
 }
 
-.pj-select-brutal:focus {
-  background-color: #ffffff;
-  box-shadow: 4px 4px 0px #000000;
+.pj-select-brutal:focus,
+.pj-select-brutal:focus-visible {
+  background-color: #ffffff !important;
+  border-color: #000000 !important;
+  outline: none !important;
+  box-shadow: 4px 4px 0px #000000 !important;
 }
 
 /* Stepper Bottom Navigation */
@@ -511,20 +554,32 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   padding: 10px 20px;
-  background-color: #ffffff;
-  color: #000000;
+  background-color: #000000;
+  color: #ffffff;
   border: 2px solid #000000;
+  border-radius: 0 !important;
+  box-shadow: 3px 3px 0px #e77963;
   cursor: pointer;
-  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.1s ease;
 }
 
 .pj-btn-back:not(:disabled):hover {
-  background-color: #f5f5f5;
+  box-shadow: 4px 4px 0px #e77963;
+}
+
+.pj-btn-back:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: none;
 }
 
 .pj-btn-back:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 .pj-btn-next {
@@ -537,6 +592,7 @@
   background-color: #000000;
   color: #ffffff;
   border: 2px solid #000000;
+  border-radius: 0 !important;
   box-shadow: 3px 3px 0px #e77963;
   cursor: pointer;
   display: flex;
@@ -545,13 +601,20 @@
   transition: all 0.1s ease;
 }
 
-.pj-btn-next:hover {
+.pj-btn-next:hover:not(:disabled) {
   box-shadow: 4px 4px 0px #e77963;
 }
 
-.pj-btn-next:active {
+.pj-btn-next:active:not(:disabled) {
   transform: translate(2px, 2px);
   box-shadow: none;
+}
+
+.pj-btn-next:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 /* Submit Button */
@@ -566,6 +629,7 @@
   letter-spacing: 0.08em;
   padding: 16px 24px;
   border: 3.5px solid #000000;
+  border-radius: 0 !important;
   box-shadow: 4px 4px 0px #000000;
   cursor: pointer;
   display: flex;
@@ -594,6 +658,7 @@
 .pj-alert-box {
   padding: 14px 18px;
   border: 2.5px solid #000000;
+  border-radius: 0 !important;
   box-shadow: 3px 3px 0px #000000;
   font-size: 13px;
   font-weight: 700;
@@ -652,6 +717,7 @@
   background-color: #fff5ea;
   padding: 8px 14px;
   border: 1px solid #000000;
+  border-radius: 0 !important;
   box-shadow: 2px 2px 0px #000000;
   font-size: 12px;
 }
@@ -672,6 +738,7 @@
   text-transform: uppercase;
   padding: 8px 16px;
   border: 2px solid #000000;
+  border-radius: 0 !important;
   background-color: #ffffff;
   color: #000000;
   box-shadow: 2px 2px 0px #000000;
@@ -728,4 +795,97 @@
 
 .pj-helpdesk-box a:hover {
   background-color: #ffffff;
+}
+
+/* ===================================================
+   RESPONSIVE DESIGN (TABLET & MOBILE)
+   =================================================== */
+
+/* Tablet (601px - 900px, e.g. 768px) */
+@media (max-width: 900px) {
+  .pj-register-wrapper {
+    padding: 28px 20px;
+  }
+
+  .pj-register-container {
+    max-width: 620px;
+  }
+}
+
+/* Mobile (≤ 600px / 425px / 375px) */
+@media (max-width: 600px) {
+  .pj-register-wrapper {
+    padding: 16px 12px 28px;
+  }
+
+  .pj-register-card {
+    border-width: 3px;
+    box-shadow: 5px 5px 0px #000000;
+  }
+
+  /* Anti-overflow floating badge di mobile */
+  .pj-floating-badge {
+    top: -13px;
+    right: 0px;
+    font-size: 9.5px;
+    padding: 3px 10px;
+    transform: rotate(2.5deg);
+    box-shadow: 2px 2px 0px #000000;
+  }
+
+  .pj-register-header {
+    padding: 22px 14px 18px;
+  }
+
+  .pj-header-tag {
+    font-size: 10.5px;
+    letter-spacing: 0.15em;
+  }
+
+  .pj-header-title {
+    font-size: 21px;
+    margin-bottom: 6px;
+  }
+
+  .pj-header-subtitle {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .pj-nav-tab {
+    font-size: 11px;
+    padding: 11px 8px;
+    letter-spacing: 0.04em;
+  }
+
+  .pj-form-body {
+    padding: 20px 14px;
+    gap: 18px;
+  }
+
+  .pj-input,
+  .pj-select {
+    padding: 11px 12px;
+    font-size: 13.5px;
+  }
+
+  .pj-btn-submit {
+    padding: 13px 16px;
+    font-size: 13.5px;
+  }
+
+  .pj-ticket-footer {
+    padding: 12px 10px;
+  }
+
+  .pj-ticket-footer p {
+    font-size: 9.5px;
+    letter-spacing: 0.05em;
+  }
+
+  .pj-helpdesk-box {
+    font-size: 11.5px;
+    margin-top: 18px;
+    padding: 0 10px 16px;
+  }
 }

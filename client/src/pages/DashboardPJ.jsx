@@ -1,4 +1,4 @@
-import { Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { Routes, Route, NavLink, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import ProfilPJ from './pj/ProfilPJ'
 import DaftarKelas from './pj/DaftarKelas'
 import PelaporanKelas from './pj/PelaporanKelas'
@@ -6,14 +6,20 @@ import PelaporanKerusakan from './pj/PelaporanKerusakan'
 import Notification from '../components/Notification'
 import './DashboardPJ.css'
 import './DashboardPJTheme.css'
-import { useContext } from 'react'
-import { BoxArrowRight, GearFill } from 'react-bootstrap-icons'
+import { useContext, useState, useEffect } from 'react'
+import { BoxArrowRight, List, XLg } from 'react-bootstrap-icons'
 import { AuthContext } from '../context/AuthContext'
 
 function DashboardPJ() {
   const { user, logout } = useContext(AuthContext)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+
+  // Otomatis tutup sidebar saat rute halaman berpindah
+  useEffect(() => {
+    setIsSidebarOpen(false)
+  }, [location.pathname])
 
   // Dynamic Header Title & Eyebrow based on active route
   const getHeaderInfo = () => {
@@ -51,16 +57,35 @@ function DashboardPJ() {
 
   return (
     <div className="dashboard-layout pj-dashboard">
-      {/* Sidebar */}
-      <aside className="sidebar">
+      {/* Backdrop Overlay untuk Mobile & Tablet Drawer */}
+      {isSidebarOpen && (
+        <div 
+          className="pj-sidebar-backdrop" 
+          onClick={() => setIsSidebarOpen(false)}
+          aria-label="Tutup navigasi menu" 
+        />
+      )}
+
+      {/* Sidebar Nav-Left (Fixed di Desktop, Off-Canvas Drawer di Tablet & Mobile) */}
+      <aside className={`sidebar ${isSidebarOpen ? 'is-open' : ''}`}>
         <div className="sidebar-top">
-          {/* Logo */}
+          {/* Logo Brand & Close Button */}
           <div className="sidebar-brand">
-            <img src="/assets/logo_sikelas.png" alt="Logo SiKelas" className="sidebar-brand-icon" />
-            <div>
-              <span className="sidebar-brand-text">Sikelas</span>
-              <span className="sidebar-brand-sub">Dashboard PJ</span>
+            <div className="sidebar-brand-left">
+              <img src="/assets/logo_sikelas.png" alt="Logo SiKelas" className="sidebar-brand-icon" />
+              <div>
+                <span className="sidebar-brand-text">Sikelas</span>
+                <span className="sidebar-brand-sub">Dashboard PJ</span>
+              </div>
             </div>
+            <button 
+              type="button" 
+              className="pj-sidebar-close-btn"
+              onClick={() => setIsSidebarOpen(false)}
+              aria-label="Tutup menu sidebar"
+            >
+              <XLg size={20} />
+            </button>
           </div>
 
           {/* Navigation */}
@@ -90,7 +115,7 @@ function DashboardPJ() {
               </svg>
               Pelaporan Kelas Kosong
             </NavLink>
-            <NavLink to="/pj/pelaporan-kerusakan" className="sidebar-link" id="nav-pelaporan">
+            <NavLink to="/pj/pelaporan-kerusakan" className="sidebar-link" id="nav-pelaporan-kerusakan">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
@@ -111,9 +136,19 @@ function DashboardPJ() {
       <main className="dashboard-main">
         {/* Top Header Bar */}
         <header className="dashboard-header">
-          <div className="pj-navbar-title">
-            <p>{headerInfo.eyebrow}</p>
-            <h1>{headerInfo.title}</h1>
+          <div className="pj-header-left-group">
+            <button
+              type="button"
+              className="pj-sidebar-toggle-btn"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              aria-label="Buka menu navigasi"
+            >
+              <List size={26} />
+            </button>
+            <div className="pj-navbar-title">
+              <p>{headerInfo.eyebrow}</p>
+              <h1>{headerInfo.title}</h1>
+            </div>
           </div>
           <div className="pj-navbar-actions">
             <Notification />
@@ -128,10 +163,12 @@ function DashboardPJ() {
         {/* Page Content */}
         <div className="dashboard-content">
           <Routes>
+            <Route index element={<Navigate to="profil" replace />} />
             <Route path="profil" element={<ProfilPJ />} />
             <Route path="daftar-kelas" element={<DaftarKelas />} />
             <Route path="pelaporan" element={<PelaporanKelas />} />
             <Route path="pelaporan-kerusakan" element={<PelaporanKerusakan />} />
+            <Route path="*" element={<Navigate to="profil" replace />} />
           </Routes>
         </div>
       </main>

@@ -10,6 +10,28 @@ import { sendPasswordOtpEmail } from '../utils/sendEmail.js'
 
 const router = Router()
 
+// GET /api/users/profile - Ambil data profil user terkini langsung dari database
+router.get('/profile', verifyToken, async (req, res) => {
+    try {
+        const userId = req.user.id
+
+        const { data: user, error: fetchErr } = await supabase
+            .from('users')
+            .select('id, username, nim_nip, email, prodi, semester, kelas, mata_kuliah, no_hp, role, status, created_at, updated_at')
+            .eq('id', userId)
+            .single()
+
+        if (fetchErr || !user) {
+            return res.status(404).json({ error: 'Pengguna tidak ditemukan' })
+        }
+
+        res.json({ user })
+    } catch (error) {
+        console.error('Get profile error:', error)
+        res.status(500).json({ error: 'Gagal memuat profil pengguna' })
+    }
+})
+
 // PUT /api/users/profile - Edit Profil Mandiri (Admin & PJ)
 router.put('/profile', verifyToken, async (req, res) => {
     try {
@@ -70,7 +92,7 @@ router.put('/profile', verifyToken, async (req, res) => {
             .from('users')
             .update(updatePayload)
             .eq('id', userId)
-            .select('id, username, nim_nip, email, prodi, semester: semVal, kelas, mata_kuliah, no_hp, role, status')
+            .select('id, username, nim_nip, email, prodi, semester: semester, kelas, mata_kuliah, no_hp, role, status')
             .single()
 
         if (updateErr) throw updateErr
@@ -182,7 +204,7 @@ router.put('/:id', verifyToken, adminOnly, async (req, res) => {
         }
         const { data, error } = await supabase
             .from('users')
-            .update({ username, nim_nip, prodi, semester, kelas, mata_kuliah, no_hp, status })
+            .update({ username, nim_nip, prodi, semester: semVal, kelas, mata_kuliah, no_hp, status })
             .eq('id', id)
             .select('*')
             .single()

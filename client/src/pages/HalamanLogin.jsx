@@ -16,7 +16,6 @@ import {
 function HalamanLogin() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
 
   // State form input
@@ -140,7 +139,7 @@ function HalamanLogin() {
                 onChange={handleChange}
               />
               <p className="login-input-hint">
-                <InfoCircleFill size={13} className="info-icon" style={{ flexShrink: 0 }} /> Gunakan email resmi (@student.walisongo.ac.id) atau username terdaftar.
+                <InfoCircleFill size={13} className="info-icon" style={{ flexShrink: 0 }} /> Untuk PJ gunakan email resmi (@student.walisongo.ac.id).
               </p>
             </div>
 
@@ -184,15 +183,6 @@ function HalamanLogin() {
 
             {/* Auxiliary Row: Remember Me & Forgot Password */}
             <div className="login-auxiliary-row">
-              <label className="login-remember-label">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="login-checkbox"
-                />
-                <span>Ingat Saya</span>
-              </label>
               <a
                 href="https://wa.me/6281234567890?text=Halo%20Admin%20SiKelas,%20saya%20lupa%20password%20akun%20saya"
                 target="_blank"

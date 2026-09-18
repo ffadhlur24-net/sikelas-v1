@@ -96,7 +96,7 @@ router.get('/', verifyToken, adminOnly, async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('facility_reports')
-            .select('*, rooms(nama, gedung, kampus, status), users(username, email, prodi, no_hp)')
+            .select('*, rooms(nama, gedung, kampus, status), reporter:users!reporter_id(username, email, prodi, no_hp)')
             .order('created_at', { ascending: false })
 
         if (error) throw error

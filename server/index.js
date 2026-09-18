@@ -2,6 +2,8 @@
 // Sikelas Backend Server
 // =============================
 
+process.env.TZ = 'Asia/Jakarta'
+
 import express from 'express'
 import cors from 'cors'
 import 'dotenv/config'
@@ -43,7 +45,8 @@ app.use(cors({
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true)
         } else {
-            callback(null, true) // fallback permisif agar pendaftar tidak terblokir
+            console.warn(`⚠️ CORS: Origin ${origin} tidak diizinkan.`)
+            callback(new Error('Not allowed by CORS'))
         }
     },
     credentials: true

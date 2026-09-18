@@ -127,6 +127,7 @@ html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 body {
@@ -136,10 +137,12 @@ body {
   background-color: var(--bg-page);
   line-height: 1.6;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 #root {
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 a {
@@ -152,8 +155,10 @@ a:hover {
   color: var(--color-primary-700);
 }
 
-img {
+img,
+video {
   max-width: 100%;
+  height: auto;
   display: block;
 }
 

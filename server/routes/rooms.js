@@ -73,12 +73,12 @@ router.get('/', async (req, res) => {
             })
         }
 
-        // 2. CARI RESERVASI INSIDENTAL APPROVED PADA SLOT TANGGAL & JAM TARGET
+        // 2. CARI RESERVASI INSIDENTAL (APPROVED & PENDING) PADA SLOT TANGGAL & JAM TARGET
         const { data: activeReservations } = await supabase
             .from('reservations')
-            .select('id, room_id, mata_kuliah, waktu_mulai, waktu_selesai, status')
+            .select('id, room_id, mata_kuliah, waktu_mulai, waktu_selesai, status, is_checked_in')
             .eq('tanggal', targetDate)
-            .eq('status', 'approved')
+            .in('status', ['approved', 'pending'])
             .lt('waktu_mulai', targetEnd)
             .gt('waktu_selesai', targetStart)
 
@@ -87,17 +87,22 @@ router.get('/', async (req, res) => {
 
         if (activeReservations) {
             activeReservations.forEach(res => {
-                // Cek apakah reservasi hari ini sudah lewat 15 menit dari waktu_mulai tanpa check-in
+                // Cek apakah reservasi hari ini sudah lewat batas waktu
                 if (targetDate === todayStr) {
                     const [sH, sM] = res.waktu_mulai.split(':').map(Number)
                     const [curH, curM] = currentTimeStr.split(':').map(Number)
                     const startTotalMins = sH * 60 + sM
                     const currentTotalMins = curH * 60 + curM
 
-                    // Toleransi 15 menit: Jika jam sekarang > waktu_mulai + 15 menit
-                    if (currentTotalMins > startTotalMins + 15) {
+                    // Toleransi approved 15 menit: Jika belum check-in dan jam sekarang > waktu_mulai + 15 menit
+                    if (res.status === 'approved' && !res.is_checked_in && currentTotalMins > startTotalMins + 15) {
                         expiredReservationIds.push(res.id)
                         return // Abaikan dari reservasi aktif (ruangan bebas!)
+                    }
+                    // Jika pending dan jam mulainya sudah lewat hari ini
+                    if (res.status === 'pending' && currentTotalMins >= startTotalMins) {
+                        expiredReservationIds.push(res.id)
+                        return
                     }
                 }
                 validReservations.push(res)
@@ -139,13 +144,15 @@ router.get('/', async (req, res) => {
                 }
             }
 
-            // Bentrok Peminjaman PJ Lain
+            // Bentrok Peminjaman PJ Lain (Approved atau Pending)
             if (reservationConflictMap.has(room.id)) {
                 const conf = reservationConflictMap.get(room.id)
+                const isPending = conf.status === 'pending'
+                const statusPrefix = isPending ? 'Sedang Diajukan PJ Lain (Menunggu ACC)' : 'Dipesan PJ Lain'
                 return {
                     ...room,
                     slot_available: false,
-                    conflict_reason: `Dipesan PJ Lain: "${conf.mata_kuliah}" (${conf.waktu_mulai.substring(0, 5)} - ${conf.waktu_selesai.substring(0, 5)} WIB)`
+                    conflict_reason: `${statusPrefix}: "${conf.mata_kuliah}" (${conf.waktu_mulai.substring(0, 5)} - ${conf.waktu_selesai.substring(0, 5)} WIB)`
                 }
             }
 
@@ -213,13 +220,28 @@ router.get('/:id/schedule', verifyToken, async (req, res) => {
 
         const validSchedules = (schedules || []).filter(s => !cancelledSubjects.has(s.mata_kuliah));
 
-        // 2. Ambil peminjaman insidental yang di-ACC untuk tanggal tersebut
+        // 2. Ambil peminjaman insidental (approved & pending) untuk tanggal tersebut
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${yyyy}-${mm}-${dd}`;
+        const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
         const { data: reservations } = await supabase
             .from('reservations')
-            .select('mata_kuliah, waktu_mulai, waktu_selesai')
+            .select('mata_kuliah, waktu_mulai, waktu_selesai, status')
             .eq('room_id', id)
             .eq('tanggal', date)
-            .eq('status', 'approved');
+            .in('status', ['approved', 'pending']);
+
+        // Filter reservasi yang masih valid jika tanggal = hari ini
+        const validReservationsTimeline = (reservations || []).filter(r => {
+            if (date === todayStr && r.status === 'pending' && r.waktu_mulai <= currentTimeStr) {
+                return false;
+            }
+            return true;
+        });
 
         // 3. Gabungkan dan urutkan dari jam paling pagi
         const combined = [
@@ -228,7 +250,11 @@ router.get('/:id/schedule', verifyToken, async (req, res) => {
                 type: 'Reguler',
                 isPendingReport: pendingSubjects.has(s.mata_kuliah)
             })),
-            ...(reservations || []).map(r => ({ ...r, type: 'Dipesan', isPendingReport: false }))
+            ...validReservationsTimeline.map(r => ({
+                ...r,
+                type: r.status === 'pending' ? 'Menunggu ACC' : 'Dipesan',
+                isPendingReport: false
+            }))
         ].sort((a, b) => a.waktu_mulai.localeCompare(b.waktu_mulai))
 
         // 4. Kirim hasil ke Front-end

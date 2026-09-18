@@ -1,17 +1,14 @@
-﻿/* ===================================================
+/* ===================================================
    Neobrutalist Campus Core - Login SiKelas
    SiKelas Institutional Management
    =================================================== */
 
 .login-page-wrapper {
+  position: relative;
   min-height: 100vh;
   background-color: #f3efe6;
-  background-image: url('/assets/background.png');
   width: 100%;
-  background-size: 100% 100%;
-  background-position: center;
-  background-attachment: fixed;
-  background-repeat: no-repeat;
+  overflow-x: hidden;
   
   font-family: 'Space Grotesk', sans-serif;
   color: #000000;
@@ -23,9 +20,25 @@
   box-sizing: border-box;
 }
 
+/* Fixed Viewport Backdrop: Anti-distorsi, bebas jitter mobile keyboard, rasio aspek cover */
+.login-page-wrapper::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image: 
+    linear-gradient(rgba(243, 239, 230, 0.74), rgba(243, 239, 230, 0.82)),
+    url('/assets/background.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
 /* Main Login Card Container */
 .login-card-container {
   position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 620px;
   background-color: #ffffff;
@@ -182,36 +195,50 @@
   font-weight: 700;
   background-color: #ffffff;
   border: 1px solid #000000;
+  border-radius: 0;
   padding: 2px 6px;
   box-shadow: 1.5px 1.5px 0px #000000;
 }
 
 .login-input-field {
   width: 100%;
-  border: 2.5px solid #000000;
+  border: 2.5px solid #000000 !important;
+  border-radius: 0 !important;
   font-family: 'JetBrains Mono', 'Chivo Mono', monospace;
   font-size: 14px;
   font-weight: 500;
   padding: 12px 14px;
   color: #000000;
-  outline: none;
+  outline: none !important;
   transition: all 0.15s ease;
   box-sizing: border-box;
+}
+
+.login-input-field:focus,
+.login-input-field:focus-visible {
+  border-color: #000000 !important;
+  outline: none !important;
+  background-color: #ffffff !important;
+  box-shadow: 4px 4px 0px #000000 !important;
 }
 
 .login-input-email {
   background-color: #F0F4FA;
 }
 
-.login-input-email:focus {
-  background-color: #ffffff;
-  box-shadow: 2px 2px 0px #000000;
+.login-input-email:focus,
+.login-input-email:focus-visible {
+  background-color: #ffffff !important;
+  border-color: #000000 !important;
+  outline: none !important;
+  box-shadow: 4px 4px 0px #000000 !important;
 }
 
 .login-input-password-wrapper {
   position: relative;
   display: flex;
   align-items: center;
+  border-radius: 0 !important;
 }
 
 .login-input-password {
@@ -219,14 +246,19 @@
   padding-right: 48px;
 }
 
-.login-input-password:focus {
-  box-shadow: 2px 2px 0px #000000;
+.login-input-password:focus,
+.login-input-password:focus-visible {
+  background-color: #ffffff !important;
+  border-color: #000000 !important;
+  outline: none !important;
+  box-shadow: 4px 4px 0px #000000 !important;
 }
 
 .login-toggle-password-btn {
   position: absolute;
   right: 12px;
-  border: 1px solid #000000;
+  border: 1.5px solid #000000;
+  border-radius: 0 !important;
   background-color: #f5f5f5;
   padding: 6px;
   cursor: pointer;
@@ -239,6 +271,7 @@
 
 .login-toggle-password-btn:hover {
   background-color: #e5e5e5;
+  box-shadow: 2px 2px 0px #000000;
 }
 
 .login-toggle-password-btn:active {
@@ -315,6 +348,7 @@
   letter-spacing: 0.08em;
   padding: 16px 24px;
   border: 2.5px solid #000000;
+  border-radius: 0 !important;
   box-shadow: 4px 4px 0px #000000;
   cursor: pointer;
   display: flex;
@@ -346,6 +380,7 @@
   background-color: #fee2e2;
   color: #b91c1c;
   border: 2.5px solid #000000;
+  border-radius: 0 !important;
   box-shadow: 3px 3px 0px #000000;
   font-size: 13px;
   font-weight: 700;
@@ -383,6 +418,7 @@
 
 .login-otp-box {
   border: 2.5px solid #000000;
+  border-radius: 0 !important;
   background-color: #ffffff;
   padding: 10px 14px;
   box-shadow: 3px 3px 0px #000000;
@@ -413,6 +449,7 @@
   justify-content: center;
   gap: 8px;
   border: 2.5px solid #000000;
+  border-radius: 0 !important;
   background-color: #ffffff;
   font-size: 12px;
   font-weight: 800;
@@ -456,6 +493,8 @@
 
 /* Bottom Helpdesk */
 .login-helpdesk-text {
+  position: relative;
+  z-index: 1;
   text-align: center;
   font-family: 'JetBrains Mono', 'Chivo Mono', monospace;
   font-size: 12px;
@@ -469,4 +508,102 @@
   text-decoration: underline;
   text-underline-offset: 2px;
   color: #000000;
+}
+
+/* ===================================================
+   RESPONSIVE DESIGN (TABLET & MOBILE)
+   =================================================== */
+
+/* Tablet (601px - 900px, e.g. 768px) */
+@media (max-width: 900px) {
+  .login-page-wrapper {
+    padding: 28px 20px;
+  }
+  
+  .login-card-container {
+    max-width: 580px;
+  }
+}
+
+/* Mobile (≤ 600px / 425px / 375px) */
+@media (max-width: 600px) {
+  .login-page-wrapper {
+    padding: 16px 12px 28px;
+  }
+
+  .login-card-container {
+    width: 100%;
+    margin: 14px auto 18px auto;
+    border-width: 3px;
+    box-shadow: 5px 5px 0px #000000;
+  }
+
+  /* Anti-overflow sticker badge di mobile */
+  .login-sticker-badge {
+    top: -13px;
+    right: 0px;
+    font-size: 9.5px;
+    padding: 3px 10px;
+    transform: rotate(2deg);
+    box-shadow: 2px 2px 0px #000000;
+  }
+
+  .login-header {
+    padding: 22px 14px 18px;
+  }
+
+  .login-header-kicker {
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+    margin-bottom: 8px;
+  }
+
+  .login-header-title {
+    font-size: 21px;
+    margin-bottom: 8px;
+  }
+
+  .login-header-subtitle {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .login-form-body {
+    padding: 20px 14px;
+  }
+
+  .login-tab-switcher {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .login-tab-active,
+  .login-tab-inactive {
+    font-size: 11px;
+    padding: 10px 6px;
+    letter-spacing: 0.04em;
+  }
+
+  .login-input-field {
+    padding: 11px 12px;
+    font-size: 13.5px;
+  }
+
+  .login-submit-btn {
+    padding: 13px 16px;
+    font-size: 13.5px;
+  }
+
+  .login-ticket-footer {
+    padding: 12px 10px;
+  }
+
+  .login-ticket-footer p {
+    font-size: 9.5px;
+    letter-spacing: 0.05em;
+  }
+
+  .login-helpdesk-text {
+    font-size: 11px;
+    padding: 0 10px 20px;
+  }
 }

@@ -38,12 +38,13 @@ router.get('/', verifyToken, async (req, res) => {
 
 router.post('/', verifyToken, async (req, res) => {
     try {
-        const { room_id, mata_kuliah, alasan, tanggal, waktu_mulai } = req.body
-        const reportDate = tanggal || new Date().toISOString().split('T')[0];
-
         const now = new Date()
-        const todayStr = now.toISOString().split('T')[0]
-        const currentTimeStr = now.toTimeString().substring(0, 5) // Format HH:MM
+        const yyyy = now.getFullYear()
+        const mm = String(now.getMonth() + 1).padStart(2, '0')
+        const dd = String(now.getDate()).padStart(2, '0')
+        const todayStr = `${yyyy}-${mm}-${dd}`
+        const reportDate = tanggal || todayStr
+        const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
 
         // 1. Validasi Batas Tanggal (Maksimal 2 Minggu Ke Depan)
         const reportDateObj = new Date(reportDate)
@@ -217,11 +218,14 @@ router.patch('/:id/resolve', verifyToken, adminOnly, async (req, res) => {
 // DELETE /api/reports/:id - Hapus laporan basi
 router.delete('/:id', verifyToken, adminOnly, async (req, res) => {
     try {
-        const { id } = id.params
+        const { id } = req.params
         const { error } = await supabase
             .from('reports')
             .delete()
             .eq('id', id)
+
+        if (error) throw error
+        res.json({ message: 'Laporan berhasil dihapus!' })
     } catch (error) {
         console.error('Delete report error:', error)
         res.status(500).json({ error: error.message || 'Gagal menghapus laporan.' })
