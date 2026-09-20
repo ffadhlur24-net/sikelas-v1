@@ -108,13 +108,32 @@ router.post('/', verifyToken, async (req, res) => {
             .from('reports')
             .insert(insertPayload)
             .select()
-        // Jika error terjadi karena kolom 'tanggal' belum ada di tabel Supabase
+
+        // Fallback 1: Jika error akibat check constraint reports_alasan_check di Supabase PostgreSQL
+        if (error && (error.code === '23514' || (error.message && error.message.includes('reports_alasan_check')))) {
+            console.warn('⚠️ reports_alasan_check constraint violated di Supabase. Retrying dengan fallback DOSEN_BERHALANGAN...')
+            insertPayload.alasan = 'DOSEN_BERHALANGAN'
+            const retry = await supabase.from('reports').insert(insertPayload).select()
+            data = retry.data
+            error = retry.error
+        }
+
+        // Fallback 2: Jika error terjadi karena kolom 'tanggal' belum ada di tabel Supabase
         if (error && error.message && error.message.includes('tanggal')) {
             delete insertPayload.tanggal
             const retry = await supabase.from('reports').insert(insertPayload).select()
             data = retry.data
             error = retry.error
         }
+
+        // Fallback 3: Kombinasi jika tanggal belum ada DAN alasan constraint violated
+        if (error && (error.code === '23514' || (error.message && error.message.includes('reports_alasan_check')))) {
+            insertPayload.alasan = 'DOSEN_BERHALANGAN'
+            const retry = await supabase.from('reports').insert(insertPayload).select()
+            data = retry.data
+            error = retry.error
+        }
+
         if (error) {
             console.error('Supabase Insert Report Error:', error)
             throw error
@@ -131,7 +150,7 @@ router.post('/', verifyToken, async (req, res) => {
                 const notifPayloads = adminUsers.map(adm => ({
                     user_id: adm.id,
                     title: '📋 Laporan Kelas Kosong Baru',
-                    message: `PJ ${req.user.username || 'Mahasiswa'} melaporkan pengosongan kelas ${mata_kuliah || ''}.`,
+                    message: `PJ ${req.user.username || 'Mahasiswa'} melaporkan pengosongan kelas ${mata_kuliah || ''}${alasan ? ` (Alasan: ${alasan})` : ''}.`,
                     type: 'info'
                 }))
                 await supabase.from('notifications').insert(notifPayloads)

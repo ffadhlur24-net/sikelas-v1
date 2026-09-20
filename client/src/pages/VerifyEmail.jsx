@@ -17,7 +17,7 @@ import {
 function VerifyEmail() {
   const navigate = useNavigate()
   const location = useLocation()
-  const [email, setEmail] = useState(location.state?.email || 'godong@student.walisongo.ac.id')
+  const [email, setEmail] = useState(location.state?.email || '')
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', ''])
   const [loading, setLoading] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
@@ -41,6 +41,11 @@ function VerifyEmail() {
     const timer = setTimeout(() => setSessionTime(sessionTime - 1), 1000)
     return () => clearTimeout(timer)
   }, [sessionTime])
+  useEffect(() => {
+    if (!location.state?.email) {
+      navigate('/register')
+    }
+  }, [location.state, navigate])
 
   const formatSessionTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
@@ -208,7 +213,7 @@ function VerifyEmail() {
 
             <div className="verify-email-pill">
               <span style={{ display: 'inline-flex', alignItems: 'center' }}><EnvelopeFill size={15} /></span>
-              <span className="underline-text">{email || 'godong@student.walisongo.ac.id'}</span>
+              <span className="underline-text">{email || 'belum ada email'}</span>
             </div>
           </section>
 
@@ -319,8 +324,8 @@ function VerifyEmail() {
                     {resendLoading
                       ? 'Mengirim Ulang...'
                       : countdown > 0
-                      ? `Kirim Ulang Kode OTP (${countdown}s)`
-                      : 'Kirim Ulang Kode OTP'
+                        ? `Kirim Ulang Kode OTP (${countdown}s)`
+                        : 'Kirim Ulang Kode OTP'
                     }
                   </span>
                 </button>

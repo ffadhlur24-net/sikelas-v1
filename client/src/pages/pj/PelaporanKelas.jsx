@@ -88,7 +88,7 @@ function PelaporanKelas() {
     const now = new Date()
     const currentIdx = now.getDay()
     const targetIdx = hariIdxMap[targetHari]
-    
+
     let diff = targetIdx - currentIdx
     if (diff < 0) {
       diff += 7
@@ -282,7 +282,7 @@ function PelaporanKelas() {
                   rows="3"
                   value={customAlasan}
                   onChange={(e) => setCustomAlasan(e.target.value)}
-                  placeholder="Contoh: AC mati, saklar lampu rusak, atau dosen berhalangan hadir dadakan..."
+                  placeholder="Contoh: Dosen berhalangan hadir dadakan..."
                   required
                   disabled={isAlreadyReported}
                 ></textarea>

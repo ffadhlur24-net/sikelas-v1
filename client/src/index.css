@@ -140,6 +140,13 @@ body {
   overflow-x: hidden;
 }
 
+/* Skala Tampilan Desktop (Zoom 90% pada Layar Desktop >= 1024px) */
+@media screen and (min-width: 1024px) {
+  body {
+    zoom: 0.9;
+  }
+}
+
 #root {
   min-height: 100vh;
   overflow-x: hidden;
@@ -508,6 +515,7 @@ input::placeholder {
     background: #fff !important;
     color: #000 !important;
     font-family: Arial, sans-serif !important;
+    zoom: 1 !important;
   }
 
   .dashboard-layout,

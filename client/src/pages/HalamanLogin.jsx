@@ -121,7 +121,7 @@ function HalamanLogin() {
             <div className="login-input-group">
               <div className="login-label-row">
                 <label className="login-label" htmlFor="email">
-                  <PersonFill size={15} /> USERNAME / EMAIL KAMPUS
+                  <PersonFill size={15} /> EMAIL KAMPUS
                 </label>
                 <span className="login-badge-wajib">
                   WAJIB
