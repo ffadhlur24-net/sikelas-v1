@@ -171,6 +171,9 @@
 
 .pj-dashboard .dashboard-main { margin-left: 260px; }
 .pj-dashboard .dashboard-header {
+  position: sticky;
+  top: 0;
+  z-index: 90;
   min-height: 112px;
   padding: 20px 32px;
   border-bottom: 4px solid var(--pj-nav-border);

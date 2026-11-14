@@ -41,8 +41,15 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Izinkan request tanpa origin (seperti mobile apps, curl, server-to-server) atau yang terdaftar
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Izinkan request tanpa origin (seperti mobile apps, curl, server-to-server), origin terdaftar, atau domain tunnel/demo
+        if (
+            !origin ||
+            allowedOrigins.includes(origin) ||
+            origin.endsWith('.trycloudflare.com') ||
+            origin.endsWith('.ngrok-free.app') ||
+            origin.endsWith('.loca.lt') ||
+            origin.endsWith('.vercel.app')
+        ) {
             callback(null, true)
         } else {
             console.warn(`⚠️ CORS: Origin ${origin} tidak diizinkan.`)

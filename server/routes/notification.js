@@ -28,9 +28,16 @@ router.get('/', verifyToken, async (req, res) => {
 router.post('/', verifyToken, async (req, res) => {
     try {
         const { user_id, title, message, type } = req.body
+        if (!title || !message) {
+            return res.status(400).json({ error: 'Title dan message wajib diisi' })
+        }
+
+        // Pengguna biasa hanya boleh mengirim notifikasi untuk dirinya sendiri, hanya Admin yang bisa mengirim ke user lain
+        const targetUserId = req.user.role === 'admin' ? (user_id || req.user.id) : req.user.id
+
         const { data, error } = await supabase
             .from('notifications')
-            .insert([{ user_id, title, message, type: type || 'info' }])
+            .insert([{ user_id: targetUserId, title, message, type: type || 'info' }])
             .select('*')
 
         if (error) throw error

@@ -187,7 +187,8 @@ router.get('/:id/schedule', verifyToken, async (req, res) => {
 
         if (!date) return res.status(400).json({ error: 'Tanggal diperlukan.' });
 
-        const dateObj = new Date(date);
+        const dateStr = date.includes('T') ? date : `${date}T00:00:00`;
+        const dateObj = new Date(dateStr);
         const hariArray = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
         const namaHari = hariArray[dateObj.getDay()];
 

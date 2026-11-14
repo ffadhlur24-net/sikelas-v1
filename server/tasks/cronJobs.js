@@ -67,7 +67,7 @@ const runPendingUserCleaner = async () => {
         const { data: deletedUsers } = await supabase
             .from('users')
             .delete()
-            .in('status', ['pending', 'pending_email_verification'])
+            .eq('status', 'pending_email_verification')
             .lt('otp_expires_at', nowIso)
             .select()
 

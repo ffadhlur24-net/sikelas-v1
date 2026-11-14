@@ -67,7 +67,7 @@ router.post('/register', async (req, res) => {
             const now = new Date()
             const isPending = ['pending', 'pending_email_verification'].includes(existingNim.status)
             const isPendingValid = isPending && existingNim.otp_expires_at && new Date(existingNim.otp_expires_at) > now
-            if (existingNim.status === 'verified' || isPendingValid) {
+            if (existingNim.status === 'aktif' || isPendingValid) {
                 return res.status(409).json({ error: "NIM / NIP ini sudah terdaftar." })
             }
         }
@@ -501,10 +501,10 @@ router.get('/available-courses', async (req, res) => {
         if (userError) throw userError;
 
         const now = new Date()
-        // Mata kuliah dianggap TERISI hanya jika PJ 'verified' ATAU 'pending' yang OTP-nya MASIH VALID (<15 menit)
+        // Mata kuliah dianggap TERISI jika PJ sudah berstatus 'aktif' ATAU 'pending' yang OTP-nya MASIH VALID (<15 menit)
         const takenCourses = new Set(
             (tokenPjs || [])
-                .filter(u => u.status === 'verified' || (['pending', 'pending_email_verification'].includes(u.status) && u.otp_expires_at && new Date(u.otp_expires_at) > now))
+                .filter(u => u.status === 'aktif' || (['pending', 'pending_email_verification'].includes(u.status) && u.otp_expires_at && new Date(u.otp_expires_at) > now))
                 .map(u => u.mata_kuliah)
         )
 
@@ -534,7 +534,7 @@ router.get('/check-email', async (req, res) => {
             .maybeSingle()
 
         if (existingEmail) {
-            if (existingEmail.status === 'verified') {
+            if (existingEmail.status === 'aktif') {
                 return res.json({ exists: true, isVerified: true, message: 'Email ini telah memiliki akun aktif.' })
             }
             // Jika status === 'pending', email dianggap tersedia untuk ditimpa jika registrasi ulang
@@ -564,8 +564,8 @@ router.post('/resume-otp', async (req, res) => {
             return res.status(404).json({ error: 'Pendaftaran dengan email ini tidak ditemukan. Silakan mendaftar.' })
         }
 
-        if (user.status === 'verified') {
-            return res.status(400).json({ error: 'Akun Anda sudah terverifikasi resmi. Silakan Login.' })
+        if (user.status === 'aktif') {
+            return res.status(400).json({ error: 'Akun Anda sudah berstatus aktif resmi. Silakan Login.' })
         }
 
         const now = new Date()

@@ -78,7 +78,7 @@ router.post('/', verifyToken, async (req, res) => {
             .eq('mata_kuliah', mata_kuliah)
             .eq('tanggal', reportDate)
             .in('status', ['pending', 'approved', 'verified'])
-            .single()
+            .maybeSingle()
 
         if (existingReport) {
             return res.status(400).json({

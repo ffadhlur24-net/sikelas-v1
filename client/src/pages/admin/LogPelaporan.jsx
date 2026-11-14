@@ -90,7 +90,7 @@ function LogPelaporan() {
     setActionLoading(true)
     setMessage('')
     try {
-      const res = await api.patch(`reports/${id}/resolve`, { status, alasan_penolakan })
+      const res = await api.patch(`/reports/${id}/resolve`, { status, alasan_penolakan })
       showSuccess(res.data.message || 'Status laporan berhasil diperbarui! Notifikasi in-app dan email telah dikirim ke PJ.', 'STATUS LAPORAN')
       fetchReports()
     } catch (error) {

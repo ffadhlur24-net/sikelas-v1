@@ -216,6 +216,9 @@
 }
 
 .admin-dashboard .dashboard-header {
+  position: sticky;
+  top: 0;
+  z-index: 90;
   min-height: 76px;
   padding: 12px 32px;
   border-bottom: 4px solid var(--admin-border);
