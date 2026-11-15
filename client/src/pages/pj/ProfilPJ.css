@@ -50,18 +50,41 @@
   line-height: 1.5;
 }
 
-/* 2. Top Grid: Profile Card (Left) & Features Summary (Right) - 50:50 Ratio */
+/* 2. Main Layout (CSS Grid Responsif): Profile, Features, and Reservations */
+.pj-main-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    "profile features"
+    "reservations reservations";
+  gap: 32px;
+  align-items: start;
+  margin-bottom: 40px;
+}
+
+.pj-profile-col {
+  grid-area: profile;
+  width: 100%;
+}
+
+.pj-features-col {
+  grid-area: features;
+  width: 100%;
+}
+
+.pj-reservations-section {
+  grid-area: reservations;
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* Fallback / Legacy Grid */
 .pj-top-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 32px;
   align-items: start;
   margin-bottom: 40px;
-}
-
-/* Left Column: Profile Card */
-.pj-profile-col {
-  width: 100%;
 }
 
 .pj-profile-card {
@@ -794,31 +817,248 @@
    RESPONSIVITAS TABLET & MOBILE
    =================================================== */
 
-@media (max-width: 960px) {
+@media (max-width: 900px) {
+  .pj-main-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "profile"
+      "reservations"
+      "features";
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .pj-reservations-section {
+    margin-top: 0;
+  }
+
   .pj-top-grid {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 20px;
   }
 }
 
-@media (max-width: 640px) {
-  .pj-page-title {
-    font-size: 24px;
+@media (max-width: 700px) {
+  /* Header */
+  .pj-page-heading {
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom-width: 3px;
   }
+  .pj-page-title {
+    font-size: 22px;
+    line-height: 1.25;
+  }
+  .pj-page-subtitle {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  /* Profile Card */
+  .pj-profile-card {
+    padding: 16px;
+    border-width: 3px;
+    box-shadow: 3px 3px 0 var(--pj-border);
+    gap: 14px;
+  }
+
+  /* Profile Header - KEPT IN ROW */
   .pj-profile-header {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom-width: 3px;
+  }
+  .pj-avatar-box {
+    width: 52px;
+    height: 52px;
+    font-size: 20px;
+    border-width: 3px;
+    box-shadow: 2.5px 2.5px 0 var(--pj-border);
+  }
+  .pj-avatar-status-dot {
+    width: 13px;
+    height: 13px;
+  }
+  .pj-profile-username {
+    font-size: 17px;
+    max-width: 180px;
+  }
+  .pj-badge-status-aktif {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+  .pj-badge-role {
+    font-size: 9.5px;
+    padding: 2px 8px;
+    margin-top: 4px;
+  }
+
+  /* Info fields */
+  .pj-info-fields-list {
+    gap: 8px;
+  }
+  .pj-info-row {
+    padding: 6px 10px;
+    border-width: 2px;
+    box-shadow: 1.5px 1.5px 0 var(--pj-border);
+  }
+  .pj-info-label {
+    font-size: 12px;
+  }
+  .pj-info-value-badge {
+    font-size: 11.5px;
+    max-width: 160px;
+  }
+  .pj-info-dual-box {
+    padding: 6px 10px;
+  }
+  .pj-info-dual-value {
+    font-size: 13px;
+    min-width: 24px;
+  }
+  .pj-info-block {
+    padding: 6px 10px;
+  }
+  .pj-info-block-value {
+    font-size: 12.5px;
+    padding: 4px 8px;
+  }
+
+  /* Edit profile button */
+  .pj-btn-edit-profile {
+    min-height: 44px;
+    font-size: 13px;
+    border-width: 3px;
+    box-shadow: 3px 3px 0 var(--pj-border);
+    padding: 10px 14px;
+  }
+
+  /* Reservations Section */
+  .pj-reservations-header {
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom-width: 3px;
+  }
+  .pj-reservations-title {
+    font-size: 18px;
+  }
+  .pj-empty-box {
+    padding: 20px 16px;
+    border-width: 3px;
+    box-shadow: 3px 3px 0 var(--pj-border);
+    font-size: 13px;
+  }
+  .pj-reservations-list {
+    gap: 12px;
+  }
+  .pj-reservation-card {
+    padding: 14px 16px;
+    border-width: 3px;
+    box-shadow: 3px 3px 0 var(--pj-border);
   }
   .pj-res-card-content {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
+  }
+  .pj-res-subject {
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+  .pj-res-room {
+    font-size: 13px;
+    margin-bottom: 3px;
+  }
+  .pj-res-time {
+    font-size: 12.5px;
   }
   .pj-res-status-actions {
-    align-items: flex-start;
     width: 100%;
+    align-items: stretch;
+    gap: 8px;
   }
   .pj-btn-checkin {
     width: 100%;
     justify-content: center;
+    min-height: 44px;
+    font-size: 14px;
+    border-width: 3px;
+    box-shadow: 3px 3px 0 var(--pj-border);
+    background: #059669;
+  }
+
+  /* Features Summary: Compact 2x2 Grid Tile on Mobile */
+  .pj-features-header {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom-width: 3px;
+  }
+  .pj-features-title {
+    font-size: 16px;
+  }
+  .pj-features-badge-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+  .pj-features-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .pj-feature-card-neo {
+    padding: 10px 12px !important;
+    border-width: 2.5px !important;
+    box-shadow: 2.5px 2.5px 0 var(--pj-border) !important;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    min-height: 84px;
+  }
+  .pj-feature-main-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+  }
+  .pj-feature-icon-box {
+    width: 36px !important;
+    height: 36px !important;
+    border-width: 2px !important;
+    box-shadow: 2px 2px 0 var(--pj-border) !important;
+  }
+  .pj-feature-icon-box svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  .pj-feature-name {
+    font-size: 12.5px !important;
+    line-height: 1.25 !important;
+  }
+  .pj-feature-desc {
+    display: none !important;
+  }
+  .pj-feature-arrow {
+    display: none !important;
+  }
+
+  /* Modal Edit Profile */
+  .pj-modal-backdrop {
+    padding: 12px;
+  }
+  .pj-modal-card {
+    padding: 16px !important;
+    border-width: 3px !important;
+    box-shadow: 4px 4px 0 var(--pj-border) !important;
+    max-height: 94vh;
+  }
+  .pj-modal-card .input {
+    min-height: 44px;
+    font-size: 14px;
+    border: 2.5px solid var(--pj-border) !important;
+  }
+  .pj-modal-actions .btn {
+    min-height: 44px;
+    padding: 10px 14px;
   }
 }

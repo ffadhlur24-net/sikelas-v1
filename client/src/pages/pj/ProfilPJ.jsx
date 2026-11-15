@@ -217,9 +217,9 @@ function ProfilPJ() {
         <p className="pj-page-subtitle">Kelola data Anda dan lakukan Check-In untuk ruangan yang disetujui.</p>
       </div>
 
-      {/* 2. Top Grid: Kartu Profil (Kiri) & Ringkasan Fitur Sistem (Kanan) */}
-      <div className='pj-top-grid'>
-        {/* Kolom Kiri: Kartu Profil PJ */}
+      {/* 2. Layout Utama Profil PJ (CSS Grid Responsif: Desktop 2 Kolom, Mobile Prioritas Reservasi) */}
+      <div className='pj-main-layout'>
+        {/* Kolom Kiri / Atas: Kartu Profil PJ */}
         <div className='pj-profile-col'>
           <div className='pj-profile-card'>
             {/* Header Profil Neo-Brutalist */}
@@ -446,13 +446,12 @@ function ProfilPJ() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* 3. Section Bawah (Lebar Penuh / Full-Width): Riwayat Reservasi PJ */}
-      <section id="riwayat-reservasi-section" className="pj-reservations-section">
-        <div className="pj-reservations-header">
-          <h2 className="pj-reservations-title">RIWAYAT RESERVASI PJ</h2>
-        </div>
+        {/* 3. Section Riwayat Reservasi PJ (Otomatis naik ke posisi prioritas di mobile) */}
+        <section id="riwayat-reservasi-section" className="pj-reservations-section">
+          <div className="pj-reservations-header">
+            <h2 className="pj-reservations-title">RIWAYAT RESERVASI PJ</h2>
+          </div>
 
         {loading ? (
           <div className="pj-empty-box">Memuat riwayat...</div>
@@ -545,6 +544,7 @@ function ProfilPJ() {
           </div>
         )}
       </section>
+      </div>
 
       {/* MODAL FORM EDIT PROFIL */}
       {showEditModal && (
