@@ -10,7 +10,9 @@ import {
   InfoCircleFill,
   ArrowRightShort,
   PinAngleFill,
-  HouseDoorFill
+  HouseDoorFill,
+  EyeFill,
+  EyeSlashFill
 } from 'react-bootstrap-icons'
 
 function HalamanLogin() {
@@ -97,13 +99,13 @@ function HalamanLogin() {
 
         {/* Tab Bar Switcher */}
         <nav aria-label="Tab Akses Login" className="login-tab-switcher">
-          {/* Inactive Tab: SIGN UP */}
+          {/* Inactive Tab: DAFTAR */}
           <Link to="/register" className="login-tab-inactive">
-            <span>SIGN UP (DAFTAR)</span>
+            <span>DAFTAR</span>
           </Link>
-          {/* Active Tab: SIGN IN */}
+          {/* Active Tab: MASUK */}
           <span className="login-tab-active">
-            <span>SIGN IN (MASUK)</span>
+            <span>MASUK</span>
           </span>
         </nav>
 
@@ -169,11 +171,14 @@ function HalamanLogin() {
                   type="button"
                   className="login-toggle-password-btn"
                   title={showPassword ? 'Sembunyikan Password' : 'Tampilkan Password'}
+                  aria-label={showPassword ? 'Sembunyikan Password' : 'Tampilkan Password'}
                   onClick={() => setShowPassword(prev => !prev)}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#000000' }}>
-                    {showPassword ? 'visibility_off' : 'visibility'}
-                  </span>
+                  {showPassword ? (
+                    <EyeSlashFill size={18} color="#000000" />
+                  ) : (
+                    <EyeFill size={18} color="#000000" />
+                  )}
                 </button>
               </div>
               <p className="login-input-hint">

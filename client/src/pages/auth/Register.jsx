@@ -21,7 +21,9 @@ import {
   TagFill,
   CheckLg,
   PinAngleFill,
-  HouseDoorFill
+  HouseDoorFill,
+  EyeFill,
+  EyeSlashFill
 } from 'react-bootstrap-icons'
 
 function Register() {
@@ -341,13 +343,13 @@ function Register() {
             </p>
           </header>
 
-          {/* Navigation Tabs (Sign Up / Sign In) */}
+          {/* Navigation Tabs (Daftar / Masuk) */}
           <nav aria-label="Tab Akses" className="pj-nav-tabs">
             <span className="pj-nav-tab pj-nav-tab-active">
-              SIGN UP (DAFTAR)
+              DAFTAR
             </span>
             <Link to="/login" className="pj-nav-tab pj-nav-tab-inactive">
-              SIGN IN (MASUK)
+              MASUK
             </Link>
           </nav>
 
@@ -507,9 +509,11 @@ function Register() {
                     className={`pj-password-toggle ${showPassword ? 'active' : ''}`}
                     onClick={() => setShowPassword(prev => !prev)}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#000000' }}>
-                      {showPassword ? 'visibility_off' : 'visibility'}
-                    </span>
+                    {showPassword ? (
+                      <EyeSlashFill size={18} color="#000000" />
+                    ) : (
+                      <EyeFill size={18} color="#000000" />
+                    )}
                   </button>
                 </div>
                 <p className="pj-input-hint">

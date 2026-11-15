@@ -819,8 +819,8 @@
   }
 
   .pj-register-card {
-    border-width: 3px;
-    box-shadow: 5px 5px 0px #000000;
+    border-width: 2.5px;
+    box-shadow: 3.5px 3.5px 0px #000000;
   }
 
   /* Anti-overflow floating badge di mobile */
