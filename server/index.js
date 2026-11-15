@@ -36,7 +36,9 @@ const allowedOrigins = [
     "http://127.0.0.1:5173",
     process.env.FRONTEND_URL,
     "https://sikelas.online",
-    "https://www.sikelas.online"
+    "https://www.sikelas.online",
+    "https://sikelas.tech",
+    "https://www.sikelas.tech"
 ].filter(Boolean)
 
 app.use(cors({
@@ -48,7 +50,9 @@ app.use(cors({
             origin.endsWith('.trycloudflare.com') ||
             origin.endsWith('.ngrok-free.app') ||
             origin.endsWith('.loca.lt') ||
-            origin.endsWith('.vercel.app')
+            origin.endsWith('.vercel.app') ||
+            origin.endsWith('.sikelas.tech') ||
+            origin.endsWith('.sikelas.online')
         ) {
             callback(null, true)
         } else {
