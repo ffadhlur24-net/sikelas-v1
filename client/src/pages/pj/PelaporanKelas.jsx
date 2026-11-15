@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react'
 import { AuthContext } from '../../context/AuthContext'
 import api from '../../api/axios'
+import NeoSelect from '../../components/Select/NeoSelect'
 import './PelaporanKelas.css'
 import {
   HourglassSplit,
@@ -10,7 +11,8 @@ import {
   GeoAltFill,
   CalendarCheckFill,
   InfoCircleFill,
-  SendFill
+  SendFill,
+  ClockFill
 } from 'react-bootstrap-icons'
 function PelaporanKelas() {
   const { user } = useContext(AuthContext)
@@ -171,6 +173,39 @@ function PelaporanKelas() {
       setLoading(false)
     }
   }
+
+  // Opsi Dropdown untuk NeoSelect
+  const sessionOptions = [
+    { value: '', label: '-- Pilih Sesi Pertemuan Perkuliahan --' },
+    ...userSchedules.map((sch, idx) => ({
+      value: String(idx),
+      label: `${sch.hari} (${sch.waktu_mulai.substring(0, 5)} - ${sch.waktu_selesai.substring(0, 5)} WIB) @ Ruang ${sch.rooms?.nama || sch.room_id}`
+    }))
+  ]
+
+  const tanggalOptions = activeSession ? [
+    {
+      value: getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 0),
+      label: `Pertemuan Terdekat: ${formatTanggalIndonesia(getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 0))}`
+    },
+    {
+      value: getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 1),
+      label: `Pertemuan 1 Minggu Ke Depan: ${formatTanggalIndonesia(getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 1))}`
+    },
+    {
+      value: getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 2),
+      label: `Pertemuan 2 Minggu Ke Depan: ${formatTanggalIndonesia(getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 2))}`
+    }
+  ] : []
+
+  const alasanOptions = [
+    { value: '', label: '-- Pilih Jenis Laporan / Kendala --' },
+    { value: 'DOSEN_BERHALANGAN', label: 'Dosen Berhalangan Hadir (Kosong)' },
+    { value: 'RUANGAN_TERKUNCI', label: 'Ruangan Terkunci / Bermasalah' },
+    { value: 'KELAS_ONLINE', label: 'Kelas Dipindah ke Online (Zoom/Meet)' },
+    { value: 'LAINNYA', label: 'Lainnya (Tulis keterangan....)' }
+  ]
+
   return (
     <div className="empty-class-report-page animate-fade-in">
       <div className="empty-report-heading page-header">
@@ -211,50 +246,60 @@ function PelaporanKelas() {
             <div className="report-field report-session-field form-group" style={{ marginBottom: '16px' }}>
               <label className="form-label">Pilih Sesi Perkuliahan SIAKAD</label>
               {userSchedules.length === 1 ? (
-                <div className="single-session-info" style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '12px 16px', borderRadius: '8px', color: '#1e40af', fontSize: '14px', fontWeight: '500' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><PinAngleFill size={16} /> <b>Sesi Tunggal ({userSchedules[0].hari}):</b></span> Jam {userSchedules[0].waktu_mulai.substring(0, 5)} - {userSchedules[0].waktu_selesai.substring(0, 5)} WIB @ Ruang {userSchedules[0].rooms?.nama || userSchedules[0].room_id}
+                <div className="single-session-card">
+                  <div className="single-session-header">
+                    <span className="single-session-badge">
+                      <PinAngleFill size={13} /> Sesi Tunggal ({userSchedules[0].hari})
+                    </span>
+                    <span className="single-session-time">
+                      <ClockFill size={13} /> {userSchedules[0].waktu_mulai.substring(0, 5)} - {userSchedules[0].waktu_selesai.substring(0, 5)} WIB
+                    </span>
+                  </div>
+                  <div className="single-session-room">
+                    <GeoAltFill size={14} /> Ruang {userSchedules[0].rooms?.nama || userSchedules[0].room_id} ({userSchedules[0].rooms?.gedung || '-'})
+                  </div>
                 </div>
               ) : (
-                <select className="input-field" value={selectedSessionIndex} onChange={handleSessionChange} required>
-                  <option value="">-- Pilih Sesi Pertemuan Perkuliahan --</option>
-                  {userSchedules.map((sch, idx) => (
-                    <option key={idx} value={idx}>
-                      {sch.hari} ({sch.waktu_mulai.substring(0, 5)} - {sch.waktu_selesai.substring(0, 5)} WIB) @ Ruang {sch.rooms?.nama || sch.room_id}
-                    </option>
-                  ))}
-                </select>
+                <NeoSelect
+                  value={selectedSessionIndex === '' ? '' : String(selectedSessionIndex)}
+                  onChange={(val) => {
+                    if (val === '') {
+                      setSelectedSessionIndex('')
+                      setFormData(prev => ({ ...prev, room_id: '', tanggal: '' }))
+                    } else {
+                      applySessionData(Number(val))
+                    }
+                  }}
+                  options={sessionOptions}
+                  placeholder="-- Pilih Sesi Pertemuan Perkuliahan --"
+                />
               )}
             </div>
 
             {/* Pilihan Tanggal Pertemuan (Hari Ini / 1 Minggu / 2 Minggu) */}
             {activeSession && (
               <div className="report-field form-group" style={{ marginBottom: '16px' }}>
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><CalendarEvent size={16} /> Pilih Tanggal Pertemuan Yang Dilaporkan Kosong</label>
-                <select
-                  className="input-field"
-                  style={{ fontWeight: '500' }}
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CalendarEvent size={15} /> Sesi Perkuliahan yang Dikosongkan
+                </label>
+                <NeoSelect
                   value={formData.tanggal}
-                  onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
-                  required
-                >
-                  <option value={getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 0)}>
-                    Pertemuan Terdekat: {formatTanggalIndonesia(getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 0))}
-                  </option>
-                  <option value={getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 1)}>
-                    Pertemuan 1 Minggu Ke Depan: {formatTanggalIndonesia(getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 1))}
-                  </option>
-                  <option value={getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 2)}>
-                    Pertemuan 2 Minggu Ke Depan: {formatTanggalIndonesia(getScheduleDateForHari(activeSession.hari, activeSession.waktu_mulai, 2))}
-                  </option>
-                </select>
+                  onChange={(val) => setFormData(prev => ({ ...prev, tanggal: val }))}
+                  options={tanggalOptions}
+                  placeholder="-- Pilih Tanggal Sesi Pertemuan --"
+                />
               </div>
             )}
 
             {/* Ruangan & Tanggal Mendatang (Auto-Filled Readonly Info) */}
             {activeSession && (
-              <div className="report-location-info" style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '14px', borderRadius: '8px', marginBottom: '20px', fontSize: '13px' }}>
-                <p style={{ margin: '0 0 6px', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}><GeoAltFill size={14} /> Ruangan Jadwal Asli: <b>Ruang {activeSession.rooms?.nama || activeSession.room_id} ({activeSession.rooms?.gedung || '-'})</b></p>
-                <p style={{ margin: 0, color: '#059669', display: 'flex', alignItems: 'center', gap: '6px' }}><CalendarCheckFill size={14} /> Tanggal Laporan Terpilih: <b>{formatTanggalIndonesia(formData.tanggal)}</b></p>
+              <div className="report-location-info">
+                <p style={{ margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <GeoAltFill size={14} /> Ruangan Jadwal Asli: <b>Ruang {activeSession.rooms?.nama || activeSession.room_id} ({activeSession.rooms?.gedung || '-'})</b>
+                </p>
+                <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CalendarCheckFill size={14} /> Tanggal Laporan Terpilih: <b>{formatTanggalIndonesia(formData.tanggal)}</b>
+                </p>
               </div>
             )}
             {/* NOTIFIKASI JIKA SUDAH PERNAH DILAPORKAN */}
@@ -264,18 +309,17 @@ function PelaporanKelas() {
               </div>
             )}
             {/* OPSI JENIS PELAPORAN */}
-            <div className="form-group" style={{ marginBottom: '24px' }}>
+            <div className="form-group" style={{ marginBottom: '20px' }}>
               <label className="form-label">Jenis Laporan / Kendala</label>
-              <select name="alasan" value={formData.alasan} onChange={handleChange} className="input-field" required>
-                <option value="">-- Pilih Jenis Laporan --</option>
-                <option value="DOSEN_BERHALANGAN">Dosen Berhalangan Hadir (Kosong)</option>
-                <option value="RUANGAN_TERKUNCI">Ruangan Terkunci / Bermasalah</option>
-                <option value="KELAS_ONLINE">Kelas Dipindah ke Online (Zoom/Meet)</option>
-                <option value="LAINNYA">Lainnya (Tulis keterangan....)</option>
-              </select>
+              <NeoSelect
+                value={formData.alasan}
+                onChange={(val) => setFormData(prev => ({ ...prev, alasan: val }))}
+                options={alasanOptions}
+                placeholder="-- Pilih Jenis Laporan / Kendala --"
+              />
             </div>
             {formData.alasan === 'LAINNYA' && (
-              <div className="form-group" style={{ marginBottom: '24px' }}>
+              <div className="form-group" style={{ marginBottom: '20px' }}>
                 <label className="form-label">Rincian Alasan / Detail Kendala</label>
                 <textarea
                   className="input-field"

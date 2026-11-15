@@ -400,7 +400,7 @@
   .pj-dashboard .card,
   .pj-dashboard .form-card,
   .pj-dashboard .filter-panel,
-  .pj-dashboard [class*="card"] {
+  .pj-dashboard [class*="card"]:not([class*="-content"]):not([class*="-header"]):not([class*="-body"]):not([class*="-footer"]):not([class*="-details"]) {
     border-width: 2.5px !important;
     box-shadow: 2.5px 2.5px 0 var(--pj-nav-border) !important;
     border-radius: 6px !important;

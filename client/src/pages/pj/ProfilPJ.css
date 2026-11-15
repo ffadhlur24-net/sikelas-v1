@@ -570,6 +570,9 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 
 .pj-res-details {
@@ -961,6 +964,9 @@
   .pj-res-card-content {
     flex-direction: column;
     gap: 12px;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
   }
   .pj-res-subject {
     font-size: 16px;
