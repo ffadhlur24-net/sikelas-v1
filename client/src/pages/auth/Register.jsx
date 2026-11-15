@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import api from '../../api/axios'
+import NeoSelect from '../../components/Select/NeoSelect'
 import './Register.css'
 import {
   ExclamationTriangleFill,
@@ -600,19 +601,13 @@ function Register() {
                           Pilih unit fakultas tempat mata kuliah Anda diselenggarakan. Data prodi akan disesuaikan otomatis.
                         </p>
                       </div>
-                      <select
+                      <NeoSelect
                         id="faculty"
-                        name="fakultas"
-                        required
-                        className="pj-select-brutal"
                         value={formData.fakultas}
-                        onChange={handleChange}
-                      >
-                        <option value="">-- Pilih Fakultas --</option>
-                        {fakultasOptions.map((f, i) => (
-                          <option key={i} value={f}>{f}</option>
-                        ))}
-                      </select>
+                        onChange={(val) => handleChange({ target: { name: 'fakultas', value: val } })}
+                        options={fakultasOptions}
+                        placeholder="-- Pilih Fakultas --"
+                      />
                     </>
                   )}
 
@@ -623,19 +618,13 @@ function Register() {
                         <h3><JournalBookmarkFill size={18} /> 2. PROGRAM STUDI (PRODI)</h3>
                         <p>Tentukan program studi resmi di bawah naungan fakultas terpilih.</p>
                       </div>
-                      <select
+                      <NeoSelect
                         id="major"
-                        name="prodi"
-                        required
-                        className="pj-select-brutal"
                         value={formData.prodi}
-                        onChange={handleChange}
-                      >
-                        <option value="">-- Pilih Program Studi --</option>
-                        {prodiOptions.map((p, i) => (
-                          <option key={i} value={p}>{p}</option>
-                        ))}
-                      </select>
+                        onChange={(val) => handleChange({ target: { name: 'prodi', value: val } })}
+                        options={prodiOptions}
+                        placeholder="-- Pilih Program Studi --"
+                      />
                       <p className="pj-input-hint">
                         <InfoCircleFill size={13} style={{ flexShrink: 0, color: '#2563eb' }} /> Terverifikasi berdasarkan fakultas terpilih.
                       </p>
@@ -649,19 +638,13 @@ function Register() {
                         <h3><CalendarWeekFill size={18} /> 3. SEMESTER (AKTIF)</h3>
                         <p>Pilih semester perkuliahan berjalan sesuai kalender akademik kampus.</p>
                       </div>
-                      <select
+                      <NeoSelect
                         id="semester"
-                        name="semester"
-                        required
-                        className="pj-select-brutal"
                         value={formData.semester}
-                        onChange={handleChange}
-                      >
-                        <option value="">-- Pilih Semester --</option>
-                        {semesterOptions.map((s, i) => (
-                          <option key={i} value={s}>Semester {s}</option>
-                        ))}
-                      </select>
+                        onChange={(val) => handleChange({ target: { name: 'semester', value: val } })}
+                        options={semesterOptions.map((s) => ({ value: String(s), label: `Semester ${s}` }))}
+                        placeholder="-- Pilih Semester --"
+                      />
                       <p className="pj-input-hint">
                         <InfoCircleFill size={13} style={{ flexShrink: 0, color: '#2563eb' }} /> Database kurikulum aktif otomatis terhubung.
                       </p>
@@ -675,19 +658,13 @@ function Register() {
                         <h3><BookHalf size={18} /> 4. MATA KULIAH (BEBAS PJ)</h3>
                         <p>Pilih mata kuliah yang belum memiliki penanggung jawab (PJ).</p>
                       </div>
-                      <select
+                      <NeoSelect
                         id="course"
-                        name="mata_kuliah"
-                        required
-                        className="pj-select-brutal"
                         value={formData.mata_kuliah}
-                        onChange={handleChange}
-                      >
-                        <option value="">-- Pilih Mata Kuliah --</option>
-                        {uniqueCourseOptions.map((m, i) => (
-                          <option key={i} value={m}>{m}</option>
-                        ))}
-                      </select>
+                        onChange={(val) => handleChange({ target: { name: 'mata_kuliah', value: val } })}
+                        options={uniqueCourseOptions}
+                        placeholder="-- Pilih Mata Kuliah --"
+                      />
                       <p className="pj-input-hint">
                         <InfoCircleFill size={13} style={{ flexShrink: 0, color: '#2563eb' }} /> Kuota PJ tersedia untuk semester yang dipilih.
                       </p>
@@ -701,19 +678,13 @@ function Register() {
                         <h3><TagFill size={18} /> 5. KELAS (BEBAS PJ)</h3>
                         <p>Tentukan rombongan belajar kelas yang Anda ampu sebagai perwakilan.</p>
                       </div>
-                      <select
+                      <NeoSelect
                         id="classGroup"
-                        name="kelas"
-                        required
-                        className="pj-select-brutal"
                         value={formData.kelas}
-                        onChange={handleChange}
-                      >
-                        <option value="">-- Pilih Kelas --</option>
-                        {kelasOptions.map((k, i) => (
-                          <option key={i} value={k}>Kelas {k}</option>
-                        ))}
-                      </select>
+                        onChange={(val) => handleChange({ target: { name: 'kelas', value: val } })}
+                        options={kelasOptions.map((k) => ({ value: String(k), label: `Kelas ${k}` }))}
+                        placeholder="-- Pilih Kelas --"
+                      />
                       <p className="pj-input-hint">
                         <InfoCircleFill size={13} style={{ flexShrink: 0, color: '#2563eb' }} /> Alokasi kelas ini akan langsung tersinkron ke daftar jadwal kuliah.
                       </p>

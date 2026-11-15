@@ -171,3 +171,29 @@
   text-align: center;
   font-style: italic;
 }
+
+/* ===================================================
+   RESPONSIVE: MOBILE (<=600px) NEO-SELECT
+   =================================================== */
+@media (max-width: 600px) {
+  .neo-select-trigger {
+    min-height: 46px;
+    padding: 10px 12px;
+    font-size: 13.5px;
+    border-width: 2.5px;
+    box-shadow: 2.5px 2.5px 0 #000000;
+    border-radius: 4px;
+  }
+
+  .neo-select-dropdown {
+    border-width: 2.5px;
+    box-shadow: 3px 3px 0 #000000;
+    max-height: 220px;
+    border-radius: 4px;
+  }
+
+  .neo-select-option {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}
