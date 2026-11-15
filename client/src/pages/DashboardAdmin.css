@@ -422,12 +422,17 @@
    =================================================== */
 @media (max-width: 600px) {
   .admin-dashboard .dashboard-header {
-    min-height: 64px;
-    padding: 10px 14px;
+    min-height: 58px;
+    padding: 10px 12px;
+    border-bottom-width: 2.5px;
+    box-shadow: 0 2.5px 0 var(--admin-border);
   }
 
   .admin-header-left-group {
     gap: 10px;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
   }
 
   .admin-sidebar-toggle-btn {
@@ -435,25 +440,34 @@
     height: 38px;
     min-width: 38px;
     min-height: 38px;
-    border-width: 3px;
-    box-shadow: 2.5px 2.5px 0 var(--admin-border);
+    border-width: 2.5px;
+    box-shadow: 2px 2px 0 var(--admin-border);
   }
 
   .admin-navbar-kicker {
     display: none;
   }
 
+  .admin-navbar-title {
+    min-width: 0;
+    flex: 1;
+  }
+
   .admin-navbar-title h1 {
-    font-size: clamp(14px, 4vw, 18px);
-    line-height: 1.2;
-    white-space: nowrap;
+    font-size: 14.5px;
+    line-height: 1.18;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: clamp(140px, 35vw, 220px);
+    max-width: 100%;
+    word-break: break-word;
   }
 
   .admin-navbar-actions {
     gap: 8px;
+    flex-shrink: 0;
   }
 
   .admin-navbar-user {
@@ -475,6 +489,60 @@
   .admin-dashboard .dashboard-content {
     padding: 14px 12px;
     width: 100%;
+    max-width: 100vw;
     box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  /* Universal Micro-Chip Clock Status Bar on Mobile (Admin) */
+  .admin-dashboard [class*="-clock-card"] {
+    padding: 8px 12px !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+    border-width: 2.5px !important;
+    box-shadow: 2.5px 2.5px 0 var(--admin-border) !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+  }
+
+  .admin-dashboard [class*="-clock-icon"],
+  .admin-dashboard [class*="clock-icon-box"] {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    flex: 0 0 32px !important;
+    font-size: 18px !important;
+  }
+
+  .admin-dashboard [class*="-clock-card"] h2,
+  .admin-dashboard [class*="-clock-card"] h3,
+  .admin-dashboard .neo-clock-time,
+  .admin-dashboard .clock-time {
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+  }
+
+  .admin-dashboard [class*="-clock-card"] [class*="-eyebrow"],
+  .admin-dashboard .neo-clock-label,
+  .admin-dashboard .clock-label {
+    font-size: 9.5px !important;
+    letter-spacing: 0.05em !important;
+    margin: 0 !important;
+  }
+
+  .admin-dashboard [class*="-clock-card"] [class*="-online"],
+  .admin-dashboard .clock-badge-online {
+    display: none !important;
+  }
+
+  /* Universal Neo-Brutalism Scaling on Mobile (Admin) */
+  .admin-dashboard .card,
+  .admin-dashboard .form-card,
+  .admin-dashboard .filter-panel,
+  .admin-dashboard [class*="card"] {
+    border-width: 2.5px !important;
+    box-shadow: 2.5px 2.5px 0 var(--admin-border) !important;
+    border-radius: 6px !important;
   }
 }

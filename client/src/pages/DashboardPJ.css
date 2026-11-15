@@ -670,3 +670,35 @@
 .dashboard-footer-links a:hover {
   color: var(--text-primary);
 }
+
+/* ===================================================
+   RESPONSIVE: MOBILE (<=600px) UNIVERSAL DASHBOARD STYLES
+   =================================================== */
+@media (max-width: 600px) {
+  .dashboard-footer {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+    padding: 20px 14px;
+    border-top: 2.5px solid var(--border-color, #000000);
+  }
+
+  .dashboard-footer-links {
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  /* Universal Table Responsiveness on Mobile */
+  .table-responsive,
+  .table-container,
+  [class*="table-container"],
+  [class*="table-wrapper"],
+  [class*="-table-wrapper"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    margin-bottom: 12px;
+  }
+}
