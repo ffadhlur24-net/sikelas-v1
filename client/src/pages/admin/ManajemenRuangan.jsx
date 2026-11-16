@@ -513,7 +513,7 @@ function ManajemenRuangan() {
         <>
           <div className="room-add-campus-card card-flat" style={{ marginBottom: '24px', maxWidth: '480px' }}>
             <h3 style={{ fontSize: "15px", fontWeight: "bold", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}><PlusLg size={16} /> Tambah Lokasi Kampus Baru</h3>
-            <form onSubmit={handleAddKampus} style={{ display: 'flex', gap: '12px' }}>
+            <form onSubmit={handleAddKampus} className="room-inline-form">
               <input
                 type="text"
                 className="input-field"
@@ -558,9 +558,9 @@ function ManajemenRuangan() {
             <button className="btn btn-secondary btn-sm" onClick={() => setSelectedKampus(null)} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><ArrowLeft size={14} /> Kembali ke Kampus</button>
           </div>
 
-          <div className="card-flat" style={{ marginBottom: '24px', maxWidth: '480px' }}>
+          <div className="card-flat room-add-building-card" style={{ marginBottom: '24px', maxWidth: '480px' }}>
             <h3 style={{ fontSize: "15px", fontWeight: "bold", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}><PlusLg size={16} /> Tambah Gedung Baru di {selectedKampus}</h3>
-            <form onSubmit={handleAddGedung} style={{ display: 'flex', gap: '12px' }}>
+            <form onSubmit={handleAddGedung} className="room-inline-form">
               <input
                 type="text"
                 className="input-field"
@@ -611,16 +611,16 @@ function ManajemenRuangan() {
           <div className="card-flat" style={{ marginBottom: '32px' }}>
             <h3 style={{ marginBottom: "16px", fontSize: "16px", display: "flex", alignItems: "center", gap: "8px" }}><PlusLg size={16} /> Tambah Ruangan Baru di {selectedGedung}</h3>
             <form onSubmit={handleAddRooms}>
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '16px' }}>
-                <div style={{ flex: '2', minWidth: '160px' }}>
+              <div className="room-form-grid" style={{ marginBottom: '16px' }}>
+                <div style={{ minWidth: '160px' }}>
                   <label className="form-label">Nama Ruangan (Mis: Q.3.1)</label>
                   <input type="text" className="input-field" value={formData.nama} onChange={(e) => setFormData({ ...formData, nama: e.target.value })} required />
                 </div>
-                <div style={{ flex: '1', minWidth: '100px' }}>
+                <div style={{ minWidth: '100px' }}>
                   <label className="form-label">Lantai ke-</label>
                   <input type="number" className="input-field" value={formData.lantai} onChange={(e) => setFormData({ ...formData, lantai: Number(e.target.value) })} required />
                 </div>
-                <div style={{ flex: '1', minWidth: '120px' }}>
+                <div style={{ minWidth: '120px' }}>
                   <label className="form-label">Kapasitas (Kursi)</label>
                   <input type="number" className="input-field" value={formData.kapasitas} onChange={(e) => setFormData({ ...formData, kapasitas: Number(e.target.value) })} required />
                 </div>
@@ -788,48 +788,95 @@ function ManajemenRuangan() {
                 <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '16px', color: '#0f172a' }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}><LayersFill size={16} /> Ruangan Lantai {lantaiNum}</span>
                 </h3>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '2px solid #e2e8f0', background: '#f8fafc' }}>
-                      <th style={{ padding: '10px 12px' }}>Nama Ruang</th>
-                      <th style={{ padding: '10px 12px' }}>Kapasitas</th>
-                      <th style={{ padding: '10px 12px' }}>Status Saat Ini</th>
-                      <th style={{ padding: '10px 12px' }}>Ubah Status</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'right' }}>Kelola Jadwal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {roomsByLantai[lantaiNum].map(room => (
-                      <tr key={room.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '12px', fontWeight: 'bold', color: '#059669' }}>{room.nama}</td>
-                        <td style={{ padding: '12px' }}>{room.kapasitas} kursi</td>
-                        <td style={{ padding: '12px' }}>
-                          {room.status === 'tersedia' && <span className="badge badge-success">Tersedia</span>}
-                          {room.status === 'terkunci' && <span className="badge badge-error">Terkunci</span>}
-                          {room.status === 'perbaikan' && <span className="badge badge-warning">Perbaikan</span>}
-                        </td>
-                        <td style={{ padding: '12px' }}>
+
+                {/* DESKTOP TABLE VIEW (min-width: 769px) */}
+                <div className="room-desktop-table">
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #e2e8f0', background: '#f8fafc' }}>
+                        <th style={{ padding: '10px 12px' }}>Nama Ruang</th>
+                        <th style={{ padding: '10px 12px' }}>Kapasitas</th>
+                        <th style={{ padding: '10px 12px' }}>Status Saat Ini</th>
+                        <th style={{ padding: '10px 12px' }}>Ubah Status</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'right' }}>Kelola Jadwal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {roomsByLantai[lantaiNum].map(room => (
+                        <tr key={room.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '12px', fontWeight: 'bold', color: '#059669' }}>{room.nama}</td>
+                          <td style={{ padding: '12px' }}>{room.kapasitas} kursi</td>
+                          <td style={{ padding: '12px' }}>
+                            {room.status === 'tersedia' && <span className="badge badge-success">Tersedia</span>}
+                            {room.status === 'terkunci' && <span className="badge badge-error">Terkunci</span>}
+                            {room.status === 'perbaikan' && <span className="badge badge-warning">Perbaikan</span>}
+                          </td>
+                          <td style={{ padding: '12px' }}>
+                            <select
+                              className="input-field"
+                              style={{ padding: '4px 8px', height: 'auto', width: 'auto', display: 'inline-block' }}
+                              value={room.status}
+                              onChange={(e) => handleUppdateStatus(room.id, e.target.value)}
+                              disabled={actionLoading}
+                            >
+                              <option value="tersedia">Tersedia</option>
+                              <option value="terkunci">Terkunci</option>
+                              <option value="perbaikan">Perbaikan</option>
+                            </select>
+                          </td>
+                          <td style={{ padding: '12px', textAlign: 'right' }}>
+                            <button className="btn btn-secondary btn-sm" onClick={() => handleOpenRoomSchedules(room)}>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><CalendarEventFill size={13} /> Kelola Jadwal</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* MOBILE ENTITY CARDS VIEW (<= 768px) */}
+                <div className="room-mobile-cards">
+                  {roomsByLantai[lantaiNum].map(room => (
+                    <div key={`m-room-${room.id}`} className="room-mobile-item">
+                      <div className="room-mobile-item-header">
+                        <div>
+                          <h4 className="room-mobile-item-title">Ruang {room.nama}</h4>
+                          <span className="room-mobile-item-cap">Lantai {room.lantai || 1} &bull; {room.kapasitas} kursi</span>
+                        </div>
+                        <div>
+                          {room.status === 'tersedia' && <span className="badge badge-success room-mobile-badge">Tersedia</span>}
+                          {room.status === 'terkunci' && <span className="badge badge-error room-mobile-badge">Terkunci</span>}
+                          {room.status === 'perbaikan' && <span className="badge badge-warning room-mobile-badge">Perbaikan</span>}
+                        </div>
+                      </div>
+
+                      <div className="room-mobile-item-body">
+                        <div className="room-mobile-status-control">
+                          <label className="room-mobile-label">Ubah Status:</label>
                           <select
-                            className="input-field"
-                            style={{ padding: '4px 8px', height: 'auto', width: 'auto', display: 'inline-block' }}
+                            className="input-field room-mobile-select"
                             value={room.status}
                             onChange={(e) => handleUppdateStatus(room.id, e.target.value)}
                             disabled={actionLoading}
                           >
-                            <option value="tersedia">Tersedia</option>
-                            <option value="terkunci">Terkunci</option>
-                            <option value="perbaikan">Perbaikan</option>
+                            <option value="tersedia">🟢 Tersedia</option>
+                            <option value="terkunci">🔴 Terkunci</option>
+                            <option value="perbaikan">🟡 Perbaikan</option>
                           </select>
-                        </td>
-                        <td style={{ padding: '12px', textAlign: 'right' }}>
-                          <button className="btn btn-secondary btn-sm" onClick={() => handleOpenRoomSchedules(room)}>
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><CalendarEventFill size={13} /> Kelola Jadwal</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="btn btn-secondary room-mobile-sched-btn"
+                          onClick={() => handleOpenRoomSchedules(room)}
+                        >
+                          <CalendarEventFill size={14} /> Kelola Jadwal SIAKAD
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))
           )}
@@ -844,7 +891,7 @@ function ManajemenRuangan() {
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
-          <div className="card-flat" style={{ width: '100%', maxWidth: '720px', background: '#fff', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className="card-flat room-sched-modal-card" style={{ width: '100%', maxWidth: '720px', background: '#fff', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}><CalendarEventFill size={18} /> Jadwal SIAKAD Ruang {selectedRoomModal.nama}</h2>
               <button className="btn btn-secondary btn-sm" onClick={() => setSelectedRoomModal(null)}>Tutup</button>
@@ -1026,39 +1073,79 @@ function ManajemenRuangan() {
             {loadingSched ? (
               <p>Memuat jadwal...</p>
             ) : roomSchedules.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Ruangan ini belum memiliki jadwal perkuliahan reguler.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: '20px 0' }}>Ruangan ini belum memiliki jadwal perkuliahan reguler.</p>
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                    <th style={{ padding: '8px 12px' }}>Hari & Waktu</th>
-                    <th style={{ padding: '8px 12px' }}>Mata Kuliah & Dosen</th>
-                    <th style={{ padding: '8px 12px' }}>Kelas</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'right' }}>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <>
+                {/* DESKTOP MODAL TABLE (min-width: 769px) */}
+                <div className="room-sched-desktop-table">
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                        <th style={{ padding: '8px 12px' }}>Hari & Waktu</th>
+                        <th style={{ padding: '8px 12px' }}>Mata Kuliah & Dosen</th>
+                        <th style={{ padding: '8px 12px' }}>Kelas</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'right' }}>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {roomSchedules.map((s) => (
+                        <tr key={s.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '10px 12px' }}>
+                            <b>{s.hari}</b><br />
+                            <span className="text-muted" style={{ fontSize: '12px' }}>{s.waktu_mulai.substring(0, 5)} - {s.waktu_selesai.substring(0, 5)}</span>
+                          </td>
+                          <td style={{ padding: '10px 12px' }}>
+                            <b>{s.mata_kuliah}</b><br />
+                            <span className="text-muted" style={{ fontSize: '12px' }}>{s.dosen}</span>
+                          </td>
+                          <td style={{ padding: '10px 12px' }}>
+                            {s.prodi} (Smstr {s.semester} - {s.kelas})
+                          </td>
+                          <td style={{ padding: '10px 10px', textAlign: 'right' }}>
+                            <button className="btn btn-secondary btn-sm" style={{ marginRight: '4px', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleEditScheduleClick(s)}><PencilSquare size={13} /> Edit</button>
+                            <button className="btn btn-secondary btn-sm" style={{ color: 'red', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleDeleteSchedule(s.id, s.mata_kuliah)}><TrashFill size={13} /> Hapus</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* MOBILE MODAL SCHEDULE CARDS (<= 768px) */}
+                <div className="room-sched-mobile-cards">
                   {roomSchedules.map((s) => (
-                    <tr key={s.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '10px 12px' }}>
-                        <b>{s.hari}</b><br />
-                        <span className="text-muted" style={{ fontSize: '12px' }}>{s.waktu_mulai.substring(0, 5)} - {s.waktu_selesai.substring(0, 5)}</span>
-                      </td>
-                      <td style={{ padding: '10px 12px' }}>
-                        <b>{s.mata_kuliah}</b><br />
-                        <span className="text-muted" style={{ fontSize: '12px' }}>{s.dosen}</span>
-                      </td>
-                      <td style={{ padding: '10px 12px' }}>
-                        {s.prodi} (Smstr {s.semester} - {s.kelas})
-                      </td>
-                      <td style={{ padding: '10px 10px', textAlign: 'right' }}>
-                        <button className="btn btn-secondary btn-sm" style={{ marginRight: '4px', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleEditScheduleClick(s)}><PencilSquare size={13} /> Edit</button>
-                        <button className="btn btn-secondary btn-sm" style={{ color: 'red', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleDeleteSchedule(s.id, s.mata_kuliah)}><TrashFill size={13} /> Hapus</button>
-                      </td>
-                    </tr>
+                    <div key={`m-sched-${s.id}`} className="room-sched-mobile-item">
+                      <div className="room-sched-mobile-header">
+                        <div>
+                          <strong className="room-sched-mobile-day">{s.hari} &bull; {s.waktu_mulai.substring(0, 5)} - {s.waktu_selesai.substring(0, 5)} WIB</strong>
+                          <h4 className="room-sched-mobile-title">{s.mata_kuliah}</h4>
+                          <span className="room-sched-mobile-dosen">{s.dosen}</span>
+                        </div>
+                        <span className="badge badge-secondary room-sched-mobile-badge">
+                          {s.prodi} (Smstr {s.semester} - {s.kelas})
+                        </span>
+                      </div>
+
+                      <div className="room-sched-mobile-actions">
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm room-sched-action-btn"
+                          onClick={() => handleEditScheduleClick(s)}
+                        >
+                          <PencilSquare size={13} /> Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm room-sched-action-btn btn-delete"
+                          onClick={() => handleDeleteSchedule(s.id, s.mata_kuliah)}
+                        >
+                          <TrashFill size={13} /> Hapus
+                        </button>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </div>
         </div>
