@@ -17,7 +17,11 @@ router.get('/profile', verifyToken, async (req, res) => {
 
         const { data: user, error: fetchErr } = await supabase
             .from('users')
-            .select('id, username, nim_nip, email, prodi, semester, kelas, mata_kuliah, no_hp, role, status, created_at, updated_at')
+            .select(`
+                id, username, nim_nip, email, departemen_id,
+                departemen:departemen_id ( id, nama_prodi, fakultas, kode_prodi ),
+                prodi, semester, kelas, mata_kuliah, no_hp, role, status, created_at, updated_at
+            `)
             .eq('id', userId)
             .single()
 
@@ -25,7 +29,12 @@ router.get('/profile', verifyToken, async (req, res) => {
             return res.status(404).json({ error: 'Pengguna tidak ditemukan' })
         }
 
-        res.json({ user })
+        const formattedUser = {
+            ...user,
+            prodi: user.departemen?.nama_prodi || user.prodi || '-'
+        }
+
+        res.json({ user: formattedUser })
     } catch (error) {
         console.error('Get profile error:', error)
         res.status(500).json({ error: 'Gagal memuat profil pengguna' })
@@ -139,7 +148,11 @@ router.get('/', verifyToken, adminOnly, async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('users')
-            .select('id, username, nim_nip, email, prodi, semester, kelas, mata_kuliah, no_hp, role, status, created_at')
+            .select(`
+                id, username, nim_nip, email, departemen_id,
+                departemen:departemen_id ( id, nama_prodi, fakultas, kode_prodi ),
+                prodi, semester, kelas, mata_kuliah, no_hp, role, status, created_at
+            `)
             .eq('role', 'pj') // 👈 Hanya ambil akun bertipe PJ (Keluarkan seluruh Akun Admin)
             .order('created_at', { ascending: false })
 
@@ -147,6 +160,7 @@ router.get('/', verifyToken, adminOnly, async (req, res) => {
 
         const formattedUsers = (data || []).map(u => ({
             ...u,
+            prodi: u.departemen?.nama_prodi || u.prodi || '-',
             semester: u.semester ?? ((u.kelas && u.kelas.endsWith('-U')) || (u.mata_kuliah && u.mata_kuliah.includes('Mengulang')) ? 'SPB' : '-')
         }))
         res.json({ users: formattedUsers })
@@ -197,20 +211,58 @@ router.delete('/:id', verifyToken, adminOnly, async (req, res) => {
 router.put('/:id', verifyToken, adminOnly, async (req, res) => {
     try {
         const { id } = req.params
-        const { username, nim_nip, prodi, semester, kelas, mata_kuliah, no_hp, status } = req.body
+        const { username, nim_nip, prodi, departemen_id, semester, kelas, mata_kuliah, no_hp, status } = req.body
         let semVal = semester
         if (String(semester).toUpperCase().trim() === 'SPB') {
             semVal = null
         }
+
+        let resolvedDepartemenId = departemen_id ? Number(departemen_id) : null
+        let resolvedProdi = prodi
+
+        // Sinkronisasi otomatis dua arah jika salah satu dikirim
+        if (resolvedDepartemenId && !resolvedProdi) {
+            const { data: dep } = await supabase.from('departemen').select('nama_prodi').eq('id', resolvedDepartemenId).maybeSingle()
+            if (dep) resolvedProdi = dep.nama_prodi
+        } else if (!resolvedDepartemenId && resolvedProdi) {
+            const { data: dep } = await supabase.from('departemen').select('id, nama_prodi').ilike('nama_prodi', resolvedProdi.trim()).maybeSingle()
+            if (dep) {
+                resolvedDepartemenId = dep.id
+                resolvedProdi = dep.nama_prodi
+            }
+        }
+
+        const updatePayload = {
+            username,
+            nim_nip,
+            semester: semVal,
+            kelas,
+            mata_kuliah,
+            no_hp,
+            status
+        }
+        if (resolvedDepartemenId !== null && !isNaN(resolvedDepartemenId)) updatePayload.departemen_id = resolvedDepartemenId
+        if (resolvedProdi !== undefined) updatePayload.prodi = resolvedProdi
+
         const { data, error } = await supabase
             .from('users')
-            .update({ username, nim_nip, prodi, semester: semVal, kelas, mata_kuliah, no_hp, status })
+            .update(updatePayload)
             .eq('id', id)
-            .select('*')
+            .select(`
+                id, username, nim_nip, email, departemen_id,
+                departemen:departemen_id ( id, nama_prodi, fakultas, kode_prodi ),
+                prodi, semester, kelas, mata_kuliah, no_hp, role, status
+            `)
             .single()
 
         if (error) throw error
-        res.json({ message: 'Data Pj berhasil diperbarui.', user: data })
+
+        const formattedUser = {
+            ...data,
+            prodi: data.departemen?.nama_prodi || data.prodi || '-'
+        }
+
+        res.json({ message: 'Data PJ berhasil diperbarui.', user: formattedUser })
     } catch (error) {
         console.error('Update user error:', error);
         res.status(500).json({ error: 'Gagal memperbarui data PJ.' })

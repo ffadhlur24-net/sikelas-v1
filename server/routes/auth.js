@@ -19,10 +19,10 @@ const emailTracker = new Map()
 router.post('/register', async (req, res) => {
     try {
         console.log('📩 [REGISTER REQUEST BODY]:', req.body)
-        const { username, email, password, prodi, semester, mata_kuliah, kelas, no_hp } = req.body
+        const { username, email, password, prodi, departemen_id, semester, mata_kuliah, kelas, no_hp } = req.body
 
         // 1. Validasi input kelengkapan
-        if (!username || !email || !password || !prodi || !mata_kuliah || !kelas || !semester || !no_hp) {
+        if (!username || !email || !password || (!prodi && !departemen_id) || !mata_kuliah || !kelas || !semester || !no_hp) {
             console.log('❌ [REGISTER FAILED]: Ada kolom yang kosong!')
             return res.status(400).json({
                 error: 'Semua kolom wajib diisi!'
@@ -54,6 +54,21 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({
                 error: 'Password minimal harus 8 karakter.'
             })
+        }
+
+        // 1e. Resolusi otomatis departemen_id dan nama_prodi resmi
+        let resolvedDepartemenId = departemen_id ? Number(departemen_id) : null
+        let resolvedProdi = prodi ? prodi.trim() : ''
+
+        if (resolvedDepartemenId && !resolvedProdi) {
+            const { data: dep } = await supabase.from('departemen').select('nama_prodi').eq('id', resolvedDepartemenId).maybeSingle()
+            if (dep) resolvedProdi = dep.nama_prodi
+        } else if (!resolvedDepartemenId && resolvedProdi) {
+            const { data: dep } = await supabase.from('departemen').select('id, nama_prodi').ilike('nama_prodi', resolvedProdi).maybeSingle()
+            if (dep) {
+                resolvedDepartemenId = dep.id
+                resolvedProdi = dep.nama_prodi
+            }
         }
 
         // 2. Cek NIM / NIP Duplikat
@@ -92,14 +107,20 @@ router.post('/register', async (req, res) => {
         }
 
         // 3. Cek double PJ & Pembersihan Instan Akun Gantung Expired
-        const { data: existingPJ } = await supabase
+        let doublePjQuery = supabase
             .from('users')
-            .select('id, username, status, otp_expires_at, email')
+            .select('id, username, status, otp_expires_at, email, departemen_id, prodi')
             .eq('role', 'pj')
-            .eq('prodi', prodi)
             .eq('mata_kuliah', mata_kuliah)
             .eq('kelas', kelas)
-            .maybeSingle()
+
+        if (resolvedDepartemenId) {
+            doublePjQuery = doublePjQuery.eq('departemen_id', resolvedDepartemenId)
+        } else {
+            doublePjQuery = doublePjQuery.eq('prodi', resolvedProdi)
+        }
+
+        const { data: existingPJ } = await doublePjQuery.maybeSingle()
 
         if (existingPJ) {
             const isOtpExpired = existingPJ.otp_expires_at && new Date() > new Date(existingPJ.otp_expires_at)
@@ -111,9 +132,9 @@ router.post('/register', async (req, res) => {
                 console.log(`🧹 [Register Instant Cleanup] Menghapus akun gantung pending (ID: ${existingPJ.id}, User: ${existingPJ.username}) untuk mengosongkan matkul ${mata_kuliah}.`)
                 await supabase.from('users').delete().eq('id', existingPJ.id)
             } else {
-                console.log(`❌ [REGISTER FAILED]: Double PJ untuk ${mata_kuliah} (${prodi}) Kelas ${kelas}`)
+                console.log(`❌ [REGISTER FAILED]: Double PJ untuk ${mata_kuliah} (${resolvedProdi}) Kelas ${kelas}`)
                 return res.status(400).json({
-                    error: `Pendaftaran Ditolak: Mata kuliah ${mata_kuliah} (${prodi}) Kelas ${kelas} sedang dalam proses verifikasi OTP oleh calon PJ lain (${existingPJ.username}, berlaku 15 menit).`
+                    error: `Pendaftaran Ditolak: Mata kuliah ${mata_kuliah} (${resolvedProdi}) Kelas ${kelas} sedang dalam proses verifikasi OTP oleh calon PJ lain (${existingPJ.username}, berlaku 15 menit).`
                 })
             }
         }
@@ -125,7 +146,7 @@ router.post('/register', async (req, res) => {
         const otpCode = Math.floor(100000 + Math.random() * 900000).toString()
         const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000)
 
-                const cleanSemester = String(semester || '1').trim()
+        const cleanSemester = String(semester || '1').trim()
         const isSpb = cleanSemester.toUpperCase() === 'SPB'
 
         const insertPayload = {
@@ -133,7 +154,8 @@ router.post('/register', async (req, res) => {
             nim_nip,
             email,
             password: hashedPassword,
-            prodi,
+            departemen_id: resolvedDepartemenId,
+            prodi: resolvedProdi || prodi,
             semester: cleanSemester,
             mata_kuliah,
             kelas,
@@ -342,25 +364,26 @@ router.get('/registration-options', async (req, res) => {
     try {
         const { data: allSchedules, error: schedError } = await supabase
             .from('schedules')
-            .select('prodi, semester, kelas, mata_kuliah')
+            .select('prodi, departemen_id, semester, kelas, mata_kuliah')
 
         if (schedError) throw schedError
 
         const { data: takenUsers, error: userError } = await supabase
             .from('users')
-            .select('prodi, semester, kelas, mata_kuliah')
+            .select('prodi, departemen_id, semester, kelas, mata_kuliah')
             .eq('role', 'pj')
 
         if (userError) throw userError
 
         const takenKeys = new Set((takenUsers || []).map(u =>
-            `${u.prodi}|${u.semester}|${u.kelas}|${u.mata_kuliah}`
+            `${u.departemen_id || u.prodi}|${u.semester}|${u.kelas}|${u.mata_kuliah}`
         ))
 
         // Filter mata kuliah yang BELUM ada PJ-nya
         const availableSchedules = (allSchedules || []).filter(s => {
-            const key = `${s.prodi}|${s.semester}|${s.kelas}|${s.mata_kuliah}`
-            return !takenKeys.has(key)
+            const key1 = `${s.departemen_id || s.prodi}|${s.semester}|${s.kelas}|${s.mata_kuliah}`
+            const key2 = `${s.prodi}|${s.semester}|${s.kelas}|${s.mata_kuliah}`
+            return !takenKeys.has(key1) && !takenKeys.has(key2)
         })
 
         if (availableSchedules.length === 0) {
@@ -396,7 +419,7 @@ router.post('/login', loginLimiter, async (req, res) => {
         // 2. cari user berdasarkan email
         const { data: user, error } = await supabase
             .from('users')
-            .select('*')
+            .select('*, departemen:departemen_id ( id, nama_prodi, fakultas, kode_prodi )')
             .eq('email', email)
             .maybeSingle()
 
@@ -456,7 +479,8 @@ router.post('/login', loginLimiter, async (req, res) => {
                 nim_nip: user.nim_nip,
                 email: user.email,
                 role: user.role,
-                prodi: user.prodi,
+                departemen_id: user.departemen_id,
+                prodi: user.departemen?.nama_prodi || user.prodi || '-',
                 semester: user.semester ?? ((user.kelas && user.kelas.endsWith('-U')) || (user.mata_kuliah && user.mata_kuliah.includes('Mengulang')) ? 'SPB' : '-'),
                 kelas: user.kelas,
                 mata_kuliah: user.mata_kuliah,
@@ -556,7 +580,7 @@ router.post('/resume-otp', async (req, res) => {
 
         const { data: user } = await supabase
             .from('users')
-            .select('id, username, email, status, otp_expires_at, mata_kuliah, prodi, kelas')
+            .select('id, username, email, status, otp_expires_at, mata_kuliah, prodi, departemen_id, departemen:departemen_id ( id, nama_prodi, fakultas, kode_prodi ), kelas')
             .eq('email', email.trim().toLowerCase())
             .maybeSingle()
 
@@ -582,7 +606,8 @@ router.post('/resume-otp', async (req, res) => {
                 username: user.username,
                 email: user.email,
                 mata_kuliah: user.mata_kuliah,
-                prodi: user.prodi,
+                departemen_id: user.departemen_id,
+                prodi: user.departemen?.nama_prodi || user.prodi || '-',
                 kelas: user.kelas,
                 otp_expires_at: user.otp_expires_at
             }

@@ -96,12 +96,20 @@ router.get('/', verifyToken, adminOnly, async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('facility_reports')
-            .select('*, rooms(nama, gedung, kampus, status), reporter:users!reporter_id(username, email, prodi, no_hp)')
+            .select('*, rooms(nama, gedung, kampus, status), reporter:users!reporter_id(username, email, prodi, departemen_id, departemen:departemen_id(id, nama_prodi, fakultas), no_hp)')
             .order('created_at', { ascending: false })
 
         if (error) throw error
 
-        res.json({ reports: data || [] })
+        const formattedReports = (data || []).map(r => ({
+            ...r,
+            reporter: r.reporter ? {
+                ...r.reporter,
+                prodi: r.reporter.departemen?.nama_prodi || r.reporter.prodi || '-'
+            } : null
+        }))
+
+        res.json({ reports: formattedReports })
     } catch (error) {
         console.error('Admin get reports error:', error)
         res.status(500).json({ error: 'gagal mengambil daftar laporan' })

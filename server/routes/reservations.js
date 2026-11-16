@@ -14,7 +14,7 @@ router.get('/', verifyToken, async (req, res) => {
     try {
         let query = supabase
             .from('reservations')
-            .select('*, rooms(nama, gedung), users(username, nim_nip, prodi, kelas, no_hp)')
+            .select('*, rooms(nama, gedung), users(username, nim_nip, prodi, departemen_id, departemen:departemen_id(id, nama_prodi, fakultas), kelas, no_hp)')
             .order('created_at', { ascending: false })
 
         // Jika PJ, hanya tampilkan miliknya sendiri
@@ -24,7 +24,15 @@ router.get('/', verifyToken, async (req, res) => {
         const { data, error } = await query
         if (error) throw error
 
-        res.json({ reservations: data })
+        const formattedData = (data || []).map(r => ({
+            ...r,
+            users: r.users ? {
+                ...r.users,
+                prodi: r.users.departemen?.nama_prodi || r.users.prodi || '-'
+            } : null
+        }))
+
+        res.json({ reservations: formattedData })
     } catch (error) {
         console.error('Get reservations error:', error)
         res.status(500).json({ error: error.message || 'Gagal mengambil data reservasi.' })
