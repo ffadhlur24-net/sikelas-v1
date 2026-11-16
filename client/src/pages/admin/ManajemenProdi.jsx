@@ -175,19 +175,19 @@ function ManajemenProdi() {
       </div>
 
       {/* NAVIGASI BREADCRUMB LEVEL */}
-      <div className="faculty-breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', fontSize: '14px', fontWeight: 'bold' }}>
+      <div className="faculty-breadcrumb">
         <button
-          className="btn btn-secondary btn-sm"
-          style={{ background: !selectedFakultas ? '#059669' : '#e2e8f0', color: !selectedFakultas ? '#fff' : '#475569' }}
+          type="button"
+          className={`faculty-breadcrumb-btn ${!selectedFakultas ? 'active' : ''}`}
           onClick={() => { setSelectedFakultas(null); setEditingId(null); }}
         >
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Building size={15} /> Daftar Fakultas (Level 1)</span>
+          <Building size={15} /> <span>Daftar Fakultas (Level 1)</span>
         </button>
         {selectedFakultas && (
           <>
-            <span style={{ display: "inline-flex", alignItems: "center" }}><ArrowRight size={13} /></span>
-            <span style={{ color: '#059669', background: '#d1fae5', padding: '4px 12px', borderRadius: '6px' }}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><GeoAltFill size={15} /> {selectedFakultas} (Level 2: Sub-Prodi)</span>
+            <span className="faculty-breadcrumb-separator"><ArrowRight size={14} /></span>
+            <span className="faculty-breadcrumb-active">
+              <GeoAltFill size={15} /> <span>{selectedFakultas} (Level 2: Sub-Prodi)</span>
             </span>
           </>
         )}
@@ -199,9 +199,9 @@ function ManajemenProdi() {
       {!selectedFakultas && (
         <>
           {/* Form Tambah Fakultas Baru */}
-          <div className="card-flat" style={{ marginBottom: '24px', maxWidth: '500px' }}>
-            <h3 style={{ fontSize: "15px", fontWeight: "bold", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}><PlusLg size={16} /> Tambah Master Fakultas Baru</h3>
-            <form onSubmit={handleSaveFakultas} style={{ display: 'flex', gap: '12px' }}>
+          <div className="card-flat faculty-add-card">
+            <h3 className="faculty-add-title"><PlusLg size={16} /> Tambah Master Fakultas Baru</h3>
+            <form onSubmit={handleSaveFakultas} className="faculty-add-form">
               <input
                 type="text"
                 className="input-field"
@@ -215,22 +215,23 @@ function ManajemenProdi() {
           </div>
 
           {/* Grid Kartu Fakultas */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+          <div className="faculty-grid">
             {listFakultas.map((fakName, idx) => {
               const count = departments.filter(d => d.fakultas === fakName && !d.nama_prodi.includes('(Umum)')).length
               return (
                 <div
                   key={idx}
-                  className="card-flat"
-                  style={{ cursor: 'pointer', borderLeft: '4px solid #059669', transition: 'transform 0.2s', background: '#fff' }}
+                  className="card-flat faculty-card-item"
                   onClick={() => setSelectedFakultas(fakName)}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <div style={{ color: "#059669" }}><Building size={32} /></div>
+                  <div className="faculty-card-top">
+                    <div className="faculty-card-icon"><Building size={28} /></div>
                     <span className="badge badge-success">{count} Program Studi</span>
                   </div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 6px', color: '#0f172a' }}>{fakName}</h3>
-                  <p style={{ margin: 0, fontSize: "13px", color: "#059669", fontWeight: "500", display: "inline-flex", alignItems: "center", gap: "5px" }}>Klik untuk kelola daftar prodi <ArrowRight size={13} /></p>
+                  <h3 className="faculty-card-title">{fakName}</h3>
+                  <p className="faculty-card-action">
+                    Klik untuk kelola daftar prodi <ArrowRight size={13} />
+                  </p>
                 </div>
               )
             })}
@@ -243,21 +244,27 @@ function ManajemenProdi() {
       {/* ========================================================= */}
       {selectedFakultas && (
         <div className="faculty-detail-card card-flat">
-          <div className="faculty-detail-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div className="faculty-detail-heading">
             <div>
-              <h2 style={{ fontSize: "18px", fontWeight: "bold", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}><MortarboardFill size={20} /> Program Studi di {selectedFakultas}</h2>
-              <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Tambah dan edit nama program studi terikat tanpa pengetikan manual.</p>
+              <h2><MortarboardFill size={20} /> Program Studi di {selectedFakultas}</h2>
+              <p>Tambah dan edit nama program studi terikat tanpa pengetikan manual.</p>
             </div>
-            <button className="btn btn-secondary btn-sm" onClick={() => { setSelectedFakultas(null); setEditingId(null); }}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><ArrowLeft size={14} /> Kembali ke Daftar Fakultas</span>
+            <button className="btn btn-secondary btn-sm faculty-back-btn" onClick={() => { setSelectedFakultas(null); setEditingId(null); }}>
+              <ArrowLeft size={14} /> Kembali ke Daftar Fakultas
             </button>
           </div>
 
           {/* Form Tambah / Edit Prodi */}
-          <form className="faculty-prodi-form" onSubmit={handleSaveProdi} style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #e2e8f0' }}>
-            <h4 style={{ margin: '0 0 12px', fontSize: '14px' }}>{editingId ? (<span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><PencilSquare size={14} /> Edit Program Studi</span>) : (<span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><PlusLg size={14} /> Tambah Program Studi Baru</span>)}</h4>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <div style={{ flex: 2, minWidth: '200px' }}>
+          <form className="faculty-prodi-form" onSubmit={handleSaveProdi}>
+            <h4>
+              {editingId ? (
+                <><PencilSquare size={14} /> Edit Program Studi</>
+              ) : (
+                <><PlusLg size={14} /> Tambah Program Studi Baru</>
+              )}
+            </h4>
+            <div className="faculty-prodi-form-grid">
+              <div className="faculty-form-group prodi-name-group">
                 <label className="form-label">Nama Program Studi</label>
                 <input
                   type="text"
@@ -268,7 +275,7 @@ function ManajemenProdi() {
                   required
                 />
               </div>
-              <div style={{ flex: 1, minWidth: '120px' }}>
+              <div className="faculty-form-group prodi-code-group">
                 <label className="form-label">Kode Prodi</label>
                 <input
                   type="text"
@@ -278,12 +285,16 @@ function ManajemenProdi() {
                   onChange={(e) => setFormProdi({ ...formProdi, kode_prodi: e.target.value })}
                 />
               </div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+              <div className="faculty-form-actions">
                 <button className="btn btn-primary" disabled={actionLoading} type="submit">
                   {editingId ? 'Simpan Perubahan' : 'Tambah Prodi'}
                 </button>
                 {editingId && (
-                  <button type="button" className="btn btn-secondary" onClick={() => { setEditingId(null); setFormProdi({ nama_prodi: '', kode_prodi: '' }); }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => { setEditingId(null); setFormProdi({ nama_prodi: '', kode_prodi: '' }); }}
+                  >
                     Batal
                   </button>
                 )}
@@ -302,43 +313,81 @@ function ManajemenProdi() {
                 type="button"
                 className="faculty-search-button"
                 onClick={() => setProdiSearch(prodiSearch.trim())}
-                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
               >
                 <Search size={15} /> CARI
               </button>
             </div>
           </section>
 
-          {/* Tabel Daftar Prodi */}
-          <table className="faculty-prodi-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #e2e8f0', background: '#f8fafc' }}>
-                <th style={{ padding: '12px 16px' }}>Kode</th>
-                <th style={{ padding: '12px 16px' }}>Nama Program Studi</th>
-                <th style={{ padding: '12px 16px' }}>Fakultas Terikat</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProdi.length > 0 ? filteredProdi.map((dep) => (
-                <tr key={dep.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 'bold', color: '#059669' }}>{dep.kode_prodi || '-'}</td>
-                  <td style={{ padding: '12px 16px', fontWeight: 'bold' }}>{dep.nama_prodi}</td>
-                  <td style={{ padding: '12px 16px', color: '#64748b' }}>{dep.fakultas}</td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                    <button className="btn btn-secondary btn-sm faculty-action-edit" style={{ marginRight: '8px', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleEditProdi(dep)}><PencilSquare size={13} /> Edit</button>
-                    <button className="btn btn-secondary btn-sm faculty-action-delete" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleDeleteProdi(dep.id, dep.nama_prodi)}><TrashFill size={13} /> Hapus</button>
-                  </td>
+          {/* Desktop Table View (> 768px) */}
+          <div className="faculty-prodi-table-wrapper">
+            <table className="faculty-prodi-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #e2e8f0', background: '#f8fafc' }}>
+                  <th style={{ padding: '12px 16px' }}>Kode</th>
+                  <th style={{ padding: '12px 16px' }}>Nama Program Studi</th>
+                  <th style={{ padding: '12px 16px' }}>Fakultas Terikat</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'right' }}>Aksi</th>
                 </tr>
-              )) : (
-                <tr>
-                  <td colSpan="4" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
-                    {prodiSearch ? 'Program studi tidak ditemukan.' : `Belum ada Program Studi yang terdaftar di ${selectedFakultas}. Silakan tambah prodi di atas.`}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredProdi.length > 0 ? filteredProdi.map((dep) => (
+                  <tr key={dep.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '12px 16px', fontWeight: 'bold', color: '#059669' }}>{dep.kode_prodi || '-'}</td>
+                    <td style={{ padding: '12px 16px', fontWeight: 'bold' }}>{dep.nama_prodi}</td>
+                    <td style={{ padding: '12px 16px', color: '#64748b' }}>{dep.fakultas}</td>
+                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                      <button className="btn btn-secondary btn-sm faculty-action-edit" style={{ marginRight: '8px', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleEditProdi(dep)}><PencilSquare size={13} /> Edit</button>
+                      <button className="btn btn-secondary btn-sm faculty-action-delete" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => handleDeleteProdi(dep.id, dep.nama_prodi)}><TrashFill size={13} /> Hapus</button>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan="4" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                      {prodiSearch ? 'Program studi tidak ditemukan.' : `Belum ada Program Studi yang terdaftar di ${selectedFakultas}. Silakan tambah prodi di atas.`}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Entity Cards View (<= 768px) */}
+          <div className="faculty-prodi-mobile-cards">
+            {filteredProdi.length > 0 ? (
+              filteredProdi.map((dep) => (
+                <div key={`m-dep-${dep.id}`} className="prodi-mobile-item">
+                  <div className="prodi-mobile-header">
+                    <div>
+                      <span className="prodi-mobile-code-badge">{dep.kode_prodi || 'PRODI'}</span>
+                      <h4 className="prodi-mobile-title">{dep.nama_prodi}</h4>
+                      <span className="prodi-mobile-faculty">{dep.fakultas}</span>
+                    </div>
+                  </div>
+                  <div className="prodi-mobile-actions">
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm faculty-action-edit prodi-mobile-btn"
+                      onClick={() => handleEditProdi(dep)}
+                    >
+                      <PencilSquare size={13} /> Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm faculty-action-delete prodi-mobile-btn"
+                      onClick={() => handleDeleteProdi(dep.id, dep.nama_prodi)}
+                    >
+                      <TrashFill size={13} /> Hapus
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="prodi-mobile-empty">
+                {prodiSearch ? 'Program studi tidak ditemukan.' : `Belum ada Program Studi yang terdaftar di ${selectedFakultas}. Silakan tambah prodi di atas.`}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
