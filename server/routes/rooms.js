@@ -317,12 +317,7 @@ router.post('/', verifyToken, adminOnly, async (req, res) => {
 router.patch('/:id/status', verifyToken, adminOnly, async (req, res) => {
     try {
         const { id } = req.params
-        let { status } = req.body
-
-        // Sanitasi status: jika dikirim 'perbaikan', fallback ke 'terkunci' agar tidak melanggar DB check constraint
-        if (status === 'perbaikan') {
-            status = 'terkunci'
-        }
+        const { status } = req.body
 
         if (!['tersedia', 'terkunci'].includes(status)) {
             return res.status(400).json({ error: 'Status ruangan tidak valid. Pilih antara "tersedia" atau "terkunci".' })

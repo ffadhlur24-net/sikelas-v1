@@ -814,7 +814,6 @@ function ManajemenRuangan() {
                           <td style={{ padding: '12px' }}>
                             {room.status === 'tersedia' && <span className="badge badge-success">Tersedia</span>}
                             {room.status === 'terkunci' && <span className="badge badge-error">Terkunci</span>}
-                            {room.status === 'perbaikan' && <span className="badge badge-warning">Perbaikan</span>}
                           </td>
                           <td style={{ padding: '8px 12px', minWidth: '150px' }}>
                             <NeoSelect
@@ -848,7 +847,6 @@ function ManajemenRuangan() {
                         <div>
                           {room.status === 'tersedia' && <span className="badge badge-success room-mobile-badge">Tersedia</span>}
                           {room.status === 'terkunci' && <span className="badge badge-error room-mobile-badge">Terkunci</span>}
-                          {room.status === 'perbaikan' && <span className="badge badge-warning room-mobile-badge">Perbaikan</span>}
                         </div>
                       </div>
 
