@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'react-bootstrap-icons'
+
 function PersetujuanReservasi() {
   const { showSuccess, showError, showWarning } = useToast()
   const [reservations, setReservations] = useState([])
@@ -44,6 +45,7 @@ function PersetujuanReservasi() {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
+
   const formatTanggalIndonesia = (dateString) => {
     if (!dateString) return '-'
     const cleanDate = dateString.split('T')[0]
@@ -59,6 +61,7 @@ function PersetujuanReservasi() {
     }
     return dateString
   }
+
   // Fungsi Cek Apakah Reservasi Sudah Lewat Jam/Tanggal
   const isReservationExpired = (res) => {
     const now = new Date()
@@ -69,6 +72,7 @@ function PersetujuanReservasi() {
     const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
     return res.status === 'pending' && (res.tanggal < todayStr || (res.tanggal === todayStr && res.waktu_mulai <= currentTimeStr))
   }
+
   const fetchReservations = async () => {
     try {
       setLoading(true)
@@ -80,9 +84,11 @@ function PersetujuanReservasi() {
       setLoading(false)
     }
   }
+
   useEffect(() => {
     fetchReservations()
   }, [])
+
   const handleApprove = async (id) => {
     try {
       setActionLoading(true)
@@ -170,6 +176,7 @@ function PersetujuanReservasi() {
     }
     return [1, '...', validCurrentPage - 1, validCurrentPage, validCurrentPage + 1, '...', totalPages]
   }
+
   // Ekspor Excel (.CSV)
   const handleExportExcel = () => {
     const headers = ['ID Tiket', 'Mata Kuliah', 'Ruangan', 'Gedung', 'Pemohon (PJ)', 'NIM', 'Tanggal Peminjaman', 'Jam Perkuliahan', 'Status Reservasi']
@@ -190,17 +197,21 @@ function PersetujuanReservasi() {
     }
     exportToCSV('Laporan_Reservasi_Kelas', headers, rows)
   }
+
   const handlePrintPDF = () => {
     window.print()
   }
+
   const pendingCount = reservations.filter(res => res.status === 'pending' && !isReservationExpired(res)).length
   const approvedCount = reservations.filter(res => res.status === 'approved').length
   const expiredCount = reservations.filter(res => isReservationExpired(res)).length
+
   return (
     <div className="approval-page animate-fade-in">
       <section className="approval-clock-card">
         <div className="approval-clock-icon" aria-hidden="true"><ClockFill size={20} /></div>
-        <div>
+        <div className="approval-clock-content">
+          <p className="approval-eyebrow approval-clock-eyebrow">SERVER TIME &bull; REALTIME</p>
           <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
         </div>
         <span className="approval-online"><span /> SISTEM ONLINE</span>
@@ -221,49 +232,51 @@ function PersetujuanReservasi() {
         </div>
         <span className="approval-count-badge">{reservations.length} TOTAL</span>
       </div>
+
       {/* FILTER TAB BAR STATUS RESERVASI */}
       <div className="approval-filter-bar no-print">
         <span className="approval-filter-label">STATUS RESERVASI</span>
         <button
-          className={`approval-filter-btn ${filterStatus === 'pending' ? 'is-active status-pending' : ''}`}
-          style={{ background: filterStatus === 'pending' ? '#f59e0b' : '#e2e8f0', color: filterStatus === 'pending' ? '#fff' : '#475569', fontWeight: filterStatus === 'pending' ? 'bold' : 'normal' }}
+          type="button"
+          className={`approval-filter-btn status-pending ${filterStatus === 'pending' ? 'is-active' : ''}`}
           onClick={() => setFilterStatus('pending')}
         >
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><HourglassSplit size={14} /> Menunggu ACC ({reservations.filter(r => r.status === 'pending' && !isReservationExpired(r)).length})</span>
         </button>
         <button
-          className={`approval-filter-btn ${filterStatus === 'approved' ? 'is-active status-approved' : ''}`}
-          style={{ background: filterStatus === 'approved' ? '#059669' : '#e2e8f0', color: filterStatus === 'approved' ? '#fff' : '#475569', fontWeight: filterStatus === 'approved' ? 'bold' : 'normal' }}
+          type="button"
+          className={`approval-filter-btn status-approved ${filterStatus === 'approved' ? 'is-active' : ''}`}
           onClick={() => setFilterStatus('approved')}
         >
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CheckCircleFill size={14} /> Disetujui ({reservations.filter(r => r.status === 'approved').length})</span>
         </button>
         <button
-          className={`approval-filter-btn ${filterStatus === 'rejected' ? 'is-active status-rejected' : ''}`}
-          style={{ background: filterStatus === 'rejected' ? '#dc2626' : '#e2e8f0', color: filterStatus === 'rejected' ? '#fff' : '#475569', fontWeight: filterStatus === 'rejected' ? 'bold' : 'normal' }}
+          type="button"
+          className={`approval-filter-btn status-rejected ${filterStatus === 'rejected' ? 'is-active' : ''}`}
           onClick={() => setFilterStatus('rejected')}
         >
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><XCircleFill size={14} /> Ditolak ({reservations.filter(r => r.status === 'rejected').length})</span>
         </button>
         <button
-          className={`approval-filter-btn ${filterStatus === 'expired' ? 'is-active status-expired' : ''}`}
-          style={{ background: filterStatus === 'expired' ? '#6b7280' : '#e2e8f0', color: filterStatus === 'expired' ? '#fff' : '#475569', fontWeight: filterStatus === 'expired' ? 'bold' : 'normal' }}
+          type="button"
+          className={`approval-filter-btn status-expired ${filterStatus === 'expired' ? 'is-active' : ''}`}
           onClick={() => setFilterStatus('expired')}
         >
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><ExclamationTriangleFill size={14} /> Kadaluarsa ({reservations.filter(r => isReservationExpired(r)).length})</span>
         </button>
         <button
-          className={`approval-filter-btn ${filterStatus === 'Semua' ? 'is-active status-all' : ''}`}
-          style={{ background: filterStatus === 'Semua' ? '#0f172a' : '#e2e8f0', color: filterStatus === 'Semua' ? '#fff' : '#475569', fontWeight: filterStatus === 'Semua' ? 'bold' : 'normal' }}
+          type="button"
+          className={`approval-filter-btn status-all ${filterStatus === 'Semua' ? 'is-active' : ''}`}
           onClick={() => setFilterStatus('Semua')}
         >
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CardList size={14} /> Semua Reservasi ({reservations.length})</span>
         </button>
       </div>
-      {/* TABEL RESERVASI */}
+
+      {/* CONTAINER UTAMA LOG RESERVASI */}
       <div className="approval-table-card">
 
-        {/* TOMBOL EKSPOR & CETAK (DI LUAR TABEL) */}
+        {/* TOMBOL EKSPOR & CETAK */}
         <div className="approval-toolbar no-print">
           <div>
             <p className="approval-eyebrow">RESERVATION LOG</p>
@@ -274,6 +287,7 @@ function PersetujuanReservasi() {
             <button className="approval-action-btn" onClick={handleExportExcel} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><FileEarmarkSpreadsheetFill size={14} /> Ekspor CSV</button>
           </div>
         </div>
+
         {/* ELEMEN KOP SURAT KHUSUS CETAK */}
         <div className="print-only">
           <div className="kop-surat">
@@ -282,98 +296,208 @@ function PersetujuanReservasi() {
             <p>Dokumen Resmi Hasil Ekspor Log Sistem Manajemen Ruangan Kelas</p>
           </div>
         </div>
+
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Memuat data reservasi...</div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #e2e8f0', background: '#f8fafc' }}>
-                <th style={{ padding: '12px 16px' }}>Mata Kuliah</th>
-                <th style={{ padding: '12px 16px' }}>Ruangan & Gedung</th>
-                <th style={{ padding: '12px 16px' }}>Pemohon (PJ)</th>
-                <th style={{ padding: '12px 16px' }}>Waktu Peminjaman</th>
-                <th style={{ padding: '12px 16px' }}>Status</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }} className="no-print">Aksi Staf</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedReservations.length > 0 ? paginatedReservations.map((res) => {
-                const expired = isReservationExpired(res)
-                return (
-                  <tr key={res.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '16px', fontWeight: '600' }}>
-                      {res.mata_kuliah}
-                    </td>
-                    <td style={{ padding: '16px' }}>
-                      <div><b>Ruang {res.rooms?.nama || 'Dihapus'}</b></div>
-                      <div style={{ fontSize: '12px', color: '#64748b' }}>{res.rooms?.gedung} ({res.rooms?.kampus})</div>
-                    </td>
-                    <td style={{ padding: '16px' }}>
-                      <div><b>{res.users?.username || 'PJ'}</b></div>
-                      <div style={{ fontSize: '12px', color: '#64748b' }}>NIM: {res.users?.nim_nip || '-'} ({res.users?.prodi})</div>
-                    </td>
-                    <td style={{ padding: '16px' }}>
-                      <div style={{ fontWeight: 'bold', color: '#0f172a' }}>{formatTanggalIndonesia(res.tanggal)}</div>
-                      <div style={{ fontSize: '12px', color: '#64748b' }}>{res.waktu_mulai.substring(0, 5)} - {res.waktu_selesai.substring(0, 5)} WIB</div>
-                    </td>
-                    <td style={{ padding: '16px' }}>
-                      {expired ? (
-                        <span className="badge badge-error" style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><ExclamationTriangleFill size={12} /> Kadaluarsa</span>
-                      ) : res.status === 'approved' ? (
-                        <span className="badge badge-success" style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><CheckCircleFill size={12} /> Disetujui</span>
-                      ) : res.status === 'rejected' ? (
-                        <div>
-                          <span className="badge badge-danger" style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><XCircleFill size={12} /> Ditolak</span>
-                          {res.alasan_penolakan && <div style={{ fontSize: '11px', color: '#dc2626', marginTop: '2px' }}>"{res.alasan_penolakan}"</div>}
-                        </div>
-                      ) : (
-                        <span className="badge badge-warning" style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><HourglassSplit size={12} /> Menunggu ACC</span>
-                      )}
-                    </td>
-                    <td style={{ padding: '16px', textAlign: 'right' }} className="no-print">
-                      {res.status === 'pending' && !expired ? (
-                        <>
-                          <button
-                            className="btn btn-sm btn-success"
-                            style={{ marginRight: '8px' }}
-                            onClick={() => handleApprove(res.id)}
-                            disabled={actionLoading}
-                          >
-                            Setujui
-                          </button>
-                          <button
-                            className="btn btn-sm btn-danger"
-                            onClick={() => handleOpenRejectModal(res)}
-                            disabled={actionLoading}
-                          >
-                            Tolak
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          className="btn btn-sm btn-secondary"
-                          style={{ color: '#dc2626', borderColor: '#fca5a5' }}
-                          disabled={actionLoading}
-                          title="Sudah Kadaluarsa"
-                        >
-                          Sudah Kadaluarsa
-                        </button>
-                      )}
-                    </td>
+          <>
+            {/* 1. TAMPILAN TABEL DESKTOP (min-width: 769px) */}
+            <div className="approval-desktop-table">
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #e2e8f0', background: '#f8fafc' }}>
+                    <th style={{ padding: '12px 16px' }}>Mata Kuliah</th>
+                    <th style={{ padding: '12px 16px' }}>Ruangan & Gedung</th>
+                    <th style={{ padding: '12px 16px' }}>Pemohon (PJ)</th>
+                    <th style={{ padding: '12px 16px' }}>Waktu Peminjaman</th>
+                    <th style={{ padding: '12px 16px' }}>Status</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'right' }} className="no-print">Aksi Staf</th>
                   </tr>
-                )
-              }) : (
-                <tr>
-                  <td colSpan="6" style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
-                    Belum ada data reservasi pada kategori filter ini.
-                  </td>
-                </tr>
+                </thead>
+                <tbody>
+                  {paginatedReservations.length > 0 ? paginatedReservations.map((res) => {
+                    const expired = isReservationExpired(res)
+                    return (
+                      <tr key={res.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '16px', fontWeight: '600' }}>
+                          {res.mata_kuliah}
+                        </td>
+                        <td style={{ padding: '16px' }}>
+                          <div><b>Ruang {res.rooms?.nama || 'Dihapus'}</b></div>
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>{res.rooms?.gedung} ({res.rooms?.kampus})</div>
+                        </td>
+                        <td style={{ padding: '16px' }}>
+                          <div><b>{res.users?.username || 'PJ'}</b></div>
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>NIM: {res.users?.nim_nip || '-'} ({res.users?.prodi})</div>
+                        </td>
+                        <td style={{ padding: '16px' }}>
+                          <div style={{ fontWeight: 'bold', color: '#0f172a' }}>{formatTanggalIndonesia(res.tanggal)}</div>
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>{res.waktu_mulai.substring(0, 5)} - {res.waktu_selesai.substring(0, 5)} WIB</div>
+                        </td>
+                        <td style={{ padding: '16px' }}>
+                          {expired ? (
+                            <span className="badge badge-error" style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><ExclamationTriangleFill size={12} /> Kadaluarsa</span>
+                          ) : res.status === 'approved' ? (
+                            <span className="badge badge-success" style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><CheckCircleFill size={12} /> Disetujui</span>
+                          ) : res.status === 'rejected' ? (
+                            <div>
+                              <span className="badge badge-danger" style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><XCircleFill size={12} /> Ditolak</span>
+                              {res.alasan_penolakan && <div style={{ fontSize: '11px', color: '#dc2626', marginTop: '2px' }}>"{res.alasan_penolakan}"</div>}
+                            </div>
+                          ) : (
+                            <span className="badge badge-warning" style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><HourglassSplit size={12} /> Menunggu ACC</span>
+                          )}
+                        </td>
+                        <td style={{ padding: '16px', textAlign: 'right' }} className="no-print">
+                          {res.status === 'pending' && !expired ? (
+                            <>
+                              <button
+                                className="btn btn-sm btn-success"
+                                style={{ marginRight: '8px' }}
+                                onClick={() => handleApprove(res.id)}
+                                disabled={actionLoading}
+                              >
+                                Setujui
+                              </button>
+                              <button
+                                className="btn btn-sm btn-danger"
+                                onClick={() => handleOpenRejectModal(res)}
+                                disabled={actionLoading}
+                              >
+                                Tolak
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              className="btn btn-sm btn-secondary"
+                              style={{ color: '#dc2626', borderColor: '#fca5a5' }}
+                              disabled={actionLoading}
+                              title="Sudah Kadaluarsa"
+                            >
+                              Sudah Kadaluarsa
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  }) : (
+                    <tr>
+                      <td colSpan="6" style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+                        Belum ada data reservasi pada kategori filter ini.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* 2. TAMPILAN KARTU ENTITAS MOBILE (max-width: 768px) */}
+            <div className="approval-mobile-cards no-print">
+              {paginatedReservations.length > 0 ? (
+                paginatedReservations.map((res) => {
+                  const expired = isReservationExpired(res)
+                  return (
+                    <div key={`m-${res.id}`} className="approval-card-item">
+                      {/* Header Kartu */}
+                      <div className="approval-card-header">
+                        <div className="approval-card-header-left">
+                          <span className="approval-card-id">#TIKET-{res.id}</span>
+                          <h3 className="approval-card-mk">{res.mata_kuliah}</h3>
+                          <div className="approval-card-room">
+                            <strong>Ruang {res.rooms?.nama || 'Dihapus'}</strong> &bull; {res.rooms?.gedung || '-'} ({res.rooms?.kampus || '-'})
+                          </div>
+                        </div>
+                        <div className="approval-card-header-right">
+                          {expired ? (
+                            <span className="badge badge-error approval-badge-pill">
+                              <ExclamationTriangleFill size={11} /> Kadaluarsa
+                            </span>
+                          ) : res.status === 'approved' ? (
+                            <span className="badge badge-success approval-badge-pill">
+                              <CheckCircleFill size={11} /> Disetujui
+                            </span>
+                          ) : res.status === 'rejected' ? (
+                            <span className="badge badge-danger approval-badge-pill">
+                              <XCircleFill size={11} /> Ditolak
+                            </span>
+                          ) : (
+                            <span className="badge badge-warning approval-badge-pill">
+                              <HourglassSplit size={11} /> Menunggu ACC
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Body Kartu */}
+                      <div className="approval-card-body">
+                        <div className="approval-card-row">
+                          <span className="approval-card-label">Pemohon (PJ Kelas):</span>
+                          <span className="approval-card-val">
+                            <strong>{res.users?.username || 'PJ'}</strong>
+                            <span className="approval-card-sub"> &bull; NIM: {res.users?.nim_nip || '-'} ({res.users?.prodi || '-'})</span>
+                          </span>
+                        </div>
+                        <div className="approval-card-row">
+                          <span className="approval-card-label">Waktu Peminjaman:</span>
+                          <span className="approval-card-val">
+                            <span className="approval-card-date">{formatTanggalIndonesia(res.tanggal)}</span>
+                            <span className="approval-card-time">({res.waktu_mulai.substring(0, 5)} - {res.waktu_selesai.substring(0, 5)} WIB)</span>
+                          </span>
+                        </div>
+
+                        {res.status === 'rejected' && res.alasan_penolakan && (
+                          <div className="approval-card-reject-box">
+                            <strong>Alasan Penolakan:</strong> &ldquo;{res.alasan_penolakan}&rdquo;
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer Aksi Staf */}
+                      <div className="approval-card-footer">
+                        {res.status === 'pending' && !expired ? (
+                          <div className="approval-card-actions-grid">
+                            <button
+                              type="button"
+                              className="approval-card-btn btn-approve"
+                              onClick={() => handleApprove(res.id)}
+                              disabled={actionLoading}
+                            >
+                              <CheckCircleFill size={14} /> Setujui
+                            </button>
+                            <button
+                              type="button"
+                              className="approval-card-btn btn-reject"
+                              onClick={() => handleOpenRejectModal(res)}
+                              disabled={actionLoading}
+                            >
+                              <XCircleFill size={14} /> Tolak
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="approval-card-status-info">
+                            {expired ? (
+                              <span className="approval-card-expired-text">Pengajuan melewati batas waktu (Kadaluarsa)</span>
+                            ) : res.status === 'approved' ? (
+                              <span className="approval-card-approved-text">Pengajuan telah disetujui &bull; Ruangan dialokasikan</span>
+                            ) : (
+                              <span className="approval-card-rejected-text">Pengajuan telah ditolak</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })
+              ) : (
+                <div className="approval-card-empty">
+                  Belum ada data reservasi pada kategori filter ini.
+                </div>
               )}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
 
-        {/* BILAH KONTROL PAGINASI (HANYA DITAMPILKAN JIKA LEBIH DARI 1 HALAMAN) */}
+        {/* BILAH KONTROL PAGINASI */}
         {!loading && totalPages > 1 && (
           <div className="approval-pagination no-print">
             <div className="approval-pagination-info">
@@ -481,4 +605,5 @@ function PersetujuanReservasi() {
     </div>
   )
 }
+
 export default PersetujuanReservasi
