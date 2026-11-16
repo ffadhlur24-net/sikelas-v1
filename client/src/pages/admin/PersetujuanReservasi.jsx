@@ -397,17 +397,17 @@ function PersetujuanReservasi() {
                 paginatedReservations.map((res) => {
                   const expired = isReservationExpired(res)
                   return (
-                    <div key={`m-${res.id}`} className="approval-card-item">
+                    <div key={`m-${res.id}`} className="approval-entity">
                       {/* Header Kartu */}
-                      <div className="approval-card-header">
-                        <div className="approval-card-header-left">
-                          <span className="approval-card-id">#TIKET-{res.id}</span>
-                          <h3 className="approval-card-mk">{res.mata_kuliah}</h3>
-                          <div className="approval-card-room">
-                            <strong>Ruang {res.rooms?.nama || 'Dihapus'}</strong> &bull; {res.rooms?.gedung || '-'} ({res.rooms?.kampus || '-'})
+                      <div className="approval-entity-header">
+                        <div className="approval-entity-header-left">
+                          <span className="approval-entity-id">#TIKET-{res.id}</span>
+                          <h3 className="approval-entity-title">{res.mata_kuliah}</h3>
+                          <div className="approval-entity-room">
+                            <strong>Ruang {res.rooms?.nama || 'Dihapus'}</strong> &bull; {res.rooms?.gedung || '-'}{res.rooms?.kampus ? ` (${res.rooms.kampus})` : ''}
                           </div>
                         </div>
-                        <div className="approval-card-header-right">
+                        <div className="approval-entity-header-right">
                           {expired ? (
                             <span className="badge badge-error approval-badge-pill">
                               <ExclamationTriangleFill size={11} /> Kadaluarsa
@@ -429,36 +429,36 @@ function PersetujuanReservasi() {
                       </div>
 
                       {/* Body Kartu */}
-                      <div className="approval-card-body">
-                        <div className="approval-card-row">
-                          <span className="approval-card-label">Pemohon (PJ Kelas):</span>
-                          <span className="approval-card-val">
+                      <div className="approval-entity-body">
+                        <div className="approval-entity-row">
+                          <span className="approval-entity-label">Pemohon (PJ Kelas):</span>
+                          <div className="approval-entity-val">
                             <strong>{res.users?.username || 'PJ'}</strong>
-                            <span className="approval-card-sub"> &bull; NIM: {res.users?.nim_nip || '-'} ({res.users?.prodi || '-'})</span>
-                          </span>
+                            <span className="approval-entity-sub"> &bull; NIM: {res.users?.nim_nip || '-'} ({res.users?.prodi || '-'})</span>
+                          </div>
                         </div>
-                        <div className="approval-card-row">
-                          <span className="approval-card-label">Waktu Peminjaman:</span>
-                          <span className="approval-card-val">
-                            <span className="approval-card-date">{formatTanggalIndonesia(res.tanggal)}</span>
-                            <span className="approval-card-time">({res.waktu_mulai.substring(0, 5)} - {res.waktu_selesai.substring(0, 5)} WIB)</span>
-                          </span>
+                        <div className="approval-entity-row">
+                          <span className="approval-entity-label">Waktu Peminjaman:</span>
+                          <div className="approval-entity-val">
+                            <span className="approval-entity-date">{formatTanggalIndonesia(res.tanggal)}</span>
+                            <span className="approval-entity-time">({res.waktu_mulai.substring(0, 5)} - {res.waktu_selesai.substring(0, 5)} WIB)</span>
+                          </div>
                         </div>
 
                         {res.status === 'rejected' && res.alasan_penolakan && (
-                          <div className="approval-card-reject-box">
+                          <div className="approval-entity-reject-box">
                             <strong>Alasan Penolakan:</strong> &ldquo;{res.alasan_penolakan}&rdquo;
                           </div>
                         )}
                       </div>
 
                       {/* Footer Aksi Staf */}
-                      <div className="approval-card-footer">
+                      <div className="approval-entity-footer">
                         {res.status === 'pending' && !expired ? (
-                          <div className="approval-card-actions-grid">
+                          <div className="approval-entity-actions">
                             <button
                               type="button"
-                              className="approval-card-btn btn-approve"
+                              className="approval-entity-btn btn-approve"
                               onClick={() => handleApprove(res.id)}
                               disabled={actionLoading}
                             >
@@ -466,7 +466,7 @@ function PersetujuanReservasi() {
                             </button>
                             <button
                               type="button"
-                              className="approval-card-btn btn-reject"
+                              className="approval-entity-btn btn-reject"
                               onClick={() => handleOpenRejectModal(res)}
                               disabled={actionLoading}
                             >
@@ -474,13 +474,19 @@ function PersetujuanReservasi() {
                             </button>
                           </div>
                         ) : (
-                          <div className="approval-card-status-info">
+                          <div className="approval-entity-status-info">
                             {expired ? (
-                              <span className="approval-card-expired-text">Pengajuan melewati batas waktu (Kadaluarsa)</span>
+                              <span className="approval-entity-expired-banner">
+                                <ExclamationTriangleFill size={12} /> Pengajuan melewati batas waktu (Kadaluarsa)
+                              </span>
                             ) : res.status === 'approved' ? (
-                              <span className="approval-card-approved-text">Pengajuan telah disetujui &bull; Ruangan dialokasikan</span>
+                              <span className="approval-entity-approved-banner">
+                                <CheckCircleFill size={13} /> Pengajuan telah disetujui &bull; Ruangan dialokasikan
+                              </span>
                             ) : (
-                              <span className="approval-card-rejected-text">Pengajuan telah ditolak</span>
+                              <span className="approval-entity-rejected-banner">
+                                <XCircleFill size={13} /> Pengajuan telah ditolak
+                              </span>
                             )}
                           </div>
                         )}
@@ -489,7 +495,7 @@ function PersetujuanReservasi() {
                   )
                 })
               ) : (
-                <div className="approval-card-empty">
+                <div className="approval-entity-empty">
                   Belum ada data reservasi pada kategori filter ini.
                 </div>
               )}
