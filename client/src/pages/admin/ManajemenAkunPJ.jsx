@@ -4,7 +4,30 @@ import './ManajemenAkunPJ.css'
 import { useToast } from '../../context/ToastContext'
 import ConfirmModal from '../../components/Modal/ConfirmModal'
 import NeoSelect from '../../components/Select/NeoSelect'
-import { PencilSquare, TrashFill, ClockFill, Search } from 'react-bootstrap-icons'
+import {
+  PencilSquare,
+  TrashFill,
+  ClockFill,
+  Search,
+  CheckLg,
+  Whatsapp,
+  EnvelopeFill,
+  TelephoneFill,
+  MortarboardFill
+} from 'react-bootstrap-icons'
+
+const getWhatsAppUrl = (phone) => {
+  if (!phone) return null
+  const cleaned = phone.replace(/\D/g, '')
+  if (!cleaned) return null
+  let formatted = cleaned
+  if (formatted.startsWith('0')) {
+    formatted = '62' + formatted.slice(1)
+  } else if (!formatted.startsWith('62')) {
+    formatted = '62' + formatted
+  }
+  return `https://wa.me/${formatted}`
+}
 
 function ManajemenAkunPJ() {
   const { showSuccess, showError } = useToast()
@@ -211,64 +234,158 @@ function ManajemenAkunPJ() {
             <h2>Daftar Penanggung Jawab Kelas</h2>
             <span>{filteredUsers.length} akun ditampilkan</span>
           </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-                <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: '500' }}>Nama PJ / NIM</th>
-                <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: '500' }}>Mata Kuliah & Kelas</th>
-                <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: '500' }}>Kontak & Email</th>
-                <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: '500' }}>Status</th>
-                <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: '500', textAlign: 'right' }}>Aksi Admin</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.length > 0 ? filteredUsers.map((u) => (
-                <tr key={u.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                  <td style={{ padding: '16px' }}>
-                    <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>{u.username}</div>
-                    <div className="text-sm text-muted">{u.nim_nip || '-'}</div>
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <div style={{ fontWeight: '500' }}>{u.mata_kuliah || '-'}</div>
-                    <div className="text-sm text-muted">
-                      {u.prodi} (Smstr {u.semester} - Kelas {u.kelas})
+
+          {/* Desktop Table View (> 768px) */}
+          <div className="pj-desktop-table">
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: '500' }}>Nama PJ / NIM</th>
+                  <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: '500' }}>Mata Kuliah & Kelas</th>
+                  <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: '500' }}>Kontak & Email</th>
+                  <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: '500' }}>Status</th>
+                  <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: '500', textAlign: 'right' }}>Aksi Admin</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.length > 0 ? filteredUsers.map((u) => (
+                  <tr key={u.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <td style={{ padding: '16px' }}>
+                      <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>{u.username}</div>
+                      <div className="text-sm text-muted">{u.nim_nip || '-'}</div>
+                    </td>
+                    <td style={{ padding: '16px' }}>
+                      <div style={{ fontWeight: '500' }}>{u.mata_kuliah || '-'}</div>
+                      <div className="text-sm text-muted">
+                        {u.prodi} (Smstr {u.semester} - Kelas {u.kelas})
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px' }}>
+                      <div style={{ fontSize: '14px' }}>{u.email}</div>
+                      <div className="text-sm text-muted">{u.no_hp || '-'}</div>
+                    </td>
+                    <td style={{ padding: '16px' }}>
+                      {u.status === 'aktif' && <span className="badge badge-success">Aktif</span>}
+                      {u.status === 'pending' && <span className="badge badge-warning">Menunggu ACC</span>}
+                      {u.status === 'nonaktif' && <span className="badge badge-error">Nonaktif</span>}
+                    </td>
+                    <td style={{ padding: '16px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        {u.status === 'pending' ? (
+                          <button className="btn btn-primary btn-sm pj-action-approve" disabled={actionLoading} onClick={() => handleUpdateStatus(u.id, 'aktif')}>
+                            ACC
+                          </button>
+                        ) : (
+                          <button className="btn btn-secondary btn-sm pj-action-edit" disabled={actionLoading} onClick={() => handleOpenEdit(u)}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><PencilSquare size={13} /> Edit</span>
+                          </button>
+                        )}
+                        <button className="btn btn-secondary btn-sm pj-action-delete" disabled={actionLoading} onClick={() => handleDeleteUser(u.id, u.username)}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><TrashFill size={13} /> Hapus</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      Belum ada data pendaftaran PJ.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Entity Cards View (<= 768px) */}
+          <div className="pj-mobile-cards">
+            {filteredUsers.length > 0 ? filteredUsers.map((u) => {
+              const waUrl = getWhatsAppUrl(u.no_hp)
+              return (
+                <div key={`m-user-${u.id}`} className="pj-mobile-item">
+                  <div className="pj-mobile-item-header">
+                    <div>
+                      <h4 className="pj-mobile-name">{u.username}</h4>
+                      <span className="pj-mobile-nim">NIM: {u.nim_nip || '-'}</span>
                     </div>
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <div style={{ fontSize: '14px' }}>{u.email}</div>
-                    <div className="text-sm text-muted">{u.no_hp || '-'}</div>
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    {u.status === 'aktif' && <span className="badge badge-success">Aktif</span>}
-                    {u.status === 'pending' && <span className="badge badge-warning">Menunggu ACC</span>}
-                    {u.status === 'nonaktif' && <span className="badge badge-error">Nonaktif</span>}
-                  </td>
-                  <td style={{ padding: '16px', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                      {u.status === 'pending' ? (
-                        <button className="btn btn-primary btn-sm pj-action-approve" disabled={actionLoading} onClick={() => handleUpdateStatus(u.id, 'aktif')}>
-                          ACC
-                        </button>
-                      ) : (
-                        <button className="btn btn-secondary btn-sm pj-action-edit" disabled={actionLoading} onClick={() => handleOpenEdit(u)}>
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><PencilSquare size={13} /> Edit</span>
-                        </button>
+                    <div>
+                      {u.status === 'aktif' && <span className="badge badge-success pj-mobile-badge">Aktif</span>}
+                      {u.status === 'pending' && <span className="badge badge-warning pj-mobile-badge">Menunggu ACC</span>}
+                      {u.status === 'nonaktif' && <span className="badge badge-error pj-mobile-badge">Nonaktif</span>}
+                    </div>
+                  </div>
+
+                  <div className="pj-mobile-item-body">
+                    <div className="pj-mobile-info-row">
+                      <span className="pj-mobile-info-icon"><MortarboardFill size={14} /></span>
+                      <div className="pj-mobile-info-text">
+                        <strong>{u.mata_kuliah || '-'}</strong>
+                        <span>{u.prodi} &bull; Smstr {u.semester || '-'} ({u.kelas || '-'})</span>
+                      </div>
+                    </div>
+
+                    <div className="pj-mobile-contact-box">
+                      <div className="pj-mobile-contact-line">
+                        <EnvelopeFill size={12} color="#64748b" />
+                        <span className="pj-mobile-email">{u.email}</span>
+                      </div>
+                      {u.no_hp && (
+                        <div className="pj-mobile-contact-line">
+                          <TelephoneFill size={12} color="#64748b" />
+                          <span>{u.no_hp}</span>
+                          {waUrl && (
+                            <a
+                              href={waUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="pj-mobile-wa-btn"
+                              title="Chat WhatsApp"
+                            >
+                              <Whatsapp size={13} /> Chat WA
+                            </a>
+                          )}
+                        </div>
                       )}
-                      <button className="btn btn-secondary btn-sm pj-action-delete" disabled={actionLoading} onClick={() => handleDeleteUser(u.id, u.username)}>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><TrashFill size={13} /> Hapus</span>
-                      </button>
                     </div>
-                  </td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    Belum ada data pendaftaran PJ.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                  </div>
+
+                  <div className="pj-mobile-actions">
+                    {u.status === 'pending' ? (
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm pj-mobile-btn-acc"
+                        disabled={actionLoading}
+                        onClick={() => handleUpdateStatus(u.id, 'aktif')}
+                      >
+                        <CheckLg size={15} /> Setujui (ACC)
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm pj-mobile-btn-edit"
+                        disabled={actionLoading}
+                        onClick={() => handleOpenEdit(u)}
+                      >
+                        <PencilSquare size={13} /> Edit Data
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm pj-mobile-btn-delete"
+                      disabled={actionLoading}
+                      onClick={() => handleDeleteUser(u.id, u.username)}
+                    >
+                      <TrashFill size={13} /> Hapus
+                    </button>
+                  </div>
+                </div>
+              )
+            }) : (
+              <div className="pj-mobile-empty">
+                Belum ada data pendaftaran PJ.
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -294,7 +411,7 @@ function ManajemenAkunPJ() {
                 <label className="form-label">Nama PJ / Username</label>
                 <input type="text" className="input-field" value={editForm.username} onChange={(e) => setEditForm({ ...editForm, username: e.target.value })} required />
               </div>
-              <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '14px' }}>
+              <div className="pj-modal-form-row" style={{ display: 'flex', gap: '12px', marginBottom: '14px' }}>
                 <div className="form-group" style={{ flex: 1 }}>
                   <label className="form-label">NIM / NIP</label>
                   <input type="text" className="input-field" value={editForm.nim_nip} onChange={(e) => setEditForm({ ...editForm, nim_nip: e.target.value })} required />
@@ -317,7 +434,7 @@ function ManajemenAkunPJ() {
               </div>
 
               {/* DROPDOWN 2 & 3: SEMESTER & KELAS */}
-              <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '14px' }}>
+              <div className="pj-modal-form-row" style={{ display: 'flex', gap: '12px', marginBottom: '14px' }}>
                 <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
                   <label className="form-label">Semester</label>
                   <NeoSelect
@@ -352,7 +469,7 @@ function ManajemenAkunPJ() {
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <div className="pj-modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setEditingUser(null)}>Batal</button>
                 <button type="submit" className="btn btn-primary" disabled={actionLoading}>
                   {actionLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
