@@ -284,7 +284,7 @@ function VerifyEmail() {
                       inputMode="numeric"
                       maxLength={1}
                       pattern="[0-9]*"
-                      placeholder="0"
+                      placeholder=""
                       className="verify-otp-box"
                       value={digit}
                       onChange={(e) => handleDigitChange(index, e.target.value)}

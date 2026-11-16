@@ -354,15 +354,18 @@
   width: 100%;
   height: 52px;
   text-align: center;
-  font-family: 'Space Mono', 'JetBrains Mono', monospace !important;
-  font-weight: 900 !important;
+  font-family: 'JetBrains Mono', 'Space Mono', monospace !important;
+  font-weight: 700 !important;
   font-size: 22px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: normal !important;
   background-color: #ffffff !important;
   border: 3px solid #000000 !important;
   box-shadow: 3px 3px 0px #000000 !important;
   transition: all 0.08s ease;
   outline: none !important;
-  box-sizing: border-box;
+  box-sizing: border-box !important;
   color: #000000 !important;
 }
 
@@ -618,6 +621,19 @@
   .verify-body {
     padding: 20px 14px;
     gap: 16px;
+  }
+
+  /* OTP Mobile Grid & Box */
+  .verify-otp-grid {
+    gap: 6px !important;
+  }
+
+  .verify-otp-box {
+    height: 48px !important;
+    font-size: 20px !important;
+    padding: 0 !important;
+    border-width: 2.5px !important;
+    box-shadow: 2px 2px 0px #000000 !important;
   }
 
   .verify-card-footer {
