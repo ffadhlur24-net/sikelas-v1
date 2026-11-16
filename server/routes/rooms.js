@@ -317,7 +317,16 @@ router.post('/', verifyToken, adminOnly, async (req, res) => {
 router.patch('/:id/status', verifyToken, adminOnly, async (req, res) => {
     try {
         const { id } = req.params
-        const { status } = req.body
+        let { status } = req.body
+
+        // Sanitasi status: jika dikirim 'perbaikan', fallback ke 'terkunci' agar tidak melanggar DB check constraint
+        if (status === 'perbaikan') {
+            status = 'terkunci'
+        }
+
+        if (!['tersedia', 'terkunci'].includes(status)) {
+            return res.status(400).json({ error: 'Status ruangan tidak valid. Pilih antara "tersedia" atau "terkunci".' })
+        }
 
         const { data, error } = await supabase
             .from('rooms')
@@ -328,7 +337,7 @@ router.patch('/:id/status', verifyToken, adminOnly, async (req, res) => {
 
         if (error) throw error
 
-        res.json({ message: `Status ruangan diubah ke"${status}".`, room: data })
+        res.json({ message: `Status ruangan diubah ke "${status}".`, room: data })
     } catch (error) {
         console.error('Update room status error:', error)
         res.status(500).json({ error: 'Gagal mengubah status ruangan.' })

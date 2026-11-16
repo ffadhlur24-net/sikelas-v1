@@ -49,6 +49,11 @@ const HARI_OPTIONS = [
   { value: 'Minggu', label: 'Minggu' }
 ]
 
+const ROOM_STATUS_OPTIONS = [
+  { value: 'tersedia', label: '🟢 Tersedia' },
+  { value: 'terkunci', label: '🔴 Terkunci' }
+]
+
 function ManajemenRuangan() {
   const { showSuccess, showError } = useToast()
   const [rooms, setRooms] = useState([])
@@ -811,18 +816,14 @@ function ManajemenRuangan() {
                             {room.status === 'terkunci' && <span className="badge badge-error">Terkunci</span>}
                             {room.status === 'perbaikan' && <span className="badge badge-warning">Perbaikan</span>}
                           </td>
-                          <td style={{ padding: '12px' }}>
-                            <select
-                              className="input-field"
-                              style={{ padding: '4px 8px', height: 'auto', width: 'auto', display: 'inline-block' }}
+                          <td style={{ padding: '8px 12px', minWidth: '150px' }}>
+                            <NeoSelect
                               value={room.status}
-                              onChange={(e) => handleUppdateStatus(room.id, e.target.value)}
+                              onChange={(newStatus) => handleUppdateStatus(room.id, newStatus)}
+                              options={ROOM_STATUS_OPTIONS}
                               disabled={actionLoading}
-                            >
-                              <option value="tersedia">Tersedia</option>
-                              <option value="terkunci">Terkunci</option>
-                              <option value="perbaikan">Perbaikan</option>
-                            </select>
+                              className="room-table-select"
+                            />
                           </td>
                           <td style={{ padding: '12px', textAlign: 'right' }}>
                             <button className="btn btn-secondary btn-sm" onClick={() => handleOpenRoomSchedules(room)}>
@@ -854,16 +855,13 @@ function ManajemenRuangan() {
                       <div className="room-mobile-item-body">
                         <div className="room-mobile-status-control">
                           <label className="room-mobile-label">Ubah Status:</label>
-                          <select
-                            className="input-field room-mobile-select"
+                          <NeoSelect
                             value={room.status}
-                            onChange={(e) => handleUppdateStatus(room.id, e.target.value)}
+                            onChange={(newStatus) => handleUppdateStatus(room.id, newStatus)}
+                            options={ROOM_STATUS_OPTIONS}
                             disabled={actionLoading}
-                          >
-                            <option value="tersedia">🟢 Tersedia</option>
-                            <option value="terkunci">🔴 Terkunci</option>
-                            <option value="perbaikan">🟡 Perbaikan</option>
-                          </select>
+                            className="room-mobile-select"
+                          />
                         </div>
 
                         <button
