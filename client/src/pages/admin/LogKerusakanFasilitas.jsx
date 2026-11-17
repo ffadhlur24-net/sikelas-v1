@@ -407,40 +407,42 @@ function LogKerusakanFasilitas() {
                                         </div>
 
                                         <div className="damage-mobile-body">
-                                            <div className="damage-mobile-rincian">
-                                                "{item.rincian}"
+                                            <div className="damage-mobile-rincian-box">
+                                                <span className="damage-mobile-rincian-label">Rincian Kerusakan:</span>
+                                                <p className="damage-mobile-rincian-text">"{item.rincian}"</p>
                                             </div>
 
                                             <div className="damage-mobile-location-card">
-                                                <div className="damage-mobile-loc-row">
-                                                    <GeoAltFill size={14} color="#0284c7" />
-                                                    <strong>Ruang {item.rooms?.nama || 'Ruangan'}</strong>
-                                                    <span>({item.rooms?.gedung || '-'} • {item.rooms?.kampus || 'Kampus 3'})</span>
+                                                <div className="damage-mobile-loc-main">
+                                                    <GeoAltFill size={13} className="damage-mobile-loc-icon" />
+                                                    <span className="damage-mobile-loc-room">Ruang {item.rooms?.nama || 'Ruangan'}</span>
+                                                    <span className="damage-mobile-loc-building">({item.rooms?.gedung || '-'} &bull; {item.rooms?.kampus || 'Kampus 3'})</span>
                                                 </div>
-                                                <div className="damage-mobile-loc-row sub-row">
-                                                    <CalendarEventFill size={12} color="#64748b" />
+                                                <div className="damage-mobile-loc-time">
+                                                    <CalendarEventFill size={11} />
                                                     <span>Dilaporkan: {formatTanggalIndonesia(item.created_at)}</span>
                                                 </div>
                                                 {item.rooms?.status === 'terkunci' && (
                                                     <div className="damage-mobile-locked-alert">
-                                                        <LockFill size={12} /> Akses Ruangan Sedang Terkunci
+                                                        <LockFill size={11} /> Akses Ruangan Sedang Terkunci
                                                     </div>
                                                 )}
                                             </div>
 
                                             <div className="damage-mobile-reporter-card">
                                                 <div className="damage-mobile-rep-header">
-                                                    <span>PELAPOR (PJ KELAS):</span>
+                                                    <span>PELAPOR (PJ KELAS)</span>
                                                 </div>
-                                                <div className="damage-mobile-rep-info">
-                                                    <strong>{reporterName}</strong> &bull; {reporterProdi}
-                                                    {reporterNim !== '-' && <span> (NIM: {reporterNim})</span>}
-                                                </div>
-                                                {reporterHp && (
-                                                    <div className="damage-mobile-rep-contact">
-                                                        <span>No. HP: {reporterHp}</span>
+                                                <div className="damage-mobile-rep-content">
+                                                    <div className="damage-mobile-rep-name-row">
+                                                        <strong>{reporterName}</strong>
+                                                        <span className="damage-mobile-rep-prodi">&bull; {reporterProdi}</span>
                                                     </div>
-                                                )}
+                                                    <div className="damage-mobile-rep-meta">
+                                                        {reporterNim !== '-' && <span>NIM: {reporterNim}</span>}
+                                                        {reporterHp && <span>&bull; No. HP: {reporterHp}</span>}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
