@@ -4,6 +4,7 @@ import api from '../../api/axios'
 import './LogKerusakanFasilitas.css'
 import { useToast } from '../../context/ToastContext'
 import ConfirmModal from '../../components/Modal/ConfirmModal'
+import NeoSelect from '../../components/Select/NeoSelect'
 import {
   WrenchAdjustable,
   HourglassSplit,
@@ -17,7 +18,8 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarEventFill,
-  GeoAltFill
+  GeoAltFill,
+  ClockFill
 } from 'react-bootstrap-icons'
 
 function LogKerusakanFasilitas() {
@@ -26,6 +28,13 @@ function LogKerusakanFasilitas() {
     const [loading, setLoading] = useState(true)
     const [filterStatus, setFilterStatus] = useState('pending')
     const [confirmModal, setConfirmModal] = useState({ open: false, roomId: null, roomName: '', loading: false })
+    const [currentTime, setCurrentTime] = useState(new Date())
+
+    // Real-time Clock Timer
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+        return () => clearInterval(timer)
+    }, [])
 
     // Paginasi Setup
     const ITEMS_PER_PAGE = 10
@@ -89,6 +98,11 @@ function LogKerusakanFasilitas() {
         ? reports
         : reports.filter(r => r.status === filterStatus)
 
+    // Perhitungan Ringkasan Statistik
+    const pendingCount = reports.filter(r => r.status === 'pending').length
+    const progressCount = reports.filter(r => r.status === 'in_progress').length
+    const resolvedCount = reports.filter(r => r.status === 'resolved').length
+
     // Perhitungan Paginasi
     const totalItems = filteredReports.length
     const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1
@@ -119,6 +133,11 @@ function LogKerusakanFasilitas() {
         return [1, '...', validCurrentPage - 1, validCurrentPage, validCurrentPage + 1, '...', totalPages]
     }
 
+    const formatClockIndonesia = (date) => {
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }
+        return date.toLocaleDateString('id-ID', options).replace(' pukul', ' —').replace(/\./g, '.')
+    }
+
     const formatTanggalIndonesia = (dateString) => {
         if (!dateString) return '-'
         const dateObj = new Date(dateString)
@@ -130,18 +149,21 @@ function LogKerusakanFasilitas() {
 
     const handleExportExcel = () => {
         const headers = ['ID Tiket', 'Kampus', 'Gedung', 'Ruangan', 'Kategori', 'Rincian Kerusakan', 'Pelapor (PJ)', 'Prodi', 'Status Penanganan', 'Tanggal Lapor']
-        const rows = filteredReports.map(r => [
-            r.id,
-            r.rooms?.kampus || 'Kampus 3',
-            r.rooms?.gedung || '-',
-            r.rooms?.nama || '-',
-            r.kategori,
-            r.rincian,
-            r.users?.username || '-',
-            r.users?.prodi || '-',
-            r.status === 'pending' ? 'Menunggu' : r.status === 'in_progress' ? 'Sedang Dikerjakan' : 'Selesai',
-            new Date(r.created_at).toLocaleDateString('id-ID')
-        ])
+        const rows = filteredReports.map(r => {
+            const reporter = r.reporter || r.users || {}
+            return [
+                r.id,
+                r.rooms?.kampus || 'Kampus 3',
+                r.rooms?.gedung || '-',
+                r.rooms?.nama || '-',
+                r.kategori,
+                r.rincian,
+                reporter.username || '-',
+                reporter.prodi || '-',
+                r.status === 'pending' ? 'Menunggu' : r.status === 'in_progress' ? 'Sedang Dikerjakan' : 'Selesai',
+                new Date(r.created_at).toLocaleDateString('id-ID')
+            ]
+        })
         if (rows.length === 0) {
             showWarning('Tidak ada data kerusakan untuk diekspor pada kategori filter ini!', 'DATA KOSONG')
             return
@@ -153,56 +175,84 @@ function LogKerusakanFasilitas() {
         window.print()
     }
 
+    const statusSelectOptions = [
+        { value: 'pending', label: '⏳ Menunggu Perbaikan' },
+        { value: 'in_progress', label: '🛠️ Sedang Dikerjakan' },
+        { value: 'resolved', label: '✅ Selesai Diperbaiki' }
+    ]
+
     return (
         <div className="damage-log-page animate-fade-in">
+            {/* 1. Real-time Clock Micro-Chip Status Bar */}
+            <section className="damage-clock-card no-print">
+                <div className="damage-clock-content">
+                    <div className="damage-clock-icon" aria-hidden="true"><ClockFill size={18} /></div>
+                    <div className="damage-clock-meta">
+                        <p className="damage-clock-eyebrow">SERVER TIME &bull; REALTIME</p>
+                        <h2>{formatClockIndonesia(currentTime)}</h2>
+                    </div>
+                </div>
+                <span className="damage-online"><span /> SISTEM ONLINE</span>
+            </section>
+
+            {/* 2. Ringkasan Statistik Sistem */}
+            <section className="damage-stats-grid no-print" aria-label="Ringkasan kerusakan fasilitas">
+                <article className="damage-stat stat-navy"><span>Total Tiket</span><strong>{reports.length}</strong></article>
+                <article className="damage-stat stat-orange"><span>Menunggu</span><strong>{pendingCount}</strong></article>
+                <article className="damage-stat stat-blue"><span>Dikerjakan</span><strong>{progressCount}</strong></article>
+                <article className="damage-stat stat-green"><span>Selesai</span><strong>{resolvedCount}</strong></article>
+            </section>
+
+            {/* 3. Page Header */}
             <div className="damage-log-heading">
                 <p className="damage-eyebrow">ADMINISTRATOR / FACILITY INCIDENTS</p>
                 <h1><span aria-hidden="true" style={{ display: "inline-flex", alignItems: "center", marginRight: "10px" }}><WrenchAdjustable size={30} /></span>Log Kerusakan Fasilitas Kampus</h1>
                 <p>Kelola perbaikan sarana kelas dan kunci ruangan jika terjadi kerusakan parah.</p>
             </div>
 
-            {/* Filter Status Penanganan (Terarah & Profesional) */}
+            {/* 4. Filter Status Penanganan (Swipeable di Mobile) */}
             <div className="damage-filter-bar no-print">
-                <span className="damage-filter-label">Status:</span>
+                <span className="damage-filter-label">Status Tiket:</span>
+                <div className="damage-filter-scroll-wrapper">
+                    <button
+                        type="button"
+                        className={`damage-filter-btn ${filterStatus === 'pending' ? 'is-active status-pending' : ''}`}
+                        onClick={() => setFilterStatus('pending')}
+                    >
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><HourglassSplit size={14} /> Menunggu ({pendingCount})</span>
+                    </button>
 
-                {/* 1. Menunggu Perbaikan (Default Active) */}
-                <button
-                    className={`damage-filter-btn ${filterStatus === 'pending' ? 'is-active status-pending' : ''}`}
-                    onClick={() => setFilterStatus('pending')}
-                >
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><HourglassSplit size={14} /> Menunggu Perbaikan</span>
-                </button>
+                    <button
+                        type="button"
+                        className={`damage-filter-btn ${filterStatus === 'in_progress' ? 'is-active status-progress' : ''}`}
+                        onClick={() => setFilterStatus('in_progress')}
+                    >
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Tools size={14} /> Sedang Dikerjakan ({progressCount})</span>
+                    </button>
 
-                {/* 2. Sedang Dikerjakan */}
-                <button
-                    className={`damage-filter-btn ${filterStatus === 'in_progress' ? 'is-active status-progress' : ''}`}
-                    onClick={() => setFilterStatus('in_progress')}
-                >
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Tools size={14} /> Sedang Dikerjakan</span>
-                </button>
+                    <button
+                        type="button"
+                        className={`damage-filter-btn ${filterStatus === 'resolved' ? 'is-active status-resolved' : ''}`}
+                        onClick={() => setFilterStatus('resolved')}
+                    >
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><CheckCircleFill size={14} /> Selesai ({resolvedCount})</span>
+                    </button>
 
-                {/* 3. Selesai Diperbaiki */}
-                <button
-                    className={`damage-filter-btn ${filterStatus === 'resolved' ? 'is-active status-resolved' : ''}`}
-                    onClick={() => setFilterStatus('resolved')}
-                >
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><CheckCircleFill size={14} /> Selesai Diperbaiki</span>
-                </button>
-
-                {/* 4. Semua Laporan */}
-                <button
-                    className={`damage-filter-btn ${filterStatus === 'Semua' ? 'is-active status-all' : ''}`}
-                    onClick={() => setFilterStatus('Semua')}
-                >
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><CardList size={14} /> Semua Laporan</span>
-                </button>
+                    <button
+                        type="button"
+                        className={`damage-filter-btn ${filterStatus === 'Semua' ? 'is-active status-all' : ''}`}
+                        onClick={() => setFilterStatus('Semua')}
+                    >
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><CardList size={14} /> Semua ({reports.length})</span>
+                    </button>
+                </div>
             </div>
 
-            {/* Tabel Log Tiket (Menyerupai Log Pelaporan Kelas Kosong) */}
+            {/* 5. Tabel Log Tiket (Dual Layout: Desktop Table & Mobile Cards) */}
             <div className="damage-table-card">
                 <div className="damage-toolbar no-print">
-                    <button className="damage-action-btn" onClick={handlePrintPDF} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><PrinterFill size={14} /> Cetak PDF Resmi</button>
-                    <button className="damage-action-btn" onClick={handleExportExcel} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><FileEarmarkSpreadsheetFill size={14} /> Ekspor Excel (.CSV)</button>
+                    <button type="button" className="damage-action-btn" onClick={handlePrintPDF} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><PrinterFill size={14} /> Cetak PDF</button>
+                    <button type="button" className="damage-action-btn" onClick={handleExportExcel} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><FileEarmarkSpreadsheetFill size={14} /> Ekspor Excel (.CSV)</button>
                 </div>
 
                 {/* ELEMEN KOP SURAT KHUSUS CETAK */}
@@ -225,117 +275,212 @@ function LogKerusakanFasilitas() {
                         <p>Belum ada laporan kerusakan fasilitas pada kategori ini.</p>
                     </div>
                 ) : (
-                    <table className="damage-table">
-                        <thead className="damage-table-head">
-                            <tr>
-                                <th style={{ width: '28%' }}>Kategori & Rincian</th>
-                                <th style={{ width: '30%' }}>Detail Ruangan</th>
-                                <th style={{ width: '22%' }}>Pelapor (PJ)</th>
-                                <th style={{ width: '20%' }} className="no-print">Status & Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {paginatedReports.map((item) => (
-                                <tr key={item.id} className="damage-table-row">
-                                    {/* Kolom 1: Kategori & Rincian Kerusakan */}
-                                    <td className="damage-table-cell">
-                                        <div className="damage-kategori-title">{item.kategori || 'FASILITAS KELAS'}</div>
-                                        <div className="damage-rincian-text">"{item.rincian}"</div>
-                                        <div className="damage-time-text">
-                                            Dilaporkan: {new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                        </div>
-                                    </td>
+                    <>
+                        {/* Desktop Table View */}
+                        <div className="damage-table-wrapper">
+                            <table className="damage-table">
+                                <thead className="damage-table-head">
+                                    <tr>
+                                        <th style={{ width: '28%' }}>Kategori & Rincian</th>
+                                        <th style={{ width: '30%' }}>Detail Ruangan</th>
+                                        <th style={{ width: '22%' }}>Pelapor (PJ)</th>
+                                        <th style={{ width: '20%' }} className="no-print">Status & Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {paginatedReports.map((item) => {
+                                        const reporter = item.reporter || item.users || {}
+                                        const reporterName = reporter.username || 'PJ Mahasiswa'
+                                        const reporterProdi = reporter.prodi || '-'
+                                        const reporterNim = reporter.nim_nip || (reporter.email ? reporter.email.split('@')[0] : null) || '-'
 
-                                    {/* Kolom 2: Detail Ruangan */}
-                                    <td className="damage-table-cell">
-                                        <div className="damage-detail-container">
-                                            <div className="damage-detail-date">
-                                                <span aria-hidden="true" style={{ display: 'inline-flex' }}><CalendarEventFill size={13} /></span>
-                                                <span>{formatTanggalIndonesia(item.created_at)}</span>
+                                        return (
+                                            <tr key={item.id} className="damage-table-row">
+                                                {/* Kolom 1: Kategori & Rincian Kerusakan */}
+                                                <td className="damage-table-cell">
+                                                    <div className="damage-kategori-title">{item.kategori || 'FASILITAS KELAS'}</div>
+                                                    <div className="damage-rincian-text">"{item.rincian}"</div>
+                                                    <div className="damage-time-text">
+                                                        Dilaporkan: {new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                    </div>
+                                                </td>
+
+                                                {/* Kolom 2: Detail Ruangan */}
+                                                <td className="damage-table-cell">
+                                                    <div className="damage-detail-container">
+                                                        <div className="damage-detail-date">
+                                                            <span aria-hidden="true" style={{ display: 'inline-flex' }}><CalendarEventFill size={13} /></span>
+                                                            <span>{formatTanggalIndonesia(item.created_at)}</span>
+                                                        </div>
+                                                        <div className="damage-room-name">
+                                                            <span aria-hidden="true" style={{ display: 'inline-flex' }}><GeoAltFill size={14} /></span>
+                                                            <span>Ruang {item.rooms?.nama || 'Ruangan'}</span>
+                                                        </div>
+                                                        <div className="damage-room-building">
+                                                            {item.rooms?.gedung || '-'} • {item.rooms?.kampus || 'Kampus 3'}
+                                                        </div>
+                                                        {item.rooms?.status === 'terkunci' && (
+                                                            <div className="damage-room-locked-badge">
+                                                                <LockFill size={12} /> Ruangan Terkunci
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+
+                                                {/* Kolom 3: Identitas Pelapor (PJ) */}
+                                                <td className="damage-table-cell">
+                                                    <div className="damage-reporter-box">
+                                                        <p className="damage-reporter-badge">Pelapor (PJ)</p>
+                                                        <p className="damage-reporter-name">{reporterName}</p>
+                                                        <p className="damage-reporter-prodi">{reporterProdi}</p>
+                                                        {reporterNim !== '-' && <p className="damage-reporter-nim">NIM: {reporterNim}</p>}
+                                                    </div>
+                                                </td>
+
+                                                {/* Kolom 4: Status Penanganan & Aksi Staf */}
+                                                <td className="damage-table-cell no-print">
+                                                    <div className="damage-action-container">
+                                                        {/* Status Selector via NeoSelect */}
+                                                        <div className="damage-status-select-wrap">
+                                                            <NeoSelect
+                                                                value={item.status}
+                                                                onChange={(val) => handleUpdateStatus(item.id, val)}
+                                                                options={statusSelectOptions}
+                                                                className="damage-neo-select-table"
+                                                            />
+                                                        </div>
+
+                                                        {/* Emergency Lock Room Button */}
+                                                        {item.rooms?.status !== 'terkunci' ? (
+                                                            <button
+                                                                type="button"
+                                                                className="damage-btn-lock"
+                                                                onClick={() => handleLockRoom(item.room_id, item.rooms?.nama)}
+                                                            >
+                                                                <LockFill size={13} /> Kunci Ruangan
+                                                            </button>
+                                                        ) : (
+                                                            <div className="damage-text-locked">
+                                                                <LockFill size={12} /> Akses Terkunci
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Mobile Cards View */}
+                        <div className="damage-mobile-cards no-print">
+                            {paginatedReports.map((item) => {
+                                const reporter = item.reporter || item.users || {}
+                                const reporterName = reporter.username || 'PJ Mahasiswa'
+                                const reporterProdi = reporter.prodi || '-'
+                                const reporterNim = reporter.nim_nip || (reporter.email ? reporter.email.split('@')[0] : null) || '-'
+                                const reporterHp = reporter.no_hp || null
+
+                                return (
+                                    <div key={`m-dmg-${item.id}`} className="damage-mobile-item">
+                                        <div className="damage-mobile-header">
+                                            <div className="damage-mobile-kategori-box">
+                                                <span className="damage-mobile-id-tag">#TIKET-{item.id}</span>
+                                                <h4 className="damage-mobile-kategori-title">{item.kategori || 'FASILITAS KELAS'}</h4>
                                             </div>
-                                            <div className="damage-room-name">
-                                                <span aria-hidden="true" style={{ display: 'inline-flex' }}><GeoAltFill size={14} /></span>
-                                                <span>Ruang {item.rooms?.nama || 'Ruangan'}</span>
+                                            <div className="damage-mobile-badge-box">
+                                                {item.status === 'resolved' ? (
+                                                    <span className="damage-mobile-status-badge status-resolved">
+                                                        <CheckCircleFill size={12} /> Selesai
+                                                    </span>
+                                                ) : item.status === 'in_progress' ? (
+                                                    <span className="damage-mobile-status-badge status-progress">
+                                                        <Tools size={12} /> Dikerjakan
+                                                    </span>
+                                                ) : (
+                                                    <span className="damage-mobile-status-badge status-pending">
+                                                        <HourglassSplit size={12} /> Menunggu
+                                                    </span>
+                                                )}
                                             </div>
-                                            <div className="damage-room-building">
-                                                {item.rooms?.gedung || '-'} • {item.rooms?.kampus || 'Kampus 3'}
+                                        </div>
+
+                                        <div className="damage-mobile-body">
+                                            <div className="damage-mobile-rincian">
+                                                "{item.rincian}"
                                             </div>
-                                            {item.rooms?.status === 'terkunci' && (
-                                                <div className="damage-room-locked-badge">
-                                                    <LockFill size={12} /> Ruangan Terkunci
+
+                                            <div className="damage-mobile-location-card">
+                                                <div className="damage-mobile-loc-row">
+                                                    <GeoAltFill size={14} color="#0284c7" />
+                                                    <strong>Ruang {item.rooms?.nama || 'Ruangan'}</strong>
+                                                    <span>({item.rooms?.gedung || '-'} • {item.rooms?.kampus || 'Kampus 3'})</span>
                                                 </div>
-                                            )}
+                                                <div className="damage-mobile-loc-row sub-row">
+                                                    <CalendarEventFill size={12} color="#64748b" />
+                                                    <span>Dilaporkan: {formatTanggalIndonesia(item.created_at)}</span>
+                                                </div>
+                                                {item.rooms?.status === 'terkunci' && (
+                                                    <div className="damage-mobile-locked-alert">
+                                                        <LockFill size={12} /> Akses Ruangan Sedang Terkunci
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="damage-mobile-reporter-card">
+                                                <div className="damage-mobile-rep-header">
+                                                    <span>PELAPOR (PJ KELAS):</span>
+                                                </div>
+                                                <div className="damage-mobile-rep-info">
+                                                    <strong>{reporterName}</strong> &bull; {reporterProdi}
+                                                    {reporterNim !== '-' && <span> (NIM: {reporterNim})</span>}
+                                                </div>
+                                                {reporterHp && (
+                                                    <div className="damage-mobile-rep-contact">
+                                                        <span>No. HP: {reporterHp}</span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    </td>
 
-                                    {/* Kolom 3: Identitas Pelapor (PJ) */}
-                                    <td className="damage-table-cell">
-                                        <div className="damage-reporter-box">
-                                            <p className="damage-reporter-badge">Pelapor (PJ)</p>
-                                            <p className="damage-reporter-name">{item.users?.username || 'PJ Mahasiswa'}</p>
-                                            <p className="damage-reporter-prodi">{item.users?.prodi || '-'}</p>
-                                            {item.users?.nim_nip && <p className="damage-reporter-nim">NIM: {item.users.nim_nip}</p>}
-                                        </div>
-                                    </td>
-
-                                    {/* Kolom 4: Status Penanganan & Aksi Staf */}
-                                    <td className="damage-table-cell no-print">
-                                        <div className="damage-action-container">
-                                            {/* Status Badge */}
-                                            {item.status === 'resolved' ? (
-                                                <div className="damage-status-badge status-resolved">
-                                                    <CheckCircleFill size={13} /> Selesai Diperbaiki
-                                                </div>
-                                            ) : item.status === 'in_progress' ? (
-                                                <div className="damage-status-badge status-progress">
-                                                    <Tools size={13} /> Sedang Dikerjakan
-                                                </div>
-                                            ) : (
-                                                <div className="damage-status-badge status-pending">
-                                                    <HourglassSplit size={13} /> Menunggu Perbaikan
-                                                </div>
-                                            )}
-
-                                            {/* Status Selector */}
-                                            <div className="damage-status-select-wrap">
-                                                <select
-                                                    className="damage-status-select"
+                                        <div className="damage-mobile-actions">
+                                            <div className="damage-mobile-select-group">
+                                                <label className="damage-mobile-action-label">Status Penanganan:</label>
+                                                <NeoSelect
                                                     value={item.status}
-                                                    onChange={(e) => handleUpdateStatus(item.id, e.target.value)}
-                                                >
-                                                    <option value="pending">Menunggu Perbaikan</option>
-                                                    <option value="in_progress">Sedang Dikerjakan</option>
-                                                    <option value="resolved">Selesai Diperbaiki</option>
-                                                </select>
+                                                    onChange={(val) => handleUpdateStatus(item.id, val)}
+                                                    options={statusSelectOptions}
+                                                    className="damage-neo-select-mobile"
+                                                />
                                             </div>
 
-                                            {/* Emergency Lock Room Button */}
                                             {item.rooms?.status !== 'terkunci' ? (
                                                 <button
                                                     type="button"
-                                                    className="damage-btn-lock"
+                                                    className="damage-mobile-btn-lock"
                                                     onClick={() => handleLockRoom(item.room_id, item.rooms?.nama)}
                                                 >
-                                                    <LockFill size={13} /> Kunci Ruangan
+                                                    <LockFill size={13} /> Kunci Ruangan Ini (Darurat)
                                                 </button>
                                             ) : (
-                                                <div className="damage-text-locked">
-                                                    <LockFill size={12} /> Akses Terkunci
+                                                <div className="damage-mobile-locked-status">
+                                                    <LockFill size={13} /> Ruangan Ini Telah Dikunci
                                                 </div>
                                             )}
                                         </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </>
                 )}
 
                 {/* Bilah Paginasi Neo-Brutalist */}
                 {totalPages > 1 && (
                     <div className="damage-pagination no-print">
                         <div className="damage-pagination-info">
-                            Menampilkan <strong>{totalItems === 0 ? 0 : startIndex + 1}</strong> - <strong>{endIndex}</strong> dari <strong>{totalItems}</strong> laporan kerusakan
+                            Menampilkan <strong>{totalItems === 0 ? 0 : startIndex + 1}</strong> - <strong>{endIndex}</strong> dari <strong>{totalItems}</strong> tiket
                         </div>
                         <div className="damage-pagination-controls">
                             <button
@@ -349,15 +494,11 @@ function LogKerusakanFasilitas() {
 
                             {getPageNumbers().map((page, idx) => {
                                 if (page === '...') {
-                                    return (
-                                        <span key={`ellipsis-${idx}`} className="damage-page-ellipsis">
-                                            ...
-                                        </span>
-                                    )
+                                    return <span key={`ellipsis-${idx}`} className="damage-page-ellipsis">...</span>
                                 }
                                 return (
                                     <button
-                                        key={page}
+                                        key={`page-${page}`}
                                         type="button"
                                         className={`damage-page-btn damage-page-num-btn ${validCurrentPage === page ? 'is-active' : ''}`}
                                         onClick={() => handlePageChange(page)}
@@ -380,17 +521,17 @@ function LogKerusakanFasilitas() {
                 )}
             </div>
 
-            {/* Neo-Brutalist Confirm Modal for Emergency Room Lock */}
+            {/* Modal Konfirmasi Kunci Ruangan */}
             <ConfirmModal
                 isOpen={confirmModal.open}
-                title="Kunci Ruangan Darurat"
-                message={`Kerusakan Parah! Apakah Anda yakin ingin MENGUNCI Ruang ${confirmModal.roomName}? Ruangan tidak akan bisa dipinjam oleh PJ lain.`}
+                title="Konfirmasi Kunci Ruangan"
+                message={`Apakah Anda yakin ingin MENGUNCI akses Ruang "${confirmModal.roomName}"? Status ruangan akan diubah menjadi 'terkunci' sehingga tidak dapat digunakan untuk perkuliahan maupun reservasi hingga perbaikan selesai.`}
                 confirmText="Ya, Kunci Ruangan"
                 cancelText="Batal"
-                variant="warning"
-                loading={confirmModal.loading}
+                variant="danger"
+                isLoading={confirmModal.loading}
                 onConfirm={handleConfirmLockRoom}
-                onCancel={() => !confirmModal.loading && setConfirmModal({ open: false, roomId: null, roomName: '', loading: false })}
+                onCancel={() => setConfirmModal({ open: false, roomId: null, roomName: '', loading: false })}
             />
         </div>
     )
