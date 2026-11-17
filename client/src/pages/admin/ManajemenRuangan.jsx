@@ -286,8 +286,10 @@ function ManajemenRuangan() {
       const newRoom = resRoom.data.room
 
       if (addWithSchedule && newRoom) {
+        const matchedDep = departments.find(d => d.nama_prodi === initialSched.prodi)
         await api.post('/schedules', {
           ...initialSched,
+          departemen_id: matchedDep ? matchedDep.id : undefined,
           room_id: newRoom.id
         })
       }
@@ -363,17 +365,18 @@ function ManajemenRuangan() {
     }
 
     try {
+      const matchedDep = departments.find(d => d.nama_prodi === schedForm.prodi)
+      const schedPayload = {
+        ...schedForm,
+        departemen_id: matchedDep ? matchedDep.id : undefined,
+        room_id: selectedRoomModal.id
+      }
+
       if (editingSchedId) {
-        await api.put(`/schedules/${editingSchedId}`, {
-          ...schedForm,
-          room_id: selectedRoomModal.id
-        })
+        await api.put(`/schedules/${editingSchedId}`, schedPayload)
         showSuccess('Jadwal perkuliahan berhasil diperbarui!', 'JADWAL KULIAH')
       } else {
-        await api.post('/schedules', {
-          ...schedForm,
-          room_id: selectedRoomModal.id
-        })
+        await api.post('/schedules', schedPayload)
         showSuccess('Jadwal perkuliahan berhasil ditambahkan!', 'JADWAL KULIAH')
       }
 

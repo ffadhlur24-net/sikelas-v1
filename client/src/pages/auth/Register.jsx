@@ -36,6 +36,7 @@ function Register() {
     no_hp: '',
     fakultas: '',
     prodi: '',
+    departemen_id: null,
     semester: '',
     mata_kuliah: '',
     kelas: ''
@@ -161,9 +162,11 @@ function Register() {
         kelas: ''
       }))
     } else if (name === 'prodi') {
+      const selectedDep = departments.find(d => d.nama_prodi === value)
       setFormData(prev => ({
         ...prev,
         prodi: value,
+        departemen_id: selectedDep ? selectedDep.id : null,
         semester: '',
         mata_kuliah: '',
         kelas: ''

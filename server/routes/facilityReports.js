@@ -96,7 +96,7 @@ router.get('/', verifyToken, adminOnly, async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('facility_reports')
-            .select('*, rooms(nama, gedung, kampus, status), reporter:users!reporter_id(username, email, prodi, departemen_id, departemen:departemen_id(id, nama_prodi, fakultas), no_hp)')
+            .select('*, rooms(nama, gedung, kampus, status), reporter:users!reporter_id(username, email, departemen_id, departemen:departemen_id(id, nama_prodi, fakultas), no_hp)')
             .order('created_at', { ascending: false })
 
         if (error) throw error
@@ -105,7 +105,7 @@ router.get('/', verifyToken, adminOnly, async (req, res) => {
             ...r,
             reporter: r.reporter ? {
                 ...r.reporter,
-                prodi: r.reporter.departemen?.nama_prodi || r.reporter.prodi || '-'
+                prodi: r.reporter.departemen?.nama_prodi || '-'
             } : null
         }))
 

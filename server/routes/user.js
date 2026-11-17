@@ -20,7 +20,7 @@ router.get('/profile', verifyToken, async (req, res) => {
             .select(`
                 id, username, nim_nip, email, departemen_id,
                 departemen:departemen_id ( id, nama_prodi, fakultas, kode_prodi ),
-                prodi, semester, kelas, mata_kuliah, no_hp, role, status, created_at, updated_at
+                semester, kelas, mata_kuliah, no_hp, role, status, created_at, updated_at
             `)
             .eq('id', userId)
             .single()
@@ -31,7 +31,7 @@ router.get('/profile', verifyToken, async (req, res) => {
 
         const formattedUser = {
             ...user,
-            prodi: user.departemen?.nama_prodi || user.prodi || '-'
+            prodi: user.departemen?.nama_prodi || '-'
         }
 
         res.json({ user: formattedUser })
@@ -101,14 +101,19 @@ router.put('/profile', verifyToken, async (req, res) => {
             .from('users')
             .update(updatePayload)
             .eq('id', userId)
-            .select('id, username, nim_nip, email, prodi, semester: semester, kelas, mata_kuliah, no_hp, role, status')
+            .select('id, username, nim_nip, email, departemen_id, departemen:departemen_id ( id, nama_prodi, fakultas, kode_prodi ), semester, kelas, mata_kuliah, no_hp, role, status')
             .single()
 
         if (updateErr) throw updateErr
 
+        const formattedUser = {
+            ...updatedUser,
+            prodi: updatedUser.departemen?.nama_prodi || '-'
+        }
+
         res.json({
             message: 'Profil berhasil diperbarui!',
-            user: updatedUser
+            user: formattedUser
         })
     } catch (error) {
         console.error('Update profile error:', error)
@@ -151,7 +156,7 @@ router.get('/', verifyToken, adminOnly, async (req, res) => {
             .select(`
                 id, username, nim_nip, email, departemen_id,
                 departemen:departemen_id ( id, nama_prodi, fakultas, kode_prodi ),
-                prodi, semester, kelas, mata_kuliah, no_hp, role, status, created_at
+                semester, kelas, mata_kuliah, no_hp, role, status, created_at
             `)
             .eq('role', 'pj') // 👈 Hanya ambil akun bertipe PJ (Keluarkan seluruh Akun Admin)
             .order('created_at', { ascending: false })
@@ -160,7 +165,7 @@ router.get('/', verifyToken, adminOnly, async (req, res) => {
 
         const formattedUsers = (data || []).map(u => ({
             ...u,
-            prodi: u.departemen?.nama_prodi || u.prodi || '-',
+            prodi: u.departemen?.nama_prodi || '-',
             semester: u.semester ?? ((u.kelas && u.kelas.endsWith('-U')) || (u.mata_kuliah && u.mata_kuliah.includes('Mengulang')) ? 'SPB' : '-')
         }))
         res.json({ users: formattedUsers })
@@ -242,7 +247,6 @@ router.put('/:id', verifyToken, adminOnly, async (req, res) => {
             status
         }
         if (resolvedDepartemenId !== null && !isNaN(resolvedDepartemenId)) updatePayload.departemen_id = resolvedDepartemenId
-        if (resolvedProdi !== undefined) updatePayload.prodi = resolvedProdi
 
         const { data, error } = await supabase
             .from('users')
@@ -251,7 +255,7 @@ router.put('/:id', verifyToken, adminOnly, async (req, res) => {
             .select(`
                 id, username, nim_nip, email, departemen_id,
                 departemen:departemen_id ( id, nama_prodi, fakultas, kode_prodi ),
-                prodi, semester, kelas, mata_kuliah, no_hp, role, status
+                semester, kelas, mata_kuliah, no_hp, role, status
             `)
             .single()
 
@@ -259,7 +263,7 @@ router.put('/:id', verifyToken, adminOnly, async (req, res) => {
 
         const formattedUser = {
             ...data,
-            prodi: data.departemen?.nama_prodi || data.prodi || '-'
+            prodi: data.departemen?.nama_prodi || '-'
         }
 
         res.json({ message: 'Data PJ berhasil diperbarui.', user: formattedUser })

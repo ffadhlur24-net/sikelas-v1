@@ -283,7 +283,7 @@ router.post('/', verifyToken, adminOnly, async (req, res) => {
         if (roomError) throw roomError
 
         if (initial_schedule &&
-            initial_schedule.prodi &&
+            (initial_schedule.prodi || initial_schedule.departemen_id) &&
             initial_schedule.semester &&
             initial_schedule.kelas &&
             initial_schedule.mata_kuliah &&
@@ -292,18 +292,26 @@ router.post('/', verifyToken, adminOnly, async (req, res) => {
             initial_schedule.waktu_mulai &&
             initial_schedule.waktu_selesai
         ) {
-            const { prodi, semester, kelas, mata_kuliah, dosen, hari, waktu_mulai, waktu_selesai } = initial_schedule
-            await supabase.from('schedules').insert([{
-                room_id: roomData.id,
-                prodi,
-                semester,
-                kelas,
-                mata_kuliah,
-                dosen,
-                hari,
-                waktu_mulai,
-                waktu_selesai,
-            }])
+            const { prodi, departemen_id, semester, kelas, mata_kuliah, dosen, hari, waktu_mulai, waktu_selesai } = initial_schedule
+            let resolvedDepartemenId = departemen_id ? Number(departemen_id) : null
+            if (!resolvedDepartemenId && prodi) {
+                const { data: dep } = await supabase.from('departemen').select('id').ilike('nama_prodi', prodi.trim()).maybeSingle()
+                if (dep) resolvedDepartemenId = dep.id
+            }
+
+            if (resolvedDepartemenId) {
+                await supabase.from('schedules').insert([{
+                    room_id: roomData.id,
+                    departemen_id: resolvedDepartemenId,
+                    semester,
+                    kelas,
+                    mata_kuliah,
+                    dosen,
+                    hari,
+                    waktu_mulai,
+                    waktu_selesai,
+                }])
+            }
         }
 
         res.status(201).json({ message: 'Ruangan berhasil ditambahkan.', room: roomData })

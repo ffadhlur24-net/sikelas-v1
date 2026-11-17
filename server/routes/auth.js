@@ -109,15 +109,13 @@ router.post('/register', async (req, res) => {
         // 3. Cek double PJ & Pembersihan Instan Akun Gantung Expired
         let doublePjQuery = supabase
             .from('users')
-            .select('id, username, status, otp_expires_at, email, departemen_id, prodi')
+            .select('id, username, status, otp_expires_at, email, departemen_id')
             .eq('role', 'pj')
             .eq('mata_kuliah', mata_kuliah)
             .eq('kelas', kelas)
 
         if (resolvedDepartemenId) {
             doublePjQuery = doublePjQuery.eq('departemen_id', resolvedDepartemenId)
-        } else {
-            doublePjQuery = doublePjQuery.eq('prodi', resolvedProdi)
         }
 
         const { data: existingPJ } = await doublePjQuery.maybeSingle()
@@ -155,7 +153,6 @@ router.post('/register', async (req, res) => {
             email,
             password: hashedPassword,
             departemen_id: resolvedDepartemenId,
-            prodi: resolvedProdi || prodi,
             semester: cleanSemester,
             mata_kuliah,
             kelas,
@@ -364,26 +361,31 @@ router.get('/registration-options', async (req, res) => {
     try {
         const { data: allSchedules, error: schedError } = await supabase
             .from('schedules')
-            .select('prodi, departemen_id, semester, kelas, mata_kuliah')
+            .select('departemen_id, semester, kelas, mata_kuliah, departemen:departemen_id(id, nama_prodi, fakultas, kode_prodi)')
 
         if (schedError) throw schedError
 
         const { data: takenUsers, error: userError } = await supabase
             .from('users')
-            .select('prodi, departemen_id, semester, kelas, mata_kuliah')
+            .select('departemen_id, semester, kelas, mata_kuliah')
             .eq('role', 'pj')
 
         if (userError) throw userError
 
         const takenKeys = new Set((takenUsers || []).map(u =>
-            `${u.departemen_id || u.prodi}|${u.semester}|${u.kelas}|${u.mata_kuliah}`
+            `${u.departemen_id}|${u.semester}|${u.kelas}|${u.mata_kuliah}`
         ))
 
+        // Map schedules dengan properti prodi dari departemen untuk kompatibilitas frontend
+        const mappedSchedules = (allSchedules || []).map(s => ({
+            ...s,
+            prodi: s.departemen?.nama_prodi || ''
+        }))
+
         // Filter mata kuliah yang BELUM ada PJ-nya
-        const availableSchedules = (allSchedules || []).filter(s => {
-            const key1 = `${s.departemen_id || s.prodi}|${s.semester}|${s.kelas}|${s.mata_kuliah}`
-            const key2 = `${s.prodi}|${s.semester}|${s.kelas}|${s.mata_kuliah}`
-            return !takenKeys.has(key1) && !takenKeys.has(key2)
+        const availableSchedules = mappedSchedules.filter(s => {
+            const key = `${s.departemen_id}|${s.semester}|${s.kelas}|${s.mata_kuliah}`
+            return !takenKeys.has(key)
         })
 
         if (availableSchedules.length === 0) {
@@ -480,7 +482,7 @@ router.post('/login', loginLimiter, async (req, res) => {
                 email: user.email,
                 role: user.role,
                 departemen_id: user.departemen_id,
-                prodi: user.departemen?.nama_prodi || user.prodi || '-',
+                prodi: user.departemen?.nama_prodi || '-',
                 semester: user.semester ?? ((user.kelas && user.kelas.endsWith('-U')) || (user.mata_kuliah && user.mata_kuliah.includes('Mengulang')) ? 'SPB' : '-'),
                 kelas: user.kelas,
                 mata_kuliah: user.mata_kuliah,
@@ -498,28 +500,35 @@ router.post('/login', loginLimiter, async (req, res) => {
 // Mengambil daftar mata kuliah dari SIAKAD yang belum memiliki PJ
 router.get('/available-courses', async (req, res) => {
     try {
-        const { prodi, kelas } = req.query;
+        const { prodi, departemen_id, kelas } = req.query;
 
-        if (!prodi || !kelas) {
+        let resolvedDepartemenId = departemen_id ? Number(departemen_id) : null
+        if (!resolvedDepartemenId && prodi) {
+            const { data: dep } = await supabase.from('departemen').select('id').ilike('nama_prodi', prodi.trim()).maybeSingle()
+            if (dep) resolvedDepartemenId = dep.id
+        }
+
+        if (!resolvedDepartemenId || !kelas) {
             return res.status(400).json({ error: 'Prodi dan kelas wajib dipilih' })
         }
 
-        // 1. Ambil semua mata kuliah dari master data schedule(SIAKAD)
+        // 1. Ambil semua mata kuliah dari master data schedule(SIAKAD) untuk departemen dan kelas tersebut
         const { data: allSchedules, error: schedError } = await supabase
             .from('schedules')
             .select('mata_kuliah')
+            .eq('departemen_id', resolvedDepartemenId)
+            .eq('kelas', kelas)
 
         if (schedError) throw schedError
 
         // Ekstrak nama mata kuliah (tanpa duplikat)
         const allCourses = [...new Set((allSchedules || []).map(s => s.mata_kuliah))];
 
-
         const { data: tokenPjs, error: userError } = await supabase
             .from('users')
             .select('mata_kuliah, status, otp_expires_at')
             .eq('role', 'pj')
-            .eq('prodi', prodi)
+            .eq('departemen_id', resolvedDepartemenId)
             .eq('kelas', kelas)
 
         if (userError) throw userError;
@@ -580,7 +589,7 @@ router.post('/resume-otp', async (req, res) => {
 
         const { data: user } = await supabase
             .from('users')
-            .select('id, username, email, status, otp_expires_at, mata_kuliah, prodi, departemen_id, departemen:departemen_id ( id, nama_prodi, fakultas, kode_prodi ), kelas')
+            .select('id, username, email, status, otp_expires_at, mata_kuliah, departemen_id, departemen:departemen_id ( id, nama_prodi, fakultas, kode_prodi ), kelas')
             .eq('email', email.trim().toLowerCase())
             .maybeSingle()
 
@@ -607,7 +616,7 @@ router.post('/resume-otp', async (req, res) => {
                 email: user.email,
                 mata_kuliah: user.mata_kuliah,
                 departemen_id: user.departemen_id,
-                prodi: user.departemen?.nama_prodi || user.prodi || '-',
+                prodi: user.departemen?.nama_prodi || '-',
                 kelas: user.kelas,
                 otp_expires_at: user.otp_expires_at
             }
