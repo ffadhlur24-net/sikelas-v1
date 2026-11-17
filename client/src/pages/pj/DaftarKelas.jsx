@@ -35,7 +35,6 @@ function DaftarKelas() {
   const [activeFilter, setActiveFilter] = useState('semua')
   const [rooms, setRooms] = useState([])
   const [loading, setLoading] = useState(true)
-  const [currentTime, setCurrentTime] = useState(new Date())
   // State Modal Timeline Harian Berbasis Hari (Poin 4 - Upgraded)
   const hariList = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
   const todayIndex = new Date().getDay()
@@ -124,12 +123,9 @@ function DaftarKelas() {
     }
   }
 
-  // JAM DIGITAL & SUPABASE REALTIME WEBSOCKET LISTENER (Pendekatan 1)
+  // SUPABASE REALTIME WEBSOCKET LISTENER (Pendekatan 1)
   useEffect(() => {
     fetchRooms(filterTanggal, filterWaktuMulai, filterSks, true)
-    const clockTimer = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 1000)
 
     // Menghubungkan WebSocket Listener Supabase Realtime
     const channel = supabaseClient
@@ -145,7 +141,6 @@ function DaftarKelas() {
       .subscribe()
 
     return () => {
-      clearInterval(clockTimer)
       supabaseClient.removeChannel(channel)
     }
   }, [filterTanggal, filterWaktuMulai, filterSks])
@@ -350,14 +345,11 @@ function DaftarKelas() {
 
   return (
     <div className="reservation-page animate-fade-in">
-      {/* HEADER + JAM DIGITAL */}
-      <div className="reservation-heading page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+      {/* HEADER */}
+      <div className="reservation-heading page-header">
         <div>
           <h1 className="page-title">Daftar Kelas & Ketersediaan Ruangan</h1>
           <p className="page-subtitle">Cari slot waktu peminjaman spesifik dan pantau ketersediaan ruangan secara real-time.</p>
-        </div>
-        <div className="reservation-clock">
-          {currentTime.toLocaleTimeString('id-ID')}
         </div>
       </div>
 

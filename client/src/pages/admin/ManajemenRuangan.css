@@ -14,38 +14,6 @@
   margin: 0 auto;
 }
 
-/* 1. Header Clock Bar */
-.room-clock-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
-  border: 3.5px solid var(--room-border);
-  padding: 18px 24px;
-  background: var(--room-blue);
-  color: #ffffff;
-  box-shadow: 4px 4px 0 var(--room-border);
-  border-radius: 8px;
-}
-
-.room-clock-icon {
-  display: grid;
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
-  place-items: center;
-  border: 2px solid var(--room-border);
-  background: #000000;
-  color: #ffffff;
-  border-radius: 6px;
-  box-shadow: 2px 2px 0 var(--room-border);
-}
-
-.room-clock-card h2 {
-  margin: 0;
-  font: clamp(16px, 2vw, 24px)/1.25 'Archivo Black', sans-serif;
-}
-
 .room-eyebrow {
   color: var(--room-muted);
   font-size: 11px;
@@ -54,37 +22,6 @@
   line-height: 16px;
   text-transform: uppercase;
   margin: 0;
-}
-
-.room-clock-card .room-eyebrow {
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 10.5px;
-  margin-bottom: 2px;
-}
-
-.room-online {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-  border: 2px solid var(--room-border);
-  padding: 8px 14px;
-  background: #ffffff;
-  color: var(--room-ink);
-  font-size: 13px;
-  font-weight: 800;
-  white-space: nowrap;
-  border-radius: 6px;
-  box-shadow: 2px 2px 0 var(--room-border);
-}
-
-.room-online span {
-  width: 10px;
-  height: 10px;
-  border: 1px solid var(--room-border);
-  background: var(--room-green);
-  border-radius: 50%;
-  display: inline-block;
 }
 
 /* 2. Stats Grid */
@@ -399,32 +336,6 @@
    📱 RESPONSIVE MOBILE STYLES (<= 768px)
    ======================================================== */
 @media (max-width: 768px) {
-  /* Clock Micro-Chip */
-  .room-clock-card {
-    padding: 8px 12px !important;
-    gap: 8px !important;
-    margin-bottom: 14px !important;
-    border-width: 2.5px !important;
-    box-shadow: 2.5px 2.5px 0 var(--room-border) !important;
-    border-radius: 6px !important;
-  }
-
-  .room-clock-icon {
-    width: 32px !important;
-    height: 32px !important;
-    flex: 0 0 32px !important;
-    border-radius: 4px !important;
-  }
-
-  .room-clock-card h2 {
-    font-size: 13px !important;
-    line-height: 1.25 !important;
-  }
-
-  .room-online {
-    display: none !important;
-  }
-
   /* 2x2 Stats Grid */
   .room-stats-grid {
     grid-template-columns: repeat(2, 1fr) !important;

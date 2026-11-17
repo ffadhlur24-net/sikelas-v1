@@ -19,17 +19,10 @@ function LogPelaporan() {
   const [actionLoading, setActionLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [filterStatus, setFilterStatus] = useState('pending') // Default Tab
-  const [currentTime, setCurrentTime] = useState(new Date())
 
   // Modal State
   const [rejectModal, setRejectModal] = useState({ open: false, id: null, subject: '', reason: '' })
   const [deleteModal, setDeleteModal] = useState({ open: false, id: null, subject: '' })
-
-  // Real-time Clock Tick
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
 
   const formatTanggalIndonesia = (dateString) => {
     if (!dateString) return '-'
@@ -45,11 +38,6 @@ function LogPelaporan() {
       return `${namaHari[dateObj.getDay()]}, ${day} ${namaBulan[monthIdx]} ${year}`
     }
     return dateString
-  }
-
-  const formatClockIndonesia = (date) => {
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }
-    return date.toLocaleDateString('id-ID', options).replace(' pukul', ' —').replace(/\./g, '.')
   }
 
   const fetchReports = async () => {
@@ -163,24 +151,7 @@ function LogPelaporan() {
 
   return (
     <div className="log-pelaporan-page">
-      {/* 1. Real-time Clock Widget */}
-      <section className="neo-clock-card no-print">
-        <div className="neo-clock-content">
-          <div className="neo-clock-icon-box" aria-hidden="true">
-            <span className="material-symbols-outlined">schedule</span>
-          </div>
-          <div className="neo-clock-meta">
-            <p className="neo-clock-eyebrow">SERVER TIME &bull; REALTIME</p>
-            <h3 className="neo-clock-time">{formatClockIndonesia(currentTime)}</h3>
-          </div>
-        </div>
-        <div className="neo-system-online-badge">
-          <span className="neo-pulse-dot"></span>
-          Sistem Online
-        </div>
-      </section>
-
-      {/* 1b. Ringkasan Statistik Sistem */}
+      {/* 1. Ringkasan Statistik Sistem */}
       <section className="report-stats-grid no-print" aria-label="Ringkasan pelaporan">
         <article className="report-stat stat-navy"><span>Total Laporan</span><strong>{reports.length}</strong></article>
         <article className="report-stat stat-blue"><span>Menunggu ACC</span><strong>{pendingCount}</strong></article>

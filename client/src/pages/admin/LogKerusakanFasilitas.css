@@ -28,92 +28,6 @@
   margin: 0 auto;
 }
 
-/* 1. Real-time Clock Micro-Chip Status Bar */
-.damage-clock-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  padding: 18px 24px;
-  background-color: var(--damage-blue);
-  color: #ffffff;
-  border: 4px solid var(--damage-border);
-  box-shadow: 6px 6px 0 var(--damage-border);
-  transition: all 0.15s ease;
-}
-
-.damage-clock-content {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.damage-clock-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-  background-color: #000000;
-  border: 2px solid var(--damage-border);
-  color: #ffffff;
-}
-
-.damage-clock-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.damage-clock-eyebrow {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #ffffff;
-  margin: 0;
-}
-
-.damage-clock-time {
-  margin: 0;
-  font-family: 'Archivo Black', sans-serif;
-  font-size: clamp(16px, 2.2vw, 24px);
-  line-height: 1.2;
-  color: #ffffff;
-}
-
-.damage-online {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background-color: #ffffff;
-  color: #000000;
-  border: 2px solid var(--damage-border);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.damage-pulse-dot {
-  width: 10px;
-  height: 10px;
-  background-color: #22c55e;
-  border: 1px solid #000000;
-  border-radius: 50%;
-  display: inline-block;
-  animation: damage-pulse 1.8s infinite;
-}
-
-@keyframes damage-pulse {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.2); opacity: 1; }
-  100% { transform: scale(0.95); opacity: 0.8; }
-}
-
 /* 2. Heading Section */
 .damage-log-heading {
   margin-bottom: 4px;
@@ -973,41 +887,6 @@
 @media (max-width: 768px) {
   .damage-log-page {
     gap: 16px;
-  }
-
-  /* Clock Micro-chip */
-  .damage-clock-card {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
-    gap: 10px;
-    border-width: 2.5px;
-    box-shadow: 3px 3px 0 var(--damage-border);
-  }
-
-  .damage-clock-content {
-    gap: 10px;
-  }
-
-  .damage-clock-icon {
-    width: 32px;
-    height: 32px;
-    flex: 0 0 32px;
-    border-width: 1.5px;
-  }
-
-  .damage-clock-eyebrow {
-    font-size: 9px;
-  }
-
-  .damage-clock-time {
-    font-size: 13px;
-    line-height: 1.2;
-  }
-
-  .damage-online {
-    display: none;
   }
 
   /* Heading */

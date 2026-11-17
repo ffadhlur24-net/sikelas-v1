@@ -25,7 +25,6 @@ function PelaporanKerusakan() {
     const [selectedKampus, setSelectedKampus] = useState('')
     const [selectedGedung, setSelectedGedung] = useState('')
     const [selectedRoomId, setSelectedRoomId] = useState('')
-    const [currentTime, setCurrentTime] = useState(new Date())
 
     const daftarKategori = [
         { id: 'AC', label: 'AC / Pendingin', icon: <Snow size={18} /> },
@@ -53,10 +52,6 @@ function PelaporanKerusakan() {
         fetchRooms()
     }, [])
 
-    useEffect(() => {
-        const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-        return () => clearInterval(timer)
-    }, [])
 
     const listKampus = Array.from(new Set(rooms.map(r => r.kampus).filter(Boolean)))
     const filteredByKampus = selectedKampus
@@ -138,7 +133,6 @@ function PelaporanKerusakan() {
                     <h1 className="page-title">Pelaporan Kerusakan Fasilitas</h1>
                     <p className="page-subtitle">Laporkan kerusakan sarana prasarana kelas untuk penanganan cepat oleh tim teknis.</p>
                 </div>
-                <div className="damage-report-clock">{currentTime.toLocaleTimeString('id-ID')}</div>
             </div>
 
             {message.text && (

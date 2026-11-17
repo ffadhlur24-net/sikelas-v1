@@ -18,7 +18,6 @@ function ProfilAdmin() {
   const [showResetModal, setShowResetModal] = useState(false)
   const [confirmInput, setConfirmInput] = useState('')
   const [message, setMessage] = useState('')
-  const [currentTime, setCurrentTime] = useState(new Date())
 
   // State Toggle Visibility Password 
   const [showOldPassword, setShowOldPassword] = useState(false)
@@ -59,9 +58,7 @@ function ProfilAdmin() {
   }
 
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     fetchStats()
-    return () => clearInterval(timer)
   }, [])
 
   // Handler Minta Kode OTP Email
@@ -182,24 +179,7 @@ function ProfilAdmin() {
 
   return (
     <div className="profil-admin-page">
-      {/* ===== 1. Real-time Clock Banner ===== */}
-      <section className="admin-clock-card neo-card">
-        <div className="clock-icon-box" aria-hidden="true">
-          <span className="material-symbols-outlined">schedule</span>
-        </div>
-        <div className="clock-text">
-          <span className="clock-label label-caps">PANEL KONTROL ADMINISTRATOR PUSAT</span>
-          <h2 className="clock-time">
-            {currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
-          </h2>
-        </div>
-        <span className="online-badge">
-          <span className="pulse-dot" />
-          Sistem Online
-        </span>
-      </section>
-
-      {/* ===== 2. Quick Stats Grid ===== */}
+      {/* ===== 1. Quick Stats Grid ===== */}
       <section className="admin-stats-grid" aria-label="Ringkasan statistik sistem">
         <article className="admin-stat-card stat-navy">
           <span className="stat-label">PJ Aktif</span>

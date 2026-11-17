@@ -12,7 +12,6 @@ import {
   MortarboardFill,
   PencilSquare,
   TrashFill,
-  ClockFill,
   Search
 } from 'react-bootstrap-icons'
 
@@ -22,7 +21,6 @@ function ManajemenProdi() {
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [prodiSearch, setProdiSearch] = useState('')
-  const [currentTime, setCurrentTime] = useState(new Date())
 
   // Navigasi Level: null = Level 1 (Daftar Fakultas), String = Level 2 (Prodi dalam Fakultas Terpilih)
   const [selectedFakultas, setSelectedFakultas] = useState(null);
@@ -47,11 +45,6 @@ function ManajemenProdi() {
 
   useEffect(() => {
     fetchDepartments()
-  }, [])
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-    return () => clearInterval(timer)
   }, [])
 
   // Ekstrak Daftar Fakultas Unik dari Database
@@ -153,14 +146,6 @@ function ManajemenProdi() {
 
   return (
     <div className="faculty-management-page animate-fade-in">
-      <section className="faculty-clock-card">
-        <div className="faculty-clock-icon" aria-hidden="true"><ClockFill size={20} /></div>
-        <div>
-          <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
-        </div>
-        <span className="faculty-online"><span /> SISTEM ONLINE</span>
-      </section>
-
       <section className="faculty-stats-grid" aria-label="Ringkasan fakultas dan program studi">
         <article className="faculty-stat stat-navy"><span>Total Fakultas</span><strong>{totalFakultas}</strong></article>
         <article className="faculty-stat stat-blue"><span>Total Program Studi</span><strong>{totalProdi}</strong></article>

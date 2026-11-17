@@ -107,79 +107,7 @@
   line-height: 16px;
 }
 
-/* ---- 1. Clock Banner ---- */
-.admin-clock-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: clamp(16px, 2.5vw, 24px);
-  background: var(--neo-accent);
-  color: #ffffff;
-}
-
-.clock-icon-box {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  flex: 0 0 48px;
-  border: 2px solid var(--neo-border);
-  background: #000000;
-  color: #ffffff;
-}
-
-.clock-icon-box .material-symbols-outlined {
-  font-size: 28px;
-}
-
-.admin-clock-card .clock-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.admin-clock-card .clock-label {
-  color: #ffffff;
-}
-
-.admin-clock-card .clock-time {
-  font-family: 'Archivo Black', sans-serif;
-  font-size: clamp(15px, 2.2vw, 26px);
-  line-height: 1.35;
-  color: #ffffff;
-  margin-top: 2px;
-  word-break: break-word;
-}
-
-.online-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-  background: #ffffff;
-  color: #000000;
-  border: 2px solid var(--neo-border);
-  padding: 6px 12px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-}
-
-.online-badge .pulse-dot {
-  width: 10px;
-  height: 10px;
-  background: var(--neo-green);
-  border: 1px solid #000000;
-  display: inline-block;
-  animation: pulse-glow 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse-glow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-/* ---- 2. Stats Grid ---- */
+/* ---- 1. Stats Grid ---- */
 .admin-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -809,43 +737,6 @@
     gap: 16px;
   }
 
-  /* Micro-chip Clock Banner */
-  .admin-clock-card {
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding: 10px 14px !important;
-    gap: 10px !important;
-    border-width: 2.5px !important;
-    box-shadow: 3px 3px 0 var(--neo-border) !important;
-  }
-
-  .clock-icon-box {
-    width: 32px !important;
-    height: 32px !important;
-    flex: 0 0 32px !important;
-    border-width: 1.5px !important;
-  }
-
-  .clock-icon-box .material-symbols-outlined {
-    font-size: 18px !important;
-  }
-
-  .clock-label {
-    font-size: 9px !important;
-    letter-spacing: 0.05em !important;
-  }
-
-  .admin-clock-card .clock-time {
-    font-size: 13px !important;
-    line-height: 1.2 !important;
-    margin-top: 1px !important;
-  }
-
-  .online-badge {
-    display: none !important;
-  }
-
   /* Compact 2x2 Stats Grid */
   .admin-stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -1103,7 +994,6 @@
     gap: 14px;
   }
 
-  .admin-clock-card,
   .admin-profile-card,
   .maintenance-card,
   .feature-summary-card,

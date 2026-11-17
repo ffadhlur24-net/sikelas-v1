@@ -12,7 +12,6 @@ import {
   PrinterFill,
   FileEarmarkSpreadsheetFill,
   X,
-  ClockFill,
   ChevronLeft,
   ChevronRight
 } from 'react-bootstrap-icons'
@@ -30,7 +29,6 @@ function PersetujuanReservasi() {
     reason: ''
   })
   const [filterStatus, setFilterStatus] = useState('pending') // Default tab
-  const [currentTime, setCurrentTime] = useState(new Date())
 
   // Konfigurasi Paginasi (15 Baris per Halaman)
   const ITEMS_PER_PAGE = 15
@@ -40,11 +38,6 @@ function PersetujuanReservasi() {
   useEffect(() => {
     setCurrentPage(1)
   }, [filterStatus])
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
 
   const formatTanggalIndonesia = (dateString) => {
     if (!dateString) return '-'
@@ -208,15 +201,6 @@ function PersetujuanReservasi() {
 
   return (
     <div className="approval-page animate-fade-in">
-      <section className="approval-clock-card">
-        <div className="approval-clock-icon" aria-hidden="true"><ClockFill size={20} /></div>
-        <div className="approval-clock-content">
-          <p className="approval-eyebrow approval-clock-eyebrow">SERVER TIME &bull; REALTIME</p>
-          <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
-        </div>
-        <span className="approval-online"><span /> SISTEM ONLINE</span>
-      </section>
-
       <section className="approval-stats-grid" aria-label="Ringkasan reservasi">
         <article className="approval-stat stat-navy"><span>Total Reservasi</span><strong>{reservations.length}</strong></article>
         <article className="approval-stat stat-blue"><span>Menunggu ACC</span><strong>{pendingCount}</strong></article>

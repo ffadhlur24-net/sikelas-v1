@@ -16,7 +16,6 @@ import {
   CalendarEventFill,
   PencilSquare,
   TrashFill,
-  ClockFill,
   ArrowCounterclockwise
 } from 'react-bootstrap-icons'
 
@@ -61,7 +60,6 @@ function ManajemenRuangan() {
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [message, setMessage] = useState({ text: '', type: '' })
-  const [currentTime, setCurrentTime] = useState(new Date())
   const [confirmDeleteSched, setConfirmDeleteSched] = useState({ open: false, id: null, matkul: '', loading: false })
 
   // NAVIGASI HIERARKI BERJENJANG:
@@ -185,11 +183,6 @@ function ManajemenRuangan() {
   useEffect(() => {
     fetchRooms()
     fetchDepartments()
-  }, [])
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-    return () => clearInterval(timer)
   }, [])
 
   // Update Waktu Selesai Otomatis pada Initial Sched
@@ -450,14 +443,6 @@ function ManajemenRuangan() {
 
   return (
     <div className="room-management-page animate-fade-in">
-      <section className="room-clock-card">
-        <div className="room-clock-icon" aria-hidden="true"><ClockFill size={20} /></div>
-        <div>
-          <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
-        </div>
-        <span className="room-online"><span /> SISTEM ONLINE</span>
-      </section>
-
       <section className="room-stats-grid" aria-label="Ringkasan ruangan">
         <article className="room-stat stat-navy"><span>Total Ruangan</span><strong>{rooms.length}</strong></article>
         <article className="room-stat stat-blue"><span>Gedung Aktif</span><strong>{totalBuildings}</strong></article>

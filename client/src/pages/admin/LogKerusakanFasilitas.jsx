@@ -18,8 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarEventFill,
-  GeoAltFill,
-  ClockFill
+  GeoAltFill
 } from 'react-bootstrap-icons'
 
 function LogKerusakanFasilitas() {
@@ -28,13 +27,6 @@ function LogKerusakanFasilitas() {
     const [loading, setLoading] = useState(true)
     const [filterStatus, setFilterStatus] = useState('pending')
     const [confirmModal, setConfirmModal] = useState({ open: false, roomId: null, roomName: '', loading: false })
-    const [currentTime, setCurrentTime] = useState(new Date())
-
-    // Real-time Clock Timer
-    useEffect(() => {
-        const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-        return () => clearInterval(timer)
-    }, [])
 
     // Paginasi Setup
     const ITEMS_PER_PAGE = 10
@@ -133,11 +125,6 @@ function LogKerusakanFasilitas() {
         return [1, '...', validCurrentPage - 1, validCurrentPage, validCurrentPage + 1, '...', totalPages]
     }
 
-    const formatClockIndonesia = (date) => {
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }
-        return date.toLocaleDateString('id-ID', options).replace(' pukul', ' —').replace(/\./g, '.')
-    }
-
     const formatTanggalIndonesia = (dateString) => {
         if (!dateString) return '-'
         const dateObj = new Date(dateString)
@@ -183,19 +170,7 @@ function LogKerusakanFasilitas() {
 
     return (
         <div className="damage-log-page animate-fade-in">
-            {/* 1. Real-time Clock Micro-Chip Status Bar */}
-            <section className="damage-clock-card no-print">
-                <div className="damage-clock-content">
-                    <div className="damage-clock-icon" aria-hidden="true"><ClockFill size={18} /></div>
-                    <div className="damage-clock-meta">
-                        <p className="damage-clock-eyebrow">SERVER TIME &bull; REALTIME</p>
-                        <h2>{formatClockIndonesia(currentTime)}</h2>
-                    </div>
-                </div>
-                <span className="damage-online"><span /> SISTEM ONLINE</span>
-            </section>
-
-            {/* 2. Ringkasan Statistik Sistem */}
+            {/* 1. Ringkasan Statistik Sistem */}
             <section className="damage-stats-grid no-print" aria-label="Ringkasan kerusakan fasilitas">
                 <article className="damage-stat stat-navy"><span>Total Tiket</span><strong>{reports.length}</strong></article>
                 <article className="damage-stat stat-orange"><span>Menunggu</span><strong>{pendingCount}</strong></article>

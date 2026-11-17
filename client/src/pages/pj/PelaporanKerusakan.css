@@ -48,21 +48,6 @@
   text-transform: uppercase;
 }
 
-.damage-report-clock {
-  border: 3.5px solid var(--damage-border) !important;
-  border-radius: 6px !important;
-  box-shadow: 3.5px 3.5px 0 var(--damage-border) !important;
-  background: var(--damage-blue) !important;
-  color: #ffffff !important;
-  padding: 8px 18px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font: 20px/1.2 'Archivo Black', sans-serif !important;
-  letter-spacing: .03em;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
 
 .damage-report-message {
   margin-bottom: 20px;
@@ -369,13 +354,6 @@
     font-size: 9.5px !important;
   }
 
-  .damage-report-clock {
-    font-size: 13px !important;
-    padding: 5px 10px !important;
-    border: 2.5px solid var(--damage-border) !important;
-    box-shadow: 2px 2px 0 var(--damage-border) !important;
-    border-radius: 4px !important;
-  }
 
   .damage-report-card {
     padding: 14px 12px !important;

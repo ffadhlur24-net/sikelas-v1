@@ -7,7 +7,6 @@ import NeoSelect from '../../components/Select/NeoSelect'
 import {
   PencilSquare,
   TrashFill,
-  ClockFill,
   Search,
   CheckLg,
   Whatsapp,
@@ -35,7 +34,6 @@ function ManajemenAkunPJ() {
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [currentTime, setCurrentTime] = useState(new Date())
   const [availableSchedules, setAvailableSchedules] = useState([])
   const [editingUser, setEditingUser] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null, username: '', loading: false })
@@ -71,11 +69,6 @@ function ManajemenAkunPJ() {
 
   useEffect(() => {
     fetchUsers()
-  }, [])
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-    return () => clearInterval(timer)
   }, [])
 
   // Handler hapus PJ
@@ -185,14 +178,6 @@ function ManajemenAkunPJ() {
 
   return (
     <div className="pj-management-page animate-fade-in">
-      <section className="pj-clock-card">
-        <div className="pj-clock-icon" aria-hidden="true"><ClockFill size={20} /></div>
-        <div>
-          <h2>{currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID')}</h2>
-        </div>
-        <span className="pj-online"><span /> SISTEM ONLINE</span>
-      </section>
-
       <section className="pj-stats-grid" aria-label="Ringkasan akun PJ">
         <article className="pj-stat stat-navy"><span>Total Akun PJ</span><strong>{users.length}</strong></article>
         <article className="pj-stat stat-blue"><span>PJ Aktif</span><strong>{activeUsers}</strong></article>

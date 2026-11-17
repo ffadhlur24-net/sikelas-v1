@@ -494,47 +494,6 @@
     overflow-x: hidden;
   }
 
-  /* Universal Micro-Chip Clock Status Bar on Mobile (Admin) */
-  .admin-dashboard [class*="-clock-card"] {
-    padding: 8px 12px !important;
-    gap: 10px !important;
-    margin-bottom: 14px !important;
-    border-width: 2.5px !important;
-    box-shadow: 2.5px 2.5px 0 var(--admin-border) !important;
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-  }
-
-  .admin-dashboard [class*="-clock-icon"],
-  .admin-dashboard [class*="clock-icon-box"] {
-    width: 32px !important;
-    height: 32px !important;
-    min-width: 32px !important;
-    flex: 0 0 32px !important;
-    font-size: 18px !important;
-  }
-
-  .admin-dashboard [class*="-clock-card"] h2,
-  .admin-dashboard [class*="-clock-card"] h3,
-  .admin-dashboard .neo-clock-time,
-  .admin-dashboard .clock-time {
-    font-size: 14px !important;
-    line-height: 1.2 !important;
-    margin: 0 !important;
-  }
-
-  .admin-dashboard [class*="-clock-card"] [class*="-eyebrow"],
-  .admin-dashboard .neo-clock-label,
-  .admin-dashboard .clock-label {
-    font-size: 9.5px !important;
-    letter-spacing: 0.05em !important;
-    margin: 0 !important;
-  }
-
-  .admin-dashboard [class*="-clock-card"] [class*="-online"],
-  .admin-dashboard .clock-badge-online {
-    display: none !important;
-  }
 
   /* Universal Neo-Brutalism Scaling on Mobile (Admin) */
   .admin-dashboard .card,
