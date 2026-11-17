@@ -452,12 +452,13 @@ function LandingPage() {
                                 {currentRooms.map((room, idx) => {
                                     const isLocked = room.status === 'terkunci';
                                     const isRepair = room.status === 'perbaikan';
+                                    const isOccupied = room.slot_available === false && room.status === 'tersedia';
                                     const cardIndexStr = `#${String(startIndex + idx + 1).padStart(2, '0')}`;
 
                                     return (
                                         <div
                                             key={room.id}
-                                            className={`landing-room-card-wrapper ${isLocked ? 'is-locked' : ''} ${isRepair ? 'is-repair' : ''}`}
+                                            className={`landing-room-card-wrapper ${isLocked ? 'is-locked' : ''} ${isRepair ? 'is-repair' : ''} ${isOccupied ? 'is-occupied' : ''}`}
                                         >
                                             {/* Folder Tab at Top */}
                                             <div className="landing-room-folder-tab" aria-hidden="true" />
@@ -466,19 +467,21 @@ function LandingPage() {
                                             <div className="landing-room-card">
                                                 <div className="landing-room-header">
                                                     <h3 className="landing-room-title">{room.nama}</h3>
-                                                    {room.status === 'tersedia' && (
-                                                        <span className="landing-room-badge status-tersedia">
-                                                            <CircleFill size={7} /> Tersedia
-                                                        </span>
-                                                    )}
-                                                    {room.status === 'terkunci' && (
+                                                    {isLocked ? (
                                                         <span className="landing-room-badge status-terkunci">
                                                             <CircleFill size={7} /> Terkunci
                                                         </span>
-                                                    )}
-                                                    {room.status === 'perbaikan' && (
+                                                    ) : isRepair ? (
                                                         <span className="landing-room-badge status-perbaikan">
                                                             <CircleFill size={7} /> Perbaikan
+                                                        </span>
+                                                    ) : isOccupied ? (
+                                                        <span className="landing-room-badge status-terpakai" title={room.conflict_reason || 'Sedang digunakan'}>
+                                                            <CircleFill size={7} /> Terpakai
+                                                        </span>
+                                                    ) : (
+                                                        <span className="landing-room-badge status-tersedia">
+                                                            <CircleFill size={7} /> Tersedia
                                                         </span>
                                                     )}
                                                 </div>
