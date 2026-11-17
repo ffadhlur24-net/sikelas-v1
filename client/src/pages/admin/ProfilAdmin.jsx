@@ -188,6 +188,7 @@ function ProfilAdmin() {
           <span className="material-symbols-outlined">schedule</span>
         </div>
         <div className="clock-text">
+          <span className="clock-label label-caps">PANEL KONTROL ADMINISTRATOR PUSAT</span>
           <h2 className="clock-time">
             {currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
           </h2>
@@ -529,9 +530,11 @@ function ProfilAdmin() {
                     <input
                       type="text"
                       maxLength={6}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       className="admin-modal-input otp-input"
                       value={editForm.otp_code}
-                      onChange={e => setEditForm({ ...editForm, otp_code: e.target.value })}
+                      onChange={e => setEditForm({ ...editForm, otp_code: e.target.value.replace(/\D/g, '') })}
                       placeholder="000000"
                       required
                     />
