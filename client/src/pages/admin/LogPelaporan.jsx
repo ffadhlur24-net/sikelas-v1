@@ -166,10 +166,11 @@ function LogPelaporan() {
       {/* 1. Real-time Clock Widget */}
       <section className="neo-clock-card no-print">
         <div className="neo-clock-content">
-          <div className="neo-clock-icon-box">
+          <div className="neo-clock-icon-box" aria-hidden="true">
             <span className="material-symbols-outlined">schedule</span>
           </div>
           <div className="neo-clock-meta">
+            <p className="neo-clock-eyebrow">SERVER TIME &bull; REALTIME</p>
             <h3 className="neo-clock-time">{formatClockIndonesia(currentTime)}</h3>
           </div>
         </div>
@@ -177,6 +178,14 @@ function LogPelaporan() {
           <span className="neo-pulse-dot"></span>
           Sistem Online
         </div>
+      </section>
+
+      {/* 1b. Ringkasan Statistik Sistem */}
+      <section className="report-stats-grid no-print" aria-label="Ringkasan pelaporan">
+        <article className="report-stat stat-navy"><span>Total Laporan</span><strong>{reports.length}</strong></article>
+        <article className="report-stat stat-blue"><span>Menunggu ACC</span><strong>{pendingCount}</strong></article>
+        <article className="report-stat stat-green"><span>Disetujui / Kosong</span><strong>{verifiedCount}</strong></article>
+        <article className="report-stat stat-orange"><span>Ditolak / Exp</span><strong>{rejectedCount + expiredCount}</strong></article>
       </section>
 
       {/* 2. Page Header Title */}
@@ -204,41 +213,43 @@ function LogPelaporan() {
       <div className="neo-toolbar-card no-print">
         <div className="neo-filter-group">
           <span className="neo-filter-label">Status Laporan:</span>
-          <button
-            type="button"
-            className={`neo-filter-btn ${filterStatus === 'pending' ? 'active-pending' : ''}`}
-            onClick={() => setFilterStatus('pending')}
-          >
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><HourglassSplit size={14} /> Menunggu ACC ({pendingCount})</span>
-          </button>
-          <button
-            type="button"
-            className={`neo-filter-btn ${filterStatus === 'verified' ? 'active-verified' : ''}`}
-            onClick={() => setFilterStatus('verified')}
-          >
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CheckCircleFill size={14} /> Disetujui / Kosong ({verifiedCount})</span>
-          </button>
-          <button
-            type="button"
-            className={`neo-filter-btn ${filterStatus === 'rejected' ? 'active-rejected' : ''}`}
-            onClick={() => setFilterStatus('rejected')}
-          >
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><XCircleFill size={14} /> Ditolak ({rejectedCount})</span>
-          </button>
-          <button
-            type="button"
-            className={`neo-filter-btn ${filterStatus === 'expired' ? 'active-expired' : ''}`}
-            onClick={() => setFilterStatus('expired')}
-          >
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><ExclamationTriangleFill size={14} /> Kadaluarsa ({expiredCount})</span>
-          </button>
-          <button
-            type="button"
-            className={`neo-filter-btn ${filterStatus === 'Semua' ? 'active-all' : ''}`}
-            onClick={() => setFilterStatus('Semua')}
-          >
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CardList size={14} /> Semua ({reports.length})</span>
-          </button>
+          <div className="neo-filter-scroll-wrapper">
+            <button
+              type="button"
+              className={`neo-filter-btn ${filterStatus === 'pending' ? 'active-pending' : ''}`}
+              onClick={() => setFilterStatus('pending')}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><HourglassSplit size={14} /> Menunggu ACC ({pendingCount})</span>
+            </button>
+            <button
+              type="button"
+              className={`neo-filter-btn ${filterStatus === 'verified' ? 'active-verified' : ''}`}
+              onClick={() => setFilterStatus('verified')}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CheckCircleFill size={14} /> Disetujui / Kosong ({verifiedCount})</span>
+            </button>
+            <button
+              type="button"
+              className={`neo-filter-btn ${filterStatus === 'rejected' ? 'active-rejected' : ''}`}
+              onClick={() => setFilterStatus('rejected')}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><XCircleFill size={14} /> Ditolak ({rejectedCount})</span>
+            </button>
+            <button
+              type="button"
+              className={`neo-filter-btn ${filterStatus === 'expired' ? 'active-expired' : ''}`}
+              onClick={() => setFilterStatus('expired')}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><ExclamationTriangleFill size={14} /> Kadaluarsa ({expiredCount})</span>
+            </button>
+            <button
+              type="button"
+              className={`neo-filter-btn ${filterStatus === 'Semua' ? 'active-all' : ''}`}
+              onClick={() => setFilterStatus('Semua')}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><CardList size={14} /> Semua ({reports.length})</span>
+            </button>
+          </div>
         </div>
 
         <div className="neo-action-tools">
@@ -273,16 +284,171 @@ function LogPelaporan() {
             <p className="neo-empty-desc">Sedang menyinkronkan data pelaporan dari server.</p>
           </div>
         ) : (
-          <table className="neo-table">
-            <thead className="neo-table-head">
-              <tr>
-                <th style={{ width: '25%' }}>Jenis Kendala</th>
-                <th style={{ width: '35%' }}>Detail</th>
-                <th style={{ width: '22%' }}>Pelapor (PJ)</th>
-                <th style={{ width: '18%' }} className="neo-cell-action no-print">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Desktop Table View */}
+            <div className="neo-table-wrapper">
+              <table className="neo-table">
+                <thead className="neo-table-head">
+                  <tr>
+                    <th style={{ width: '25%' }}>Jenis Kendala</th>
+                    <th style={{ width: '35%' }}>Detail</th>
+                    <th style={{ width: '22%' }}>Pelapor (PJ)</th>
+                    <th style={{ width: '18%' }} className="neo-cell-action no-print">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredReports.length > 0 ? (
+                    filteredReports.map((report) => {
+                      const targetDate = report.tanggal || report.created_at?.split('T')[0]
+                      const expired = isReportExpired(report)
+                      const reasonTitle = report.alasan?.replace(/_/g, ' ') || 'DOSEN BERHALANGAN'
+                      const sentDate = report.created_at
+                        ? new Date(report.created_at).toLocaleString('id-ID', {
+                          day: 'numeric',
+                          month: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit'
+                        })
+                        : '-'
+
+                      return (
+                        <tr key={report.id} className="neo-table-row">
+                          {/* Column 1: Jenis Kendala */}
+                          <td className="neo-table-cell">
+                            <p className="neo-report-reason">{reasonTitle}</p>
+                            <p className="neo-report-time">Dikirim: {sentDate}</p>
+                          </td>
+
+                          {/* Column 2: Detail */}
+                          <td className="neo-table-cell">
+                            <div className="neo-detail-container">
+                              <div className="neo-detail-date">
+                                <span className="material-symbols-outlined">calendar_today</span>
+                                <span>{formatTanggalIndonesia(targetDate)}</span>
+                              </div>
+
+                              {/* Status Badge */}
+                              {expired ? (
+                                <div className="neo-status-badge neo-badge-expired">
+                                  <span className="material-symbols-outlined">warning</span>
+                                  KADALUARSA
+                                </div>
+                              ) : report.status === 'verified' ? (
+                                <div className="neo-status-badge neo-badge-verified">
+                                  <span className="material-symbols-outlined">check_circle</span>
+                                  DISETUJUI / KOSONG
+                                </div>
+                              ) : report.status === 'rejected' ? (
+                                <div>
+                                  <div className="neo-status-badge neo-badge-rejected">
+                                    <span className="material-symbols-outlined">cancel</span>
+                                    DITOLAK
+                                  </div>
+                                  {report.alasan_penolakan && (
+                                    <p className="neo-reject-note">"{report.alasan_penolakan}"</p>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="neo-status-badge neo-badge-pending">
+                                  <span className="material-symbols-outlined">hourglass_empty</span>
+                                  MENUNGGU ACC
+                                </div>
+                              )}
+
+                              <p className="neo-detail-subject">{report.mata_kuliah || 'Mata Kuliah'}</p>
+
+                              <div className="neo-detail-location">
+                                <span className="material-symbols-outlined">location_on</span>
+                                <span>
+                                  Ruang: {report.rooms?.nama || report.room_id || '-'} ({report.rooms?.gedung || '-'})
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Column 3: Pelapor (PJ) */}
+                          <td className="neo-table-cell">
+                            <div className="neo-reporter-box">
+                              <p className="neo-reporter-badge-text">Pelapor (PJ)</p>
+                              <p className="neo-reporter-name">{report.users?.username || 'PJ Mahasiswa'}</p>
+                              <p className="neo-reporter-nim">NIM: {report.users?.nim_nip || '-'}</p>
+                            </div>
+                          </td>
+
+                          {/* Column 4: Aksi */}
+                          <td className="neo-table-cell neo-cell-action no-print">
+                            {report.status === 'pending' && !expired ? (
+                              <div className="neo-action-buttons">
+                                <button
+                                  type="button"
+                                  className="neo-btn neo-btn-approve"
+                                  disabled={actionLoading}
+                                  title="ACC & Kosongkan Jadwal Kelas"
+                                  onClick={() => handleResolve(report.id, 'verified')}
+                                >
+                                  ACC
+                                </button>
+                                <button
+                                  type="button"
+                                  className="neo-btn neo-btn-reject"
+                                  disabled={actionLoading}
+                                  title="Tolak Pengajuan Laporan"
+                                  onClick={() =>
+                                    setRejectModal({
+                                      open: true,
+                                      id: report.id,
+                                      subject: report.mata_kuliah || 'Mata Kuliah',
+                                      reason: ''
+                                    })
+                                  }
+                                >
+                                  Tolak
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                className="neo-btn neo-btn-delete"
+                                disabled={actionLoading}
+                                title="Hapus Laporan dari Sistem"
+                                onClick={() =>
+                                  setDeleteModal({
+                                    open: true,
+                                    id: report.id,
+                                    subject: report.mata_kuliah || 'Mata Kuliah'
+                                  })
+                                }
+                              >
+                                Hapus
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="4">
+                        <div className="neo-empty-state">
+                          <div className="neo-empty-icon">
+                            <span className="material-symbols-outlined">inbox</span>
+                          </div>
+                          <h4 className="neo-empty-title">Tidak Ada Laporan</h4>
+                          <p className="neo-empty-desc">
+                            Belum ada data laporan kelas kosong pada kategori status "{filterStatus}".
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards View */}
+            <div className="report-mobile-cards no-print">
               {filteredReports.length > 0 ? (
                 filteredReports.map((report) => {
                   const targetDate = report.tanggal || report.created_at?.split('T')[0]
@@ -291,96 +457,90 @@ function LogPelaporan() {
                   const sentDate = report.created_at
                     ? new Date(report.created_at).toLocaleString('id-ID', {
                       day: 'numeric',
-                      month: 'numeric',
+                      month: 'short',
                       year: 'numeric',
                       hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit'
+                      minute: '2-digit'
                     })
                     : '-'
 
                   return (
-                    <tr key={report.id} className="neo-table-row">
-                      {/* Column 1: Jenis Kendala */}
-                      <td className="neo-table-cell">
-                        <p className="neo-report-reason">{reasonTitle}</p>
-                        <p className="neo-report-time">Dikirim: {sentDate}</p>
-                      </td>
-
-                      {/* Column 2: Detail */}
-                      <td className="neo-table-cell">
-                        <div className="neo-detail-container">
-                          <div className="neo-detail-date">
-                            <span className="material-symbols-outlined">calendar_today</span>
-                            <span>{formatTanggalIndonesia(targetDate)}</span>
-                          </div>
-
-                          {/* Status Badge */}
+                    <div key={`m-rep-${report.id}`} className="report-mobile-item">
+                      <div className="report-mobile-header">
+                        <div className="report-mobile-reason">
+                          <span className="report-mobile-reason-tag">#LAPORAN-{report.id}</span>
+                          <h4>{reasonTitle}</h4>
+                        </div>
+                        <div className="report-mobile-badge-box">
                           {expired ? (
-                            <div className="neo-status-badge neo-badge-expired">
-                              <span className="material-symbols-outlined">warning</span>
-                              KADALUARSA
-                            </div>
-                          ) : report.status === 'verified' ? (
-                            <div className="neo-status-badge neo-badge-verified">
-                              <span className="material-symbols-outlined">check_circle</span>
-                              DISETUJUI / KOSONG
-                            </div>
-                          ) : report.status === 'rejected' ? (
-                            <div>
-                              <div className="neo-status-badge neo-badge-rejected">
-                                <span className="material-symbols-outlined">cancel</span>
-                                DITOLAK
-                              </div>
-                              {report.alasan_penolakan && (
-                                <p className="neo-reject-note">"{report.alasan_penolakan}"</p>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="neo-status-badge neo-badge-pending">
-                              <span className="material-symbols-outlined">hourglass_empty</span>
-                              MENUNGGU ACC
-                            </div>
-                          )}
-
-                          <p className="neo-detail-subject">{report.mata_kuliah || 'Mata Kuliah'}</p>
-
-                          <div className="neo-detail-location">
-                            <span className="material-symbols-outlined">location_on</span>
-                            <span>
-                              Ruang: {report.rooms?.nama || report.room_id || '-'} ({report.rooms?.gedung || '-'})
+                            <span className="report-mobile-status-badge badge-expired">
+                              <span className="material-symbols-outlined">warning</span> Kadaluarsa
                             </span>
+                          ) : report.status === 'verified' ? (
+                            <span className="report-mobile-status-badge badge-verified">
+                              <span className="material-symbols-outlined">check_circle</span> Disetujui
+                            </span>
+                          ) : report.status === 'rejected' ? (
+                            <span className="report-mobile-status-badge badge-rejected">
+                              <span className="material-symbols-outlined">cancel</span> Ditolak
+                            </span>
+                          ) : (
+                            <span className="report-mobile-status-badge badge-pending">
+                              <span className="material-symbols-outlined">hourglass_empty</span> Menunggu ACC
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="report-mobile-body">
+                        <h3 className="report-mobile-subject">{report.mata_kuliah || 'Mata Kuliah'}</h3>
+
+                        <div className="report-mobile-meta-grid">
+                          <div className="report-mobile-meta-item">
+                            <span className="material-symbols-outlined">location_on</span>
+                            <span>Ruang: <strong>{report.rooms?.nama || report.room_id || '-'}</strong> ({report.rooms?.gedung || '-'})</span>
+                          </div>
+                          <div className="report-mobile-meta-item">
+                            <span className="material-symbols-outlined">calendar_today</span>
+                            <span>Sesi: <strong>{formatTanggalIndonesia(targetDate)}</strong></span>
                           </div>
                         </div>
-                      </td>
 
-                      {/* Column 3: Pelapor (PJ) */}
-                      <td className="neo-table-cell">
-                        <div className="neo-reporter-box">
-                          <p className="neo-reporter-badge-text">Pelapor (PJ)</p>
-                          <p className="neo-reporter-name">{report.users?.username || 'PJ Mahasiswa'}</p>
-                          <p className="neo-reporter-nim">NIM: {report.users?.nim_nip || '-'}</p>
+                        <div className="report-mobile-reporter-card">
+                          <div className="report-mobile-reporter-header">
+                            <span className="report-mobile-reporter-role">PELAPOR (PJ KELAS):</span>
+                            <span className="report-mobile-sent-time">Dikirim: {sentDate}</span>
+                          </div>
+                          <div className="report-mobile-reporter-info">
+                            <strong>{report.users?.username || 'PJ Mahasiswa'}</strong>
+                            <span> &bull; NIM: {report.users?.nim_nip || '-'}</span>
+                            {report.users?.no_hp && <span> &bull; {report.users.no_hp}</span>}
+                          </div>
                         </div>
-                      </td>
 
-                      {/* Column 4: Aksi */}
-                      <td className="neo-table-cell neo-cell-action no-print">
+                        {report.status === 'rejected' && report.alasan_penolakan && (
+                          <div className="report-mobile-reject-box">
+                            <span className="report-mobile-reject-title">Alasan Penolakan:</span>
+                            <p>"{report.alasan_penolakan}"</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="report-mobile-actions">
                         {report.status === 'pending' && !expired ? (
-                          <div className="neo-action-buttons">
+                          <div className="report-mobile-btn-grid">
                             <button
                               type="button"
-                              className="neo-btn neo-btn-approve"
+                              className="neo-btn neo-btn-approve report-mobile-btn-acc"
                               disabled={actionLoading}
-                              title="ACC & Kosongkan Jadwal Kelas"
                               onClick={() => handleResolve(report.id, 'verified')}
                             >
-                              ACC
+                              <span className="material-symbols-outlined">check</span> Setujui (ACC)
                             </button>
                             <button
                               type="button"
-                              className="neo-btn neo-btn-reject"
+                              className="neo-btn neo-btn-reject report-mobile-btn-reject"
                               disabled={actionLoading}
-                              title="Tolak Pengajuan Laporan"
                               onClick={() =>
                                 setRejectModal({
                                   open: true,
@@ -390,15 +550,14 @@ function LogPelaporan() {
                                 })
                               }
                             >
-                              Tolak
+                              <span className="material-symbols-outlined">close</span> Tolak
                             </button>
                           </div>
                         ) : (
                           <button
                             type="button"
-                            className="neo-btn neo-btn-delete"
+                            className="neo-btn neo-btn-delete report-mobile-btn-delete"
                             disabled={actionLoading}
-                            title="Hapus Laporan dari Sistem"
                             onClick={() =>
                               setDeleteModal({
                                 open: true,
@@ -407,30 +566,20 @@ function LogPelaporan() {
                               })
                             }
                           >
-                            Hapus
+                            <span className="material-symbols-outlined">delete</span> Hapus Laporan
                           </button>
                         )}
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   )
                 })
               ) : (
-                <tr>
-                  <td colSpan="4">
-                    <div className="neo-empty-state">
-                      <div className="neo-empty-icon">
-                        <span className="material-symbols-outlined">inbox</span>
-                      </div>
-                      <h4 className="neo-empty-title">Tidak Ada Laporan</h4>
-                      <p className="neo-empty-desc">
-                        Belum ada data laporan kelas kosong pada kategori status "{filterStatus}".
-                      </p>
-                    </div>
-                  </td>
-                </tr>
+                <div className="report-mobile-empty">
+                  Tidak ada data laporan untuk status "{filterStatus}".
+                </div>
               )}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
 
