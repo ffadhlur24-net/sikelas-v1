@@ -7,7 +7,6 @@ import {
   Building,
   GeoAltFill,
   ArrowRight,
-  ArrowLeft,
   PlusLg,
   MortarboardFill,
   PencilSquare,
@@ -165,6 +164,7 @@ function ManajemenProdi() {
           type="button"
           className={`faculty-breadcrumb-btn ${!selectedFakultas ? 'active' : ''}`}
           onClick={() => { setSelectedFakultas(null); setEditingId(null); }}
+          title={selectedFakultas ? "Klik untuk kembali ke Daftar Fakultas" : "Level 1: Daftar Fakultas"}
         >
           <Building size={15} /> <span>Daftar Fakultas (Level 1)</span>
         </button>
@@ -234,9 +234,6 @@ function ManajemenProdi() {
               <h2><MortarboardFill size={20} /> Program Studi di {selectedFakultas}</h2>
               <p>Tambah dan edit nama program studi terikat tanpa pengetikan manual.</p>
             </div>
-            <button className="btn btn-secondary btn-sm faculty-back-btn" onClick={() => { setSelectedFakultas(null); setEditingId(null); }}>
-              <ArrowLeft size={14} /> Kembali ke Daftar Fakultas
-            </button>
           </div>
 
           {/* Form Tambah / Edit Prodi */}

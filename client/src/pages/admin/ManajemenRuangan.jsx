@@ -10,7 +10,6 @@ import {
   Buildings,
   GeoAltFill,
   ArrowRight,
-  ArrowLeft,
   PlusLg,
   LayersFill,
   CalendarEventFill,
@@ -470,8 +469,9 @@ function ManajemenRuangan() {
       <div className="room-breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', fontSize: '14px', fontWeight: 'bold', flexWrap: 'wrap' }}>
         <button
           className="btn btn-secondary btn-sm"
-          style={{ background: !selectedKampus ? '#059669' : '#e2e8f0', color: !selectedKampus ? '#fff' : '#475569' }}
+          style={{ background: !selectedKampus ? '#059669' : '#e2e8f0', color: !selectedKampus ? '#fff' : '#475569', cursor: 'pointer' }}
           onClick={() => { setSelectedKampus(null); setSelectedGedung(null); }}
+          title="Klik untuk kembali ke Daftar Kampus"
         >
           <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Building size={15} /> Level 1: Daftar Kampus</span>
         </button>
@@ -481,8 +481,9 @@ function ManajemenRuangan() {
             <span style={{ display: "inline-flex", alignItems: "center" }}><ArrowRight size={13} /></span>
             <button
               className="btn btn-secondary btn-sm"
-              style={{ background: selectedKampus && !selectedGedung ? '#059669' : '#e2e8f0', color: selectedKampus && !selectedGedung ? '#fff' : '#475569' }}
+              style={{ background: selectedKampus && !selectedGedung ? '#059669' : '#e2e8f0', color: selectedKampus && !selectedGedung ? '#fff' : '#475569', cursor: 'pointer' }}
               onClick={() => setSelectedGedung(null)}
+              title={`Klik untuk kembali ke Gedung di ${selectedKampus}`}
             >
               <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Buildings size={15} /> Level 2: Gedung ({selectedKampus})</span>
             </button>
@@ -546,9 +547,8 @@ function ManajemenRuangan() {
       {/* ========================================================= */}
       {selectedKampus && !selectedGedung && (
         <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div style={{ marginBottom: '20px' }}>
             <h2 style={{ fontSize: "18px", fontWeight: "bold", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}><Buildings size={20} /> Gedung di {selectedKampus}</h2>
-            <button className="btn btn-secondary btn-sm" onClick={() => setSelectedKampus(null)} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><ArrowLeft size={14} /> Kembali ke Kampus</button>
           </div>
 
           <div className="card-flat room-add-building-card" style={{ marginBottom: '24px', maxWidth: '480px' }}>
@@ -592,12 +592,9 @@ function ManajemenRuangan() {
       {/* ========================================================= */}
       {selectedKampus && selectedGedung && (
         <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <div>
-              <h2 style={{ fontSize: "18px", fontWeight: "bold", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}><GeoAltFill size={20} /> Ruangan {selectedGedung} ({selectedKampus})</h2>
-              <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Daftar inventaris ruang terbagi otomatis per lantai gedung.</p>
-            </div>
-            <button className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }} onClick={() => setSelectedGedung(null)}><ArrowLeft size={14} /> Kembali ke Daftar Gedung</button>
+          <div style={{ marginBottom: '20px' }}>
+            <h2 style={{ fontSize: "18px", fontWeight: "bold", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}><GeoAltFill size={20} /> Ruangan {selectedGedung} ({selectedKampus})</h2>
+            <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>Daftar inventaris ruang terbagi otomatis per lantai gedung.</p>
           </div>
 
           {/* Form Tambah Ruangan Baru di Gedung Terpilih */}

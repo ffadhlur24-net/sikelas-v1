@@ -299,12 +299,6 @@
   color: #64748b;
 }
 
-.faculty-back-btn {
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
 
 /* Form Tambah / Edit Prodi */
 .faculty-prodi-form {
@@ -666,10 +660,7 @@
   }
 
   .faculty-detail-heading {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 12px !important;
-    margin-bottom: 16px !important;
+    margin-bottom: 14px !important;
   }
 
   .faculty-detail-heading h2 {
@@ -678,12 +669,6 @@
 
   .faculty-detail-heading p {
     font-size: 12px !important;
-  }
-
-  .faculty-back-btn {
-    width: 100% !important;
-    min-height: 40px !important;
-    justify-content: center !important;
   }
 
   /* Stacked Form */
