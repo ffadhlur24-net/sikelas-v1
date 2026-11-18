@@ -94,71 +94,86 @@ Proyek **SiKelas** disusun secara terstruktur dengan pemisahan penuh antara Fron
 ```text
 project_website/
 ├── client/                             # 🎨 FRONTEND WEB (React.js + Vite)
+│   ├── public/                         # Aset Statis & Favicon
+│   │   ├── assets/                     # Gambar Logo & Banner Latar
+│   │   ├── favicon-circle.png
+│   │   └── favicon.ico
 │   ├── src/
 │   │   ├── api/
 │   │   │   └── axios.js                # Client API & Response 401 Interceptor
-│   │   ├── components/                 # Komponen Reusable
-│   │   │   ├── Header.jsx              # Topbar Header Dashboard
-│   │   │   ├── NotificationBell.jsx    # Pop-up Lonceng Inbox Notifikasi
+│   │   ├── components/                 # Komponen Antarmuka Interaktif
+│   │   │   ├── DatePicker/             # NeoDatePicker (Kalender Neo-Brutalism)
+│   │   │   ├── Modal/                  # ConfirmModal (Dialog Konfirmasi Aksi)
+│   │   │   ├── Notification.jsx        # Universal Inbox Pop-up Notifikasi & CSS
 │   │   │   ├── ProtectedRoute.jsx      # Pengaman Akses Berdasarkan Role
-│   │   │   └── Sidebar.jsx             # Menu Navigasi Samping
+│   │   │   ├── Select/                 # NeoSelect (Dropdown Kustom Neo-Brutalism)
+│   │   │   ├── TimePicker/             # NeoTimePicker (Pemilih Jam Kustom)
+│   │   │   └── Toast/                  # Toast Notification Container & Alert
+│   │   ├── config/
+│   │   │   └── supabase.js             # Konfigurasi Supabase Client Frontend
 │   │   ├── context/
-│   │   │   └── AuthContext.jsx         # Provider State Pengguna Global
+│   │   │   ├── AuthContext.jsx         # Global Authentication & Session State
+│   │   │   └── ToastContext.jsx        # Global Toast Alert Notification State
 │   │   ├── pages/                      # Halaman Utama Aplikasi
-│   │   │   ├── admin/                  # Halaman Fitur Manajemen Admin
-│   │   │   │   ├── LogKerusakanFasilitas.jsx
-│   │   │   │   ├── LogPelaporan.jsx
-│   │   │   │   ├── ManajemenAkunPJ.jsx
-│   │   │   │   ├── ManajemenProdi.jsx
-│   │   │   │   ├── ManajemenRuangan.jsx
-│   │   │   │   ├── PersetujuanReservasi.jsx
-│   │   │   │   ├── ProfilAdmin.css
-│   │   │   │   └── ProfilAdmin.jsx     # Edit Profil Admin + Toggle & OTP
-│   │   │   ├── auth/                   # Autentikasi Pengguna
-│   │   │   │   └── Register.jsx        # Pendaftaran Akun PJ & Form OTP
-│   │   │   ├── pj/                     # Halaman Fitur Mahasiswa PJ
-│   │   │   │   ├── DaftarKelas.jsx
-│   │   │   │   ├── PelaporanKelas.jsx
-│   │   │   │   ├── Pelaporankerusakan.jsx
-│   │   │   │   ├── ProfilPJ.css
-│   │   │   │   └── ProfilPJ.jsx        # Edit Profil PJ + Toggle & OTP
-│   │   │   ├── DashboardAdmin.jsx      # Layout Shell Admin
-│   │   │   ├── DashboardPJ.jsx         # Layout Shell PJ
-│   │   │   ├── HalamanLogin.jsx        # Form Login & Rate Limiter Alert
-│   │   │   ├── LandingPage.jsx         # Halaman Depan Publik
-│   │   │   └── VerifyEmail.jsx         # Verifikasi Email OTP
-│   │   ├── App.css
-│   │   ├── App.jsx                     # Konfigurasi Rute Aplikasi
-│   │   ├── index.css                   # System Design Tokens & Variabel CSS
-│   │   └── main.jsx                    # Berkas Utama React Entry Point
-│   ├── index.html
-│   └── package.json                    # Pustaka & Dependensi Frontend
+│   │   │   ├── admin/                  # Modul Administrasi Kampus (Admin)
+│   │   │   │   ├── LogKerusakanFasilitas.jsx & .css
+│   │   │   │   ├── LogPelaporan.jsx & .css
+│   │   │   │   ├── ManajemenAkunPJ.jsx & .css
+│   │   │   │   ├── ManajemenProdi.jsx & .css
+│   │   │   │   ├── ManajemenRuangan.jsx & .css
+│   │   │   │   ├── PersetujuanReservasi.jsx & .css
+│   │   │   │   └── ProfilAdmin.jsx & .css
+│   │   │   ├── auth/                   # Modul Autentikasi
+│   │   │   │   └── Register.jsx & .css # Form Pendaftaran PJ & Verifikasi OTP
+│   │   │   ├── pj/                     # Modul Penanggung Jawab Kelas (PJ)
+│   │   │   │   ├── DaftarKelas.jsx & .css
+│   │   │   │   ├── PelaporanKelas.jsx & .css
+│   │   │   │   ├── PelaporanKerusakan.jsx & .css
+│   │   │   │   └── ProfilPJ.jsx & .css
+│   │   │   ├── DashboardAdmin.jsx & .css   # Layout Shell & Header Admin
+│   │   │   ├── DashboardPJ.jsx & .css      # Layout Shell & Header PJ
+│   │   │   ├── HalamanLogin.jsx & .css     # Form Login & Proteksi Rate Limiter
+│   │   │   ├── LandingPage.jsx & .css      # Halaman Depan Publik & Cek Ketersediaan
+│   │   │   └── VerifyEmail.jsx & .css      # Verifikasi Email OTP & Reset Password
+│   │   ├── utils/
+│   │   │   └── exportExcel.js          # Generator Ekspor Laporan Excel/CSV
+│   │   ├── App.jsx                     # Konfigurasi Rute Aplikasi (React Router)
+│   │   ├── index.css                   # Token Desain & Styling Global
+│   │   └── main.jsx                    # Entry Point Aplikasi React
+│   ├── .env.example                    # Template Konfigurasi Environment Client
+│   ├── .gitignore                      # Berkas Pengabaian Git Client
+│   ├── index.html                      # Template Dokumen HTML Utama
+│   ├── package.json                    # Dependensi & Skrip Frontend
+│   ├── vercel.json                     # Konfigurasi Routing Deployment Vercel
+│   └── vite.config.js                  # Konfigurasi Bundler Vite
 │
-└── server/                             # ⚙️ BACKEND API (Express.js)
-    ├── config/
-    │   └── supabase.js                 # Inisialisasi Koneksi DB Supabase
-    ├── middleware/
-    │   ├── auth.js                     # Middleware Verifikasi JWT Token
-    │   └── rateLimiter.js              # Middleware IP Limiter Perangkat
-    ├── routes/                         # Endpoint Controller RESTful API
-    │   ├── auth.js                     # Register, Login, Verify OTP, Reset Password
-    │   ├── departemen.js               # Manajemen Prodi Dinamis
-    │   ├── facilityReports.js          # Laporan Kerusakan Fasilitas
-    │   ├── notification.js             # API Notifikasi Inbox 2-Arah
-    │   ├── reports.js                  # API Laporan Kelas Kosong
-    │   ├── reservations.js             # API Booking & Check-In Kelas
-    │   ├── rooms.js                    # API Master Ruangan & Status Lock
-    │   ├── schedules.js                # API Kalender Perkuliahan
-    │   └── user.js                     # API Profil, User List, & Request OTP
-    ├── tasks/
-    │   └── cronJobs.js                 # Automation Phantom Booking & Midnight Sweeper
-    ├── untils/
-    │   └── sendEmail.js                # Helper Pengiriman Email OTP via Resend API
-    ├── .env                            # Kunci Rahasia Environment Variables
-    ├── index.js                        # Berkas Utama Server & Init Cron Jobs
-    ├── seed_add.js                     # Skrip Inisialisasi Data Awal (Seeder)
-    ├── seed_clear.js                   # Skrip Reset Data Seeder
-    └── package.json                    # Pustaka & Dependensi Backend
+├── server/                             # ⚙️ BACKEND API (Express.js)
+│   ├── config/
+│   │   └── supabase.js                 # Inisialisasi Koneksi Database Supabase
+│   ├── middleware/
+│   │   ├── auth.js                     # Middleware Verifikasi JWT Token
+│   │   └── rateLimiter.js              # Middleware Proteksi Brute Force IP
+│   ├── routes/                         # Endpoint RESTful API Controllers
+│   │   ├── auth.js                     # Registrasi, Login, OTP, & Reset Password
+│   │   ├── departemen.js               # Manajemen Master Prodi & Fakultas
+│   │   ├── facilityReports.js          # Laporan Kerusakan Sarana Prasarana
+│   │   ├── notification.js             # API Notifikasi Inbox 2-Arah
+│   │   ├── reports.js                  # API Laporan Kelas Kosong / Kendala
+│   │   ├── reservations.js             # API Booking Ruangan & Check-In
+│   │   ├── rooms.js                    # API Master Ruangan & Status Kunci
+│   │   ├── schedules.js                # API Jadwal Perkuliahan Terintegrasi 3NF
+│   │   └── user.js                     # API Profil Pengguna & Verifikasi Akun PJ
+│   ├── tasks/
+│   │   └── cronJobs.js                 # Sweeper Otomatis Reservasi Hangus
+│   ├── utils/
+│   │   └── sendEmail.js                # Helper Pengiriman Email OTP via Resend API
+│   ├── .env.example                    # Template Konfigurasi Environment Server
+│   ├── .gitignore                      # Berkas Pengabaian Git Server
+│   ├── index.js                        # Entry Point Server Express & Sweeper Init
+│   └── package.json                    # Dependensi & Skrip Backend
+│
+├── .gitignore                          # Berkas Pengabaian Git Global
+└── README.md                           # Dokumentasi Resmi Proyek
 ```
 
 ---
